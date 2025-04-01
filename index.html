@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Sklep z liquidami - szeroki wybór smaków i mocnych wrażeń">
     <title>Sole - Sklep z Liquidami | Smaki i Cennik</title>
     <link rel="stylesheet" href="styles.css">
@@ -32,10 +32,23 @@
 
         <section class="why-us">
             <h2>Dlaczego my?</h2>
-            <p>
-                Oferujemy najwyższą jakość produktów, szeroki wybór smaków oraz konkurencyjne ceny.
-                Nasze sole są tworzone z myślą o Twojej przyjemności i satysfakcji.
-            </p>
+            <div class="why-us-content">
+                <div class="benefit">
+                    <i class="fas fa-atom"></i>
+                    <h3>Spersonalizowane liquidy</h3>
+                    <p>Dopasowujemy skład i proporcje PG/VG specjalnie pod Twój model e-peta dla optymalnego smaku i produkcji pary</p>
+                </div>
+                <div class="benefit">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Doświadczenie</h3>
+                    <p>5 lat tworzenia liquidów pod konkretne urządzenia - znamy charakterystykę każdego modelu</p>
+                </div>
+                <div class="benefit">
+                    <i class="fas fa-tools"></i>
+                    <h3>Optymalizacja</h3>
+                    <p>Uwzględniamy moc grzałki, opór i konstrukcję Twojego e-peta przy doborze mocy nikotyny i składu</p>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -44,16 +57,19 @@
         <a href="#" id="admin-link" class="admin-link">Panel admina</a>
     </footer>
 
-    <!-- Modal zamówienia -->
-    <div id="order-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
+    <!-- Modal zamówienia - POPRAWIONA WERSJA Z SUWAKIEM -->
+<div id="order-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="order-scroll-container"> <!-- DODANY KONTENER Z SUWAKIEM -->
             <h2>Tworzenie zamówienia</h2>
+            
             <div id="order-form">
                 <div class="form-group">
                     <label>Smak:</label>
                     <select id="flavor-select" class="form-control"></select>
                 </div>
+                
                 <div class="form-group">
                     <label>Pojemność:</label>
                     <select id="size-select" class="form-control">
@@ -63,6 +79,7 @@
                         <option value="60ml">60ml</option>
                     </select>
                 </div>
+                
                 <div class="form-group">
                     <label>Moc nikotyny:</label>
                     <select id="strength-select" class="form-control">
@@ -74,8 +91,8 @@
                         <option value="3">3mg</option>
                         <option value="0">0mg</option>
                     </select>
-                    <!-- Tutaj zostanie wstawiony podgląd ceny -->
                 </div>
+                
                 <button id="add-to-order" class="btn">Dodaj do zamówienia</button>
             </div>
             
@@ -89,24 +106,25 @@
                 
                 <div id="order-total">Razem: 0zł</div>
                 
-                <div class="form-group">
+                <div class="form-group notes-group">
                     <label for="order-notes">Uwagi do zamówienia:</label>
                     <textarea id="order-notes" class="form-control" rows="3" 
-                            placeholder="Dodatkowe uwagi, preferencje..."></textarea>
+                              placeholder="Podaj model swojego e-peta (np. Vaporesso XROS, Geekvape Wenax) i szczególne preferencje. Robimy liquidy specjalnie dopasowane do Twojego urządzenia!"></textarea>
                 </div>
-                
-                <div id="submit-order-container">
-                    <button id="submit-order" class="btn">Złóż zamówienie</button>
-                </div>
-            </div>
-            
-            <div id="order-confirmation" style="display:none;">
-                <h3>Zamówienie złożone!</h3>
-                <p>Twój numer zamówienia: <strong id="order-number"></strong></p>
-                <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
             </div>
         </div>
+        
+        <div id="submit-order-container">
+            <button id="submit-order" class="btn">Złóż zamówienie</button>
+        </div>
+        
+        <div id="order-confirmation" style="display:none;">
+            <h3>Zamówienie złożone!</h3>
+            <p>Twój numer zamówienia: <strong id="order-number"></strong></p>
+            <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
+        </div>
     </div>
+</div>
   
     <!-- Przycisk otwierający zamówienie -->
     <button id="start-order" class="order-button" aria-label="Otwórz formularz zamówienia">
@@ -133,7 +151,7 @@
                 <!-- Tutaj będą wyświetlane szczegóły zamówienia -->
             </div>
 
-            <!-- Nowa sekcja ze statystykami -->
+            <!-- Sekcja ze statystykami -->
             <div class="stats-section">
                 <h3>Statystyki sklepu</h3>
                 <div class="stats-grid">
@@ -165,13 +183,13 @@
     <script src="app.js"></script>
     
     <script>
-        // Proste funkcje które można dodać od razu
+        // Aktualizacja roku w stopce
         document.getElementById('current-year').textContent = new Date().getFullYear();
         
-        // Zabezpieczenie przed błędami ładowania
+        // Dodatkowe zabezpieczenie przed błędami
         document.addEventListener('DOMContentLoaded', function() {
-            if (!document.getElementById('order-items')) {
-                console.error('Brak elementu order-items w DOM!');
+            if (!window.Chart) {
+                console.warn('Chart.js nie został załadowany!');
             }
         });
     </script>
