@@ -16,7 +16,11 @@ class OrderSystem {
     
     initEventListeners() {
         // Przyciski zamówienia
-        document.getElementById('start-order').addEventListener('click', this.openModal.bind(this));
+        document.getElementById('start-order').addEventListener('click', () => {
+            this.openModal();
+            this.resetScrollPosition();
+        });
+        
         document.querySelector('.close').addEventListener('click', this.closeModal.bind(this));
         document.getElementById('add-to-order').addEventListener('click', this.addToOrder.bind(this));
         document.getElementById('submit-order').addEventListener('click', this.submitOrder.bind(this));
@@ -35,7 +39,6 @@ class OrderSystem {
         // Link do panelu admina
         document.getElementById('admin-link').addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation();
             document.getElementById('admin-panel').style.display = 'block';
             window.scrollTo({
                 top: document.getElementById('admin-panel').offsetTop,
@@ -43,39 +46,69 @@ class OrderSystem {
             });
         });
     }
-    
-initFlavorFilter() {
-    const filterContainer = document.createElement('div');
-    filterContainer.className = 'flavor-filters';
-    filterContainer.innerHTML = `
-        <div class="filter-group">
-            <label>Firma:</label>
-            <select id="brand-filter" class="form-control">
-                <option value="all">Wszystkie firmy</option>
-                <option value="funk">Funk Claro</option>
-                <option value="aroma">Aroma King</option>
-                <option value="wanna">Wanna Be Cool</option>
-                <option value="inne">Inne</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label>Typ smaku:</label>
-            <select id="type-filter" class="form-control">
-                <option value="all">Wszystkie typy</option>
-                <option value="owocowe">Owocowe</option>
-                <option value="miętowe">Miętowe</option>
-                <option value="słodkie">Słodkie</option>
-                <option value="cytrusowe">Cytrusowe</option>
-                <option value="energy">Energy drink</option>
-            </select>
-        </div>
-    `;
 
-    document.querySelector('.flavors').insertBefore(filterContainer, document.getElementById('flavors-list'));
+    resetScrollPosition() {
+        const scrollContainer = document.querySelector('.order-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.scrollTop = 0;
+        }
+    }
+
+    openModal() {
+        document.getElementById('order-modal').style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Blokada przewijania tła
+        document.getElementById('order-form').style.display = 'block';
+        document.getElementById('order-summary').style.display = 'block';
+        document.getElementById('order-confirmation').style.display = 'none';
+        this.currentOrder = [];
+        this.updateOrderSummary();
+    }
     
-    document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
-    document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
-}
+    closeModal() {
+        document.getElementById('order-modal').style.display = 'none';
+        document.body.style.overflow = ''; // Odblokowanie przewijania tła
+    }
+    
+    initFlavorFilter() {
+        // Sprawdź czy filtry już istnieją
+        if (document.getElementById('brand-filter')) {
+            return; // Jeśli tak, wyjdź z funkcji
+        }
+    
+        const filterContainer = document.createElement('div');
+        filterContainer.className = 'flavor-filters';
+        filterContainer.innerHTML = `
+            <div class="filter-group">
+                <label>Firma:</label>
+                <select id="brand-filter" class="form-control">
+                    <option value="all">Wszystkie firmy</option>
+                    <option value="funk">Funk Claro</option>
+                    <option value="aroma">Aroma King</option>
+                    <option value="wanna">Wanna Be Cool</option>
+                    <option value="inne">Inne</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Typ smaku:</label>
+                <select id="type-filter" class="form-control">
+                    <option value="all">Wszystkie typy</option>
+                    <option value="owocowe">Owocowe</option>
+                    <option value="miętowe">Miętowe</option>
+                    <option value="słodkie">Słodkie</option>
+                    <option value="cytrusowe">Cytrusowe</option>
+                    <option value="energy">Energy drink</option>
+                </select>
+            </div>
+        `;
+    
+        const flavorsSection = document.querySelector('.flavors');
+        if (flavorsSection) {
+            flavorsSection.insertBefore(filterContainer, document.getElementById('flavors-list'));
+        }
+        
+        document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
+        document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
+    }
 
 filterFlavors() {
     const flavorsList = document.getElementById('flavors-list');
@@ -111,9 +144,11 @@ filterFlavors() {
 }
     
     formatFlavorName(flavor) {
-        return flavor.includes('(') 
-            ? flavor.replace('(', ' (') // Dodaj spację przed nawiasem
-            : flavor;
+    // Usuwa niepotrzebne spacje i poprawia formatowanie
+    return flavor
+        .replace(/\s+/g, ' ') // Zamienia wiele spacji na jedną
+        .replace(/\s,/g, ',') // Usuwa spacje przed przecinkami
+        .replace(/\s\(/g, ' ('); // Dodaje spację przed nawiasem
     }
     
     openModal() {
@@ -142,6 +177,11 @@ filterFlavors() {
     }
     
     setupPricePreview() {
+        // Sprawdź czy podgląd ceny już istnieje
+        if (document.getElementById('price-preview')) {
+            return; // Jeśli tak, wyjdź z funkcji
+        }
+        
         const pricePreview = document.createElement('div');
         pricePreview.id = 'price-preview';
         pricePreview.textContent = 'Cena: -';
@@ -215,7 +255,6 @@ filterFlavors() {
         itemsList.innerHTML = '';
         let total = 0;
         
-        // Grupowanie identycznych produktów
         const groupedItems = {};
         this.currentOrder.forEach(item => {
             const key = `${item.flavorNumber}-${item.size}-${item.strength}`;
@@ -231,18 +270,21 @@ filterFlavors() {
             }
         });
         
-        // Wyświetlanie zgrupowanych produktów
-        Object.values(groupedItems).forEach((item, index) => {
+        Object.values(groupedItems).forEach((item) => {
             const li = document.createElement('li');
             li.className = 'order-item';
             
             const itemInfo = document.createElement('div');
             itemInfo.className = 'order-item-info';
             itemInfo.innerHTML = `
-                <span class="flavor-number">${item.flavorNumber}.</span>
-                ${this.formatFlavorName(item.flavor).split('(')[0].trim()} 
-                (${item.size}, ${item.strength})
-                ${item.quantity > 1 ? `<span class="item-quantity">${item.quantity}x</span>` : ''}
+                <div class="flavor-name">
+                    <span class="flavor-number">${item.flavorNumber}.</span>
+                    ${this.formatFlavorName(item.flavor).split('(')[0].trim()}
+                </div>
+                <div class="item-details">
+                    (${item.size}, ${item.strength})
+                    <span class="item-quantity">${item.quantity}x</span>
+                </div>
             `;
             
             const itemPrice = document.createElement('div');
@@ -253,7 +295,6 @@ filterFlavors() {
             removeBtn.textContent = 'X';
             removeBtn.className = 'remove-item';
             removeBtn.addEventListener('click', () => {
-                // Usuń wszystkie wystąpienia tego produktu
                 this.currentOrder = this.currentOrder.filter(i => 
                     `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${item.strength}`
                 );
@@ -269,12 +310,6 @@ filterFlavors() {
         });
         
         orderTotal.textContent = `Razem: ${total}zł`;
-        
-        // Automatyczne przewijanie do dołu jeśli lista jest długa
-        if (Object.keys(groupedItems).length > 2) {
-            const orderContainer = document.querySelector('.order-items-container');
-            orderContainer.scrollTop = orderContainer.scrollHeight;
-        }
     }
     
     submitOrder() {
@@ -297,8 +332,10 @@ filterFlavors() {
         
         localStorage.setItem('orders', JSON.stringify(this.orders));
         
+        // Ukryj formularz i przycisk, pokaż potwierdzenie
         document.getElementById('order-form').style.display = 'none';
         document.getElementById('order-summary').style.display = 'none';
+        document.getElementById('submit-order-container').classList.add('hidden'); // Dodana linia
         document.getElementById('order-confirmation').style.display = 'block';
         document.getElementById('order-number').textContent = orderNumber;
         document.getElementById('order-notes').value = '';
@@ -516,6 +553,91 @@ filterFlavors() {
         this.updateStats(); // Dodaj tę linijkę
         // ... reszta istniejącej metody
     }
+
+    searchOrder() {
+        const orderNumber = document.getElementById('order-search').value.trim();
+        const order = this.orders[orderNumber];
+        const orderDetails = document.getElementById('order-details');
+        
+        orderDetails.innerHTML = '';
+        
+        if (!order) {
+            orderDetails.innerHTML = '<p class="no-order">Nie znaleziono zamówienia o podanym numerze</p>';
+            return;
+        }
+        
+        const orderHTML = `
+            <div class="order-header">
+                <h3>Zamówienie ${orderNumber}</h3>
+                <p class="order-date"><strong>Data:</strong> ${order.date}</p>
+                <p class="order-status"><strong>Status:</strong> <span class="status-badge ${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span></p>
+                ${order.notes ? `<p class="order-notes"><strong>Uwagi:</strong> ${order.notes}</p>` : ''}
+            </div>
+            
+            <div class="order-items-section">
+                <h4>Produkty:</h4>
+                <ul class="order-items-list">
+                    ${order.items.map(item => `
+                        <li class="order-item-detail">
+                            <span class="flavor-number">${item.flavorNumber}.</span> 
+                            ${this.formatFlavorName(item.flavor).split('(')[0].trim()} 
+                            (${item.size}, ${item.strength}) - ${item.price}zł
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+            
+            <div class="order-summary-section">
+                <p class="order-total"><strong>Suma:</strong> ${order.total}zł</p>
+            </div>
+            
+            <div class="order-actions">
+                <div class="form-group">
+                    <label>Zmień status:</label>
+                    <select id="status-select" class="form-control">
+                        <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
+                        <option value="W realizacji" ${order.status === 'W realizacji' ? 'selected' : ''}>W realizacji</option>
+                        <option value="Wysłane" ${order.status === 'Wysłane' ? 'selected' : ''}>Wysłane</option>
+                        <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
+                    </select>
+                    <button id="update-status" class="btn">Aktualizuj status</button>
+                </div>
+            </div>
+        `;
+        
+        orderDetails.innerHTML = orderHTML;
+        
+        document.getElementById('update-status').addEventListener('click', () => {
+            const newStatus = document.getElementById('status-select').value;
+            this.orders[orderNumber].status = newStatus;
+            localStorage.setItem('orders', JSON.stringify(this.orders));
+            this.searchOrder(); // Odśwież widok po zmianie
+            alert('Status zamówienia został zaktualizowany!');
+        });
+    }
+
+    openModal() {
+        document.getElementById('order-modal').style.display = 'block';
+        document.getElementById('order-form').style.display = 'block';
+        document.getElementById('order-summary').style.display = 'block';
+        document.getElementById('submit-order-container').classList.remove('hidden');// Dodana linia
+        document.getElementById('order-confirmation').style.display = 'none';
+        this.currentOrder = [];
+        this.updateOrderSummary();
+    }
+    
+    closeModal() {
+        document.getElementById('order-modal').style.display = 'none';
+        document.body.classList.remove('modal-open'); // Usuń klasę z body
+    }
+    
+    resetScrollPosition() {
+        const scrollContainer = document.querySelector('.order-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.scrollTop = 0;
+        }
+    }
+    
 }
 
 // Inicjalizacja systemu
