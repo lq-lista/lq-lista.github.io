@@ -38,13 +38,19 @@ const flavors = [
 ];
 
 const flavorCategories = {
+    // Kategorie smaków
     "owocowe": [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
     "miętowe": [8, 24], // Mint Watermelon
     "słodkie": [0, 1, 2, 6, 9, 15, 17, 22, 23, 25, 26, 27, 28, 29, 30, 31, 33, 34],
     "cytrusowe": [4, 7, 14, 19, 30, 32],
     "energy": [15],
-    "funk": [17, 18, 19, 20, 21, 22, 23, 24],
-    "aroma": [25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
+    
+    // Kategorie producentów (zgodne z nowym filtrem)
+    "funk": [17, 18, 19, 20, 21, 22, 23, 24], // Funk Claro
+    "aroma": [25, 26, 27, 28, 29, 30, 31, 32, 33, 34], // Aroma King
+    "wanna": [16], // Wanna Be Cool (tylko Cactus)
+    
+    // Inne kategorie
     "chłodzone": [0, 1, 2, 3, 4, 5, 7, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 25, 28]
 };
 
