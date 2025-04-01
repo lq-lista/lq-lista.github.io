@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Renderowanie listy smaków
     const flavorsList = document.getElementById('flavors-list');
-    flavors.forEach(flavor => {
+    flavors.forEach((flavor, index) => {
         const li = document.createElement('li');
-        li.textContent = flavor;
+        li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${flavor}`;
         flavorsList.appendChild(li);
     });
 
@@ -32,4 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
         tbody.appendChild(row);
     });
     pricingTable.appendChild(tbody);
+
+    // Inicjalizacja systemu zamówień (TYLKO RAZ)
+    const orderSystem = new OrderSystem();
+
+    document.getElementById('current-year').textContent = new Date().getFullYear();
 });
