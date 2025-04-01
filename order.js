@@ -51,12 +51,12 @@ class OrderSystem {
             <div class="filter-group">
                 <label>Firma:</label>
                 <select id="brand-filter" class="form-control">
-                    <option value="all">Wszystkie firmy</option>
-                    <option value="panda">Panda Classic</option>
-                    <option value="funk">Funk Claro</option>
-                    <option value="izi">Izi Pizi</option>
-                    <option value="inne">Inne</option>
-                </select>
+    <option value="all">Wszystkie firmy</option>
+    <option value="funk">Funk Claro</option>
+    <option value="aroma">Aroma King</option>
+    <option value="wanna">Wanna Be Cool</option>
+    <option value="inne">Inne</option>
+</select>
             </div>
             <div class="filter-group">
                 <label>Typ smaku:</label>
