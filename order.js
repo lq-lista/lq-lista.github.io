@@ -44,71 +44,71 @@ class OrderSystem {
         });
     }
     
-    initFlavorFilter() {
-        const filterContainer = document.createElement('div');
-        filterContainer.className = 'flavor-filters';
-        filterContainer.innerHTML = `
-            <div class="filter-group">
-                <label>Firma:</label>
-                <select id="brand-filter" class="form-control">
-    <option value="all">Wszystkie firmy</option>
-    <option value="funk">Funk Claro</option>
-    <option value="aroma">Aroma King</option>
-    <option value="wanna">Wanna Be Cool</option>
-    <option value="inne">Inne</option>
-</select>
-            </div>
-            <div class="filter-group">
-                <label>Typ smaku:</label>
-                <select id="type-filter" class="form-control">
-                    <option value="all">Wszystkie typy</option>
-                    <option value="owocowe">Owocowe</option>
-                    <option value="miętowe">Miętowe</option>
-                    <option value="słodkie">Słodkie</option>
-                    <option value="cytrusowe">Cytrusowe</option>
-                    <option value="energy">Energy drink</option>
-                </select>
-            </div>
-        `;
+initFlavorFilter() {
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'flavor-filters';
+    filterContainer.innerHTML = `
+        <div class="filter-group">
+            <label>Firma:</label>
+            <select id="brand-filter" class="form-control">
+                <option value="all">Wszystkie firmy</option>
+                <option value="funk">Funk Claro</option>
+                <option value="aroma">Aroma King</option>
+                <option value="wanna">Wanna Be Cool</option>
+                <option value="inne">Inne</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Typ smaku:</label>
+            <select id="type-filter" class="form-control">
+                <option value="all">Wszystkie typy</option>
+                <option value="owocowe">Owocowe</option>
+                <option value="miętowe">Miętowe</option>
+                <option value="słodkie">Słodkie</option>
+                <option value="cytrusowe">Cytrusowe</option>
+                <option value="energy">Energy drink</option>
+            </select>
+        </div>
+    `;
 
-        document.querySelector('.flavors').insertBefore(filterContainer, document.getElementById('flavors-list'));
-        
-        document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
-        document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
-    }
+    document.querySelector('.flavors').insertBefore(filterContainer, document.getElementById('flavors-list'));
     
-    filterFlavors() {
-        const flavorsList = document.getElementById('flavors-list');
-        flavorsList.innerHTML = '';
+    document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
+    document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
+}
 
-        const brandFilter = document.getElementById('brand-filter').value;
-        const typeFilter = document.getElementById('type-filter').value;
+filterFlavors() {
+    const flavorsList = document.getElementById('flavors-list');
+    flavorsList.innerHTML = '';
 
-        flavors.forEach((flavor, index) => {
-            // Sprawdzanie filtra firmy
-            const brandMatch = 
-                brandFilter === 'all' ||
-                (brandFilter === 'panda' && flavor.includes('(Panda Classic)')) ||
-                (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
-                (brandFilter === 'izi' && flavor.includes('(Izi Pizi)')) ||
-                (brandFilter === 'inne' && !flavor.includes('('));
+    const brandFilter = document.getElementById('brand-filter').value;
+    const typeFilter = document.getElementById('type-filter').value;
 
-            // Sprawdzanie filtra typu
-            let typeMatch = false;
-            if (typeFilter === 'all') {
-                typeMatch = true;
-            } else {
-                const typeIndexes = flavorCategories[typeFilter] || [];
-                typeMatch = typeIndexes.includes(index);
-            }
+    flavors.forEach((flavor, index) => {
+        // Sprawdzanie filtra firmy
+        const brandMatch = 
+            brandFilter === 'all' ||
+            (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
+            (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
+            (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
+            (brandFilter === 'inne' && !flavor.includes('('));
 
-            if (brandMatch && typeMatch) {
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
-                flavorsList.appendChild(li);
-            }
-        });
-    }
+        // Sprawdzanie filtra typu
+        let typeMatch = false;
+        if (typeFilter === 'all') {
+            typeMatch = true;
+        } else {
+            const typeIndexes = flavorCategories[typeFilter] || [];
+            typeMatch = typeIndexes.includes(index);
+        }
+
+        if (brandMatch && typeMatch) {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
+            flavorsList.appendChild(li);
+        }
+    });
+}
     
     formatFlavorName(flavor) {
         return flavor.includes('(') 
