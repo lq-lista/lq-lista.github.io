@@ -14,23 +14,38 @@ const flavors = [
     "Owoce leśne, ice",
     "Gruszka, melon, granat, ice",
     "Ananas, grejpfrut",
-    "Starberry cream (Panda Classic)",
-    "Mrożone winogrono (Funk Claro)",
-    "Energy drink kiwi (Izi Pizi)",
-    "Mango papaya (Izi Pizi)",
-    "Winogronowy energetyk (Funk Claro)",
-    "Kiwi guawa marakuja (Funk Claro)"
+    // Nowe smaki
+    "Kiwi (Energy Drink)",
+    "Cactus (Wanna Be Cool)",
+    "Strawberry Cream (Funk Claro)",
+    "Kiwi Guava Marakuja (Funk Claro)",
+    "Kwaśne Jabłko (Funk Claro)",
+    "Mrożone Winogrono (Funk Claro)",
+    "Chilled Face (Funk Claro)",
+    "Blue Slushie (Funk Claro)",
+    "Berry (Funk Claro)",
+    "Mint Watermelon (Funk Claro)",
+    "Blue Razz Cherry (Aroma King)",
+    "Geometric (Aroma King)",
+    "Dragon Berry (Aroma King)",
+    "Blueberry Slushie (Aroma King)",
+    "Dilons (Aroma King)",
+    "Wild Orange (Aroma King)",
+    "Summer Time (Aroma King)",
+    "Citrus Punch (Aroma King)",
+    "Panda (Aroma King)",
+    "Gruszka (Aroma King)"
 ];
 
 const flavorCategories = {
-    "owocowe": [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-    "miętowe": [8],
-    "słodkie": [0, 1, 2, 6, 9, 15],
-    "cytrusowe": [4, 7, 14],
-    "energy": [17, 19],
-    "panda": [15],
-    "funk": [16, 19, 20],
-    "izi": [17, 18]
+    "owocowe": [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+    "miętowe": [8, 24], // Mint Watermelon
+    "słodkie": [0, 1, 2, 6, 9, 15, 17, 22, 23, 25, 26, 27, 28, 29, 30, 31, 33, 34],
+    "cytrusowe": [4, 7, 14, 19, 30, 32],
+    "energy": [15],
+    "funk": [17, 18, 19, 20, 21, 22, 23, 24],
+    "aroma": [25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
+    "chłodzone": [0, 1, 2, 3, 4, 5, 7, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 25, 28]
 };
 
 const pricingData = {
