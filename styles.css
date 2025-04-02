@@ -505,48 +505,48 @@ h3 {
 
 /* Nowe style dla elementów zamówienia */
 .order-item {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
     align-items: center;
-    padding: 12px;
-    margin-bottom: 8px;
-    background: #fff;
-    border-radius: 6px;
-    border-left: 4px solid #ff6f61;
 }
 
 .order-item-info {
-    flex: 1;
+    display: flex;
+    flex-direction: column;
     min-width: 0;
 }
 
 .flavor-name {
-    font-weight: bold;
-    margin-bottom: 4px;
+    display: flex;
+    gap: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.flavor-number {
+    flex-shrink: 0;
+}
+
+.flavor-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .item-details {
     display: flex;
-    align-items: center;
     gap: 8px;
-    color: #666;
     font-size: 0.9em;
-}
-
-.item-quantity {
-    background: #ff6f61;
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
+    color: #666;
 }
 
 .order-item-price {
     font-weight: bold;
     color: #ff6f61;
-    min-width: 60px;
     text-align: right;
-    margin: 0 15px;
+    min-width: 60px;
 }
 
 .remove-item {
@@ -556,11 +556,7 @@ h3 {
     border-radius: 4px;
     padding: 5px 10px;
     cursor: pointer;
-}
-
-.remove-item:hover {
-    background: #e53935;
-    transform: scale(1.05);
+    margin-left: 10px;
 }
 
 /* Custom scrollbar */
