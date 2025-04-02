@@ -1,90 +1,126 @@
 class OrderSystem {
     constructor() {
+        try {
+            // Sprawdź czy dane są załadowane
+            if (typeof AppData === 'undefined') {
+                throw new Error('Dane aplikacji (AppData) nie zostały załadowane!');
+            }
 
-        // Sprawdź czy dane są załadowane
-        if (typeof AppData === 'undefined') {
-            throw new Error('Dane aplikacji (AppData) nie zostały załadowane!');
+            // Inicjalizacja właściwości z wartościami domyślnymi
+            this.currentOrder = [];
+            this.orders = {};
+            this.adminPassword = "admin123";
+            this.pageViews = 0;
+            this.ordersChart = null;
+            this.flavorsChart = null;
+            
+            // Inicjalizacja Firebase
+            this.initializeFirebase();
+            
+            // Inicjalizacja danych lokalnych
+            this.initializeLocalData().catch(e => {
+                console.error('Błąd inicjalizacji danych lokalnych:', e);
+            });
+            
+            // Inicjalizacja UI i eventów
+            this.initUIComponents();
+            
+            // Inicjalizacja statystyk
+            this.initStatistics();
+            
+            // Test połączenia z Firebase
+            this.testFirebaseConnection().catch(e => {
+                console.error('Błąd testu połączenia Firebase:', e);
+            });
+
+        } catch (error) {
+            console.error('Błąd inicjalizacji OrderSystem:', error);
+            throw error;
         }
-    
-        // Inicjalizacja właściwości
-        this.currentOrder = [];
-        this.orders = {};
-        this.adminPassword = "admin123";
-        this.pageViews = 0;
-        
-        // Inicjalizacja Firebase
-        this.initializeFirebase();
-        
-        // Inicjalizacja danych lokalnych
-        this.initializeLocalData();
-        
-        // Inicjalizacja UI i eventów
-        this.initUIComponents();
-        
-        // Inicjalizacja statystyk
-        this.initStatistics();
-        
-        // Test połączenia z Firebase (można później usunąć)
-        this.testFirebaseConnection();
-
-        this.ordersChart = null;
-        this.flavorsChart = null;
     }
 
     initializeFirebase() {
-        const firebaseConfig = {
-            apiKey: "AIzaSyAfYyYUOcdjfpupkWMTUZfup6xmRRZJ68w",
-            authDomain: "lq-lista.firebaseapp.com",
-            databaseURL: "https://lq-lista-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "lq-lista",
-            storageBucket: "lq-lista.firebasestorage.app",
-            messagingSenderId: "642905853097",
-            appId: "1:642905853097:web:ca850099dcdc002f9b2db8"
-        };
-    
-        // Inicjalizacja tylko jeśli nie została już wykonana
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyAfYyYUOcdjfpupkWMTUZfup6xmRRZJ68w",
+                authDomain: "lq-lista.firebaseapp.com",
+                databaseURL: "https://lq-lista-default-rtdb.europe-west1.firebasedatabase.app",
+                projectId: "lq-lista",
+                storageBucket: "lq-lista.firebasestorage.app",
+                messagingSenderId: "642905853097",
+                appId: "1:642905853097:web:ca850099dcdc002f9b2db8"
+            };
+
+            if (typeof firebase === 'undefined') {
+                console.warn('Firebase nie został załadowany');
+                return;
+            }
+
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            
+            this.database = firebase.database();
+            this.testConnection().catch(e => {
+                console.error('Błąd testu połączenia:', e);
+            });
+
+        } catch (error) {
+            console.error('Błąd inicjalizacji Firebase:', error);
+            throw error;
         }
-        
-        this.database = firebase.database();
-        
-        // Test połączenia (możesz później usunąć)
-        this.testConnection();
     }
     
     async testConnection() {
         try {
+            if (!this.database) {
+                throw new Error('Brak zainicjalizowanej bazy danych');
+            }
             await this.database.ref('.info/connected').once('value');
             console.log("Połączenie z Firebase działa poprawnie!");
         } catch (error) {
             console.error("Błąd połączenia z Firebase:", error);
+            throw error;
         }
     }
 
     async initializeLocalData() {
-        // Ładowanie zamówień z localStorage
-        const localOrders = localStorage.getItem('orders');
-        this.orders = localOrders ? JSON.parse(localOrders) : {};
-        
-        // Jeśli są lokalne zamówienia, zsynchronizuj je z Firebase
-        if (Object.keys(this.orders).length > 0) {
-            await this.syncLocalOrdersToFirebase();
+        try {
+            const localOrders = localStorage.getItem('orders');
+            this.orders = localOrders ? JSON.parse(localOrders) : {};
+            
+            if (Object.keys(this.orders).length > 0) {
+                await this.syncLocalOrdersToFirebase();
+            }
+        } catch (error) {
+            console.error("Błąd inicjalizacji danych lokalnych:", error);
+            this.orders = {};
+            throw error;
         }
     }
 
     initUIComponents() {
-        this.initEventListeners();
-        this.populateFlavors();
-        this.setupPricePreview();
-        this.initFlavorFilter();
-        this.initScrollButton();
+        try {
+            this.initEventListeners();
+            this.populateFlavors();
+            this.setupPricePreview();
+            this.initFlavorFilter();
+            this.initScrollButton();
+        } catch (error) {
+            console.error('Błąd inicjalizacji komponentów UI:', error);
+            throw error;
+        }
     }
 
     initStatistics() {
-        this.pageViews = parseInt(localStorage.getItem('pageViews')) || 0;
-        this.initCharts();
-        this.trackPageView();
+        try {
+            this.pageViews = parseInt(localStorage.getItem('pageViews')) || 0;
+            this.initCharts();
+            this.trackPageView();
+        } catch (error) {
+            console.error('Błąd inicjalizacji statystyk:', error);
+            throw error;
+        }
     }
 
     async syncOrdersFromFirebase() {
@@ -277,10 +313,16 @@ class OrderSystem {
     }
     
     formatFlavorName(flavor) {
-        return flavor
-            .replace(/\s+/g, ' ')
-            .replace(/\s,/g, ',')
-            .replace(/\s\(/g, ' (');
+        if (!flavor) return '';
+        try {
+            return String(flavor)
+                .replace(/\s+/g, ' ')
+                .replace(/\s,/g, ',')
+                .replace(/\s\(/g, ' (');
+        } catch (e) {
+            console.warn('Błąd formatowania nazwy smaku:', flavor, e);
+            return String(flavor);
+        }
     }
     
     populateFlavors() {
@@ -610,35 +652,146 @@ class OrderSystem {
 
     initCharts() {
         try {
-            // Najpierw zniszcz istniejące wykresy jeśli są
+            // 1. Zniszcz istniejące wykresy
+            this.destroyCharts();
+
+            // 2. Pobierz elementy canvas
+            const ordersCtx = this.getCanvasContext('ordersChart');
+            const flavorsCtx = this.getCanvasContext('flavorsChart');
+            
+            if (!ordersCtx || !flavorsCtx) {
+                console.warn('Nie można zainicjować wykresów - brak canvas');
+                return;
+            }
+
+            // 3. Przygotuj dane z walidacją
+            const chartData = this.prepareChartData();
+            if (!chartData.valid) {
+                console.warn('Nie można zainicjować wykresów - nieprawidłowe dane');
+                return;
+            }
+
+            // 4. Stwórz nowe wykresy
+            this.createCharts(ordersCtx, flavorsCtx, chartData);
+
+        } catch (error) {
+            console.error('Krytyczny błąd inicjalizacji wykresów:', error);
+            this.destroyCharts(); // Wyczyść ewentualne częściowo utworzone wykresy
+        }
+    }
+
+    destroyCharts() {
+        try {
             if (this.ordersChart instanceof Chart) {
                 this.ordersChart.destroy();
                 this.ordersChart = null;
             }
+        } catch (e) {
+            console.warn('Błąd niszczenia wykresu zamówień:', e);
+        }
+
+        try {
             if (this.flavorsChart instanceof Chart) {
                 this.flavorsChart.destroy();
                 this.flavorsChart = null;
             }
-    
-            // Pobierz elementy canvas
-            const ordersCtx = document.getElementById('ordersChart')?.getContext('2d');
-            const flavorsCtx = document.getElementById('flavorsChart')?.getContext('2d');
-    
-            if (!ordersCtx || !flavorsCtx) {
-                console.warn('Nie znaleziono elementów canvas dla wykresów');
-                return;
+        } catch (e) {
+            console.warn('Błąd niszczenia wykresu smaków:', e);
+        }
+    }
+
+    getCanvasContext(id) {
+        try {
+            const canvas = document.getElementById(id);
+            if (!canvas) {
+                console.warn(`Nie znaleziono elementu canvas #${id}`);
+                return null;
             }
-    
-            // Sprawdź czy elementy canvas nie są już używane
-            if (ordersCtx.canvas.chart || flavorsCtx.canvas.chart) {
-                console.warn('Canvas jest już używany przez inny wykres');
-                return;
+
+            // Sprawdź czy canvas nie jest już używany
+            if (canvas.chart) {
+                console.warn(`Canvas #${id} jest już używany przez inny wykres`);
+                return null;
             }
-    
-            // Inicjalizacja nowych wykresów z bezpiecznymi danymi
-            const ordersData = this.getOrdersLast7Days().map(Number);
-            const last7Days = this.getLast7Days().map(String); // Upewnij się, że etykiety są stringami
-    
+
+            return canvas.getContext('2d');
+        } catch (e) {
+            console.warn(`Błąd pobierania kontekstu canvas #${id}:`, e);
+            return null;
+        }
+    }
+
+    prepareChartData() {
+        try {
+            const last7Days = this.getValidatedDays();
+            const ordersData = this.getValidatedOrders();
+            const topFlavors = this.getValidatedFlavors();
+
+            return {
+                valid: last7Days.valid && ordersData.valid && topFlavors.valid,
+                last7Days: last7Days.data,
+                ordersData: ordersData.data,
+                topFlavors: topFlavors.data
+            };
+        } catch (e) {
+            console.warn('Błąd przygotowywania danych wykresów:', e);
+            return { valid: false };
+        }
+    }
+
+    getValidatedDays() {
+        try {
+            const days = this.getLast7Days();
+            if (!Array.isArray(days) || days.length !== 7) {
+                throw new Error('Nieprawidłowa struktura danych dni');
+            }
+            return {
+                valid: true,
+                data: days.map(day => String(day || ''))
+            };
+        } catch (e) {
+            console.warn('Błąd walidacji dni:', e);
+            return { valid: false };
+        }
+    }
+
+    getValidatedOrders() {
+        try {
+            const orders = this.getOrdersLast7Days();
+            if (!Array.isArray(orders) || orders.length !== 7) {
+                throw new Error('Nieprawidłowa struktura danych zamówień');
+            }
+            return {
+                valid: true,
+                data: orders.map(val => Number(val) || 0)
+            };
+        } catch (e) {
+            console.warn('Błąd walidacji zamówień:', e);
+            return { valid: false };
+        }
+    }
+
+    getValidatedFlavors() {
+        try {
+            const flavors = this.getTopFlavors(5);
+            if (!Array.isArray(flavors) || flavors.length === 0) {
+                throw new Error('Nieprawidłowa struktura danych smaków');
+            }
+            return {
+                valid: true,
+                data: flavors.map(f => ({
+                    name: String(f.name || ''),
+                    count: Number(f.count) || 0
+                }))
+            };
+        } catch (e) {
+            console.warn('Błąd walidacji smaków:', e);
+            return { valid: false };
+        }
+    }
+
+    createCharts(ordersCtx, flavorsCtx, { last7Days, ordersData, topFlavors }) {
+        try {
             this.ordersChart = new Chart(ordersCtx, {
                 type: 'line',
                 data: {
@@ -649,26 +802,45 @@ class OrderSystem {
                         borderColor: '#ff6f61',
                         backgroundColor: 'rgba(255, 111, 97, 0.1)',
                         tension: 0.3,
-                        fill: true
+                        fill: true,
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
                         }
                     }
                 }
             });
-    
-            const topFlavors = this.getTopFlavors(5);
+
             this.flavorsChart = new Chart(flavorsCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: topFlavors.map(f => String(f.name)), // Upewnij się, że etykiety są stringami
+                    labels: topFlavors.map(f => f.name),
                     datasets: [{
-                        data: topFlavors.map(f => Number(f.count)),
+                        data: topFlavors.map(f => f.count),
                         backgroundColor: [
                             '#ff6f61',
                             '#ff9a9e',
@@ -676,24 +848,87 @@ class OrderSystem {
                             '#ffcc00',
                             '#45a049'
                         ],
-                        borderWidth: 1
+                        borderWidth: 1,
+                        hoverOffset: 10
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             position: 'right',
+                            labels: {
+                                font: {
+                                    size: 12
+                                },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
                         }
-                    }
+                    },
+                    cutout: '60%'
                 }
             });
-    
+
         } catch (error) {
-            console.error('Błąd inicjalizacji wykresów:', error);
+            console.error('Błąd tworzenia wykresów:', error);
+            this.destroyCharts();
+            throw error;
         }
     }
 
+    updateCharts() {
+        if (!this.ordersChart || !this.flavorsChart) {
+            this.initCharts();
+            return;
+        }
+
+        try {
+            const chartData = this.prepareChartData();
+            if (!chartData.valid) {
+                console.warn('Nie można zaktualizować wykresów - nieprawidłowe dane');
+                return;
+            }
+
+            // Aktualizacja wykresu zamówień
+            if (this.isChartValid(this.ordersChart)) {
+                this.ordersChart.data.labels = chartData.last7Days;
+                this.ordersChart.data.datasets[0].data = chartData.ordersData;
+                this.ordersChart.update();
+            }
+
+            // Aktualizacja wykresu smaków
+            if (this.isChartValid(this.flavorsChart)) {
+                this.flavorsChart.data.labels = chartData.topFlavors.map(f => f.name);
+                this.flavorsChart.data.datasets[0].data = chartData.topFlavors.map(f => f.count);
+                this.flavorsChart.update();
+            }
+
+        } catch (error) {
+            console.error('Błąd aktualizacji wykresów:', error);
+            this.initCharts(); // Próba ponownej inicjalizacji
+        }
+    }
+
+    isChartValid(chart) {
+        return chart instanceof Chart && 
+               typeof chart.update === 'function' &&
+               chart.data && 
+               chart.data.datasets &&
+               chart.data.datasets.length > 0;
+    }
+    
     getOrdersChartConfig() {
         return {
             type: 'line',
@@ -793,22 +1028,39 @@ class OrderSystem {
         return counts;
     }
 
-    getTopFlavors(limit) {
+    getTopFlavors(limit = 5) {
         const flavorCounts = {};
         
-        Object.values(this.orders).forEach(order => {
-            if (order && order.items) {
-                order.items.forEach(item => {
-                    if (item && item.flavor) {
-                        const flavorName = this.formatFlavorName(item.flavor).split('(')[0].trim();
-                        flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + (item.quantity || 1);
+        try {
+            Object.values(this.orders || {}).forEach(order => {
+                try {
+                    if (order && order.items && Array.isArray(order.items)) {
+                        order.items.forEach(item => {
+                            try {
+                                if (item && item.flavor) {
+                                    const flavorName = this.formatFlavorName(item.flavor).split('(')[0].trim();
+                                    if (flavorName) {
+                                        flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + (item.quantity || 1);
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Błąd przetwarzania smaku:', item, e);
+                            }
+                        });
                     }
-                });
-            }
-        });
+                } catch (e) {
+                    console.warn('Błąd przetwarzania zamówienia:', order, e);
+                }
+            });
+        } catch (e) {
+            console.error('Błąd przetwarzania zamówień:', e);
+        }
         
         return Object.entries(flavorCounts)
-            .map(([name, count]) => ({ name: String(name), count: Number(count) })) // Upewnij się o typach
+            .map(([name, count]) => ({ 
+                name: String(name || 'Nieznany'), 
+                count: Number(count) || 0 
+            }))
             .sort((a, b) => b.count - a.count)
             .slice(0, limit);
     }
@@ -872,5 +1124,10 @@ class OrderSystem {
     }
 }
 
-// Inicjalizacja systemu
-const orderSystem = new OrderSystem();
+// Bezpieczna inicjalizacja systemu
+try {
+    const orderSystem = new OrderSystem();
+} catch (error) {
+    console.error('Błąd inicjalizacji systemu zamówień:', error);
+    // Tutaj możesz dodać kod wyświetlający komunikat o błędzie użytkownikowi
+}
