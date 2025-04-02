@@ -466,19 +466,20 @@ class OrderSystem {
             const isMobile = window.matchMedia("(max-width: 768px)").matches;
             const quantityDisplay = isMobile ? `${item.quantity}×` : `${item.quantity}x`;
             
-            li.innerHTML = `
-    <div class="order-item-info">
-        <div class="flavor-name">
-            <span class="flavor-number">${item.flavorNumber}</span>
-            <span class="flavor-text">${this.formatFlavorName(item.flavor).split('(')[0].trim()}</span>
-        </div>
-        <div class="item-details">
-            <span class="size-strength">(${item.size}, ${item.strength})</span>
-            <span class="item-quantity">${item.quantity}x</span>
-        </div>
-    </div>
-    <div class="order-item-price">${item.totalPrice}zł</div>
-    <button class="remove-item">X</button>
+            // W sekcji renderowania zamówienia zmień na:
+li.innerHTML = `
+<div class="order-item-main">
+    <span class="flavor-name">
+        <span class="flavor-number">${item.flavorNumber}</span>
+        <span class="flavor-text">${this.formatFlavorName(item.flavor).split('(')[0].trim()}</span>
+    </span>
+    <span class="item-quantity">${item.quantity}x</span>
+</div>
+<div class="order-item-details">
+    <span class="size-strength">${item.size}, ${item.strength}</span>
+    <span class="item-price">${item.totalPrice}zł</span>
+</div>
+<button class="remove-item">X</button>
 `;
             
             li.querySelector('.remove-item').addEventListener('click', () => {
