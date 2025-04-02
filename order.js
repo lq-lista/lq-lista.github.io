@@ -283,33 +283,46 @@ class OrderSystem {
 
     filterFlavors() {
         const flavorsList = document.getElementById('flavors-list');
-        flavorsList.innerHTML = '';
-
-        const brandFilter = document.getElementById('brand-filter').value;
-        const typeFilter = document.getElementById('type-filter').value;
-
-        flavors.forEach((flavor, index) => {
-            const brandMatch = 
-                brandFilter === 'all' ||
-                (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
-                (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
-                (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
-                (brandFilter === 'inne' && !flavor.includes('('));
-
-            let typeMatch = false;
-            if (typeFilter === 'all') {
-                typeMatch = true;
-            } else {
-                const typeIndexes = flavorCategories[typeFilter] || [];
-                typeMatch = typeIndexes.includes(index);
-            }
-
-            if (brandMatch && typeMatch) {
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
-                flavorsList.appendChild(li);
-            }
-        });
+        if (!flavorsList) return;
+    
+        try {
+            const brandFilter = document.getElementById('brand-filter')?.value || 'all';
+            const typeFilter = document.getElementById('type-filter')?.value || 'all';
+            const flavors = AppData?.flavors || [];
+            const flavorCategories = AppData?.flavorCategories || {};
+    
+            flavorsList.innerHTML = '';
+    
+            flavors.forEach((flavor, index) => {
+                try {
+                    const brandMatch = 
+                        brandFilter === 'all' ||
+                        (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
+                        (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
+                        (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
+                        (brandFilter === 'inne' && !flavor.includes('('));
+    
+                    let typeMatch = false;
+                    if (typeFilter === 'all') {
+                        typeMatch = true;
+                    } else {
+                        const typeIndexes = flavorCategories[typeFilter] || [];
+                        typeMatch = typeIndexes.includes(index);
+                    }
+    
+                    if (brandMatch && typeMatch) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
+                        flavorsList.appendChild(li);
+                    }
+                } catch (e) {
+                    console.warn(`Błąd przetwarzania smaku ${index}:`, e);
+                }
+            });
+        } catch (error) {
+            console.error('Błąd filtrowania smaków:', error);
+            flavorsList.innerHTML = '<li>Błąd ładowania listy smaków</li>';
+        }
     }
     
     formatFlavorName(flavor) {
@@ -374,27 +387,38 @@ class OrderSystem {
     }
     
     addToOrder() {
-        const flavorIndex = document.getElementById('flavor-select').value;
-        const size = document.getElementById('size-select').value;
-        const strength = document.getElementById('strength-select').value;
-        
-        if (!flavorIndex || !size || !strength) {
-            alert('Proszę wybrać smak, pojemność i moc nikotyny!');
-            return;
+        try {
+            const flavorIndex = document.getElementById('flavor-select').value;
+            const size = document.getElementById('size-select').value;
+            const strength = document.getElementById('strength-select').value;
+            
+            if (!flavorIndex || !size || !strength) {
+                alert('Proszę wybrać smak, pojemność i moc nikotyny!');
+                return;
+            }
+            
+            // Używamy AppData.flavors zamiast globalnej zmiennej flavors
+            const flavors = AppData?.flavors || [];
+            if (!flavors[flavorIndex]) {
+                throw new Error(`Nie znaleziono smaku o indeksie ${flavorIndex}`);
+            }
+            
+            const price = this.calculatePrice(size, strength);
+            const flavorName = flavors[flavorIndex];
+            
+            this.currentOrder.push({
+                flavor: flavorName,
+                size,
+                strength: strength + 'mg',
+                price,
+                flavorNumber: parseInt(flavorIndex) + 1
+            });
+            
+            this.updateOrderSummary();
+        } catch (error) {
+            console.error('Błąd dodawania do zamówienia:', error);
+            alert('Wystąpił błąd podczas dodawania produktu. Spróbuj ponownie.');
         }
-        
-        const price = this.calculatePrice(size, strength);
-        const flavorName = flavors[flavorIndex];
-        
-        this.currentOrder.push({
-            flavor: flavorName,
-            size,
-            strength: strength + 'mg',
-            price,
-            flavorNumber: parseInt(flavorIndex) + 1
-        });
-        
-        this.updateOrderSummary();
     }
     
     calculatePrice(size, strength) {
@@ -1032,24 +1056,28 @@ class OrderSystem {
         const flavorCounts = {};
         
         try {
-            // Dodatkowe zabezpieczenie przed brakiem orders
+            // Używamy AppData.flavors jako źródła danych
+            const allFlavors = AppData?.flavors || [];
             const orders = this.orders || {};
             
             Object.values(orders).forEach(order => {
                 try {
-                    // Sprawdź czy order.items istnieje i jest tablicą
                     if (order?.items && Array.isArray(order.items)) {
                         order.items.forEach(item => {
                             try {
                                 if (item?.flavor) {
-                                    const flavorName = this.formatFlavorName(item.flavor).split('(')[0].trim();
-                                    if (flavorName) {
+                                    // Szukamy pełnej nazwy smaku na podstawie flavorNumber
+                                    const flavorIndex = (item.flavorNumber || 1) - 1;
+                                    const flavorName = allFlavors[flavorIndex] || item.flavor;
+                                    const formattedName = this.formatFlavorName(flavorName).split('(')[0].trim();
+                                    
+                                    if (formattedName) {
                                         const quantity = Number(item.quantity) || 1;
-                                        flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + quantity;
+                                        flavorCounts[formattedName] = (flavorCounts[formattedName] || 0) + quantity;
                                     }
                                 }
                             } catch (itemError) {
-                                console.warn('Błąd przetwarzania pozycji zamówienia:', item, itemError);
+                                console.warn('Błąd przetwarzania pozycji:', item, itemError);
                             }
                         });
                     }
@@ -1061,7 +1089,7 @@ class OrderSystem {
             console.error('Błąd przetwarzania zamówień:', error);
         }
         
-        // Zawsze zwracaj poprawną strukturę danych, nawet jeśli pusta
+        // Zawsze zwracamy poprawną strukturę danych
         const result = Object.entries(flavorCounts)
             .map(([name, count]) => ({ 
                 name: String(name || 'Nieznany smak'), 
@@ -1070,28 +1098,20 @@ class OrderSystem {
             .sort((a, b) => b.count - a.count)
             .slice(0, limit);
     
-        // Jeśli brak danych, zwróć przynajmniej jedną pozycję
-        return result.length > 0 ? result : [
-            { name: 'Brak danych', count: 0 }
-        ];
+        return result.length > 0 ? result : [{ name: 'Brak danych', count: 0 }];
     }
-
+    
     getValidatedFlavors() {
         try {
             const flavors = this.getTopFlavors(5);
-            
-            // Zmienione kryterium walidacji - akceptujemy też brak danych
             return {
-                valid: Array.isArray(flavors),
-                data: flavors.map(f => ({
-                    name: String(f.name || ''),
-                    count: Number(f.count) || 0
-                }))
+                valid: true, // Zawsze zwracamy true, aby pokazać wykres
+                data: flavors
             };
         } catch (e) {
             console.warn('Błąd walidacji smaków:', e);
             return {
-                valid: true, // Zmienione na true, aby pokazać przynajmniej pusty wykres
+                valid: true,
                 data: [{ name: 'Brak danych', count: 0 }]
             };
         }
