@@ -1,30 +1,160 @@
 class OrderSystem {
     constructor() {
+        // Inicjalizacja właściwości
         this.currentOrder = [];
-        this.orders = JSON.parse(localStorage.getItem('orders')) || {};
+        this.orders = {};
         this.adminPassword = "admin123";
+        this.pageViews = 0;
         
+        // Inicjalizacja Firebase
+        this.initializeFirebase();
+        
+        // Inicjalizacja danych lokalnych
+        this.initializeLocalData();
+        
+        // Inicjalizacja UI i eventów
+        this.initUIComponents();
+        
+        // Inicjalizacja statystyk
+        this.initStatistics();
+        
+        // Test połączenia z Firebase (można później usunąć)
+        this.testFirebaseConnection();
+    }
+
+    initializeFirebase() {
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfYyYUOcdjfpupkWMTUZfup6xmRRZJ68w",
+            authDomain: "lq-lista.firebaseapp.com",
+            databaseURL: "https://lq-lista-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "lq-lista",
+            storageBucket: "lq-lista.firebasestorage.app",
+            messagingSenderId: "642905853097",
+            appId: "1:642905853097:web:ca850099dcdc002f9b2db8"
+        };
+    
+        // Inicjalizacja tylko jeśli nie została już wykonana
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        this.database = firebase.database();
+        
+        // Test połączenia (możesz później usunąć)
+        this.testConnection();
+    }
+    
+    async testConnection() {
+        try {
+            await this.database.ref('.info/connected').once('value');
+            console.log("Połączenie z Firebase działa poprawnie!");
+        } catch (error) {
+            console.error("Błąd połączenia z Firebase:", error);
+        }
+    }
+
+    async initializeLocalData() {
+        // Ładowanie zamówień z localStorage
+        const localOrders = localStorage.getItem('orders');
+        this.orders = localOrders ? JSON.parse(localOrders) : {};
+        
+        // Jeśli są lokalne zamówienia, zsynchronizuj je z Firebase
+        if (Object.keys(this.orders).length > 0) {
+            await this.syncLocalOrdersToFirebase();
+        }
+    }
+
+    initUIComponents() {
         this.initEventListeners();
         this.populateFlavors();
         this.setupPricePreview();
         this.initFlavorFilter();
         this.initScrollButton();
+    }
+
+    initStatistics() {
         this.pageViews = parseInt(localStorage.getItem('pageViews')) || 0;
         this.initCharts();
         this.trackPageView();
     }
+
+    async syncOrdersFromFirebase() {
+        try {
+            console.log("Rozpoczynanie synchronizacji z Firebase...");
+            const snapshot = await this.database.ref('orders').once('value');
+            const firebaseOrders = snapshot.val() || {};
+            
+            let updated = false;
+            
+            // Aktualizuj lokalne zamówienia tylko jeśli w Firebase są nowsze wersje
+            for (const [orderId, firebaseOrder] of Object.entries(firebaseOrders)) {
+                if (!this.orders[orderId] || 
+                    (this.orders[orderId].updatedAt || 0) < firebaseOrder.updatedAt) {
+                    this.orders[orderId] = firebaseOrder;
+                    updated = true;
+                }
+            }
+            
+            if (updated) {
+                localStorage.setItem('orders', JSON.stringify(this.orders));
+                console.log("Zaktualizowano lokalne zamówienia z Firebase");
+                this.updateStats();
+            }
+            
+        } catch (error) {
+            console.error("Błąd synchronizacji z Firebase:", error);
+        }
+    }
+
+    async syncLocalOrdersToFirebase() {
+        try {
+            console.log("Rozpoczynanie synchronizacji lokalnych zamówień z Firebase...");
+            const updates = {};
+            
+            // Przygotuj aktualizacje dla wszystkich zamówień
+            for (const [orderId, order] of Object.entries(this.orders)) {
+                updates[`orders/${orderId}`] = order;
+            }
+            
+            // Wykonaj zbiorczą aktualizację
+            await this.database.ref().update(updates);
+            console.log("Zsynchroniczowano lokalne zamówienia z Firebase");
+            
+        } catch (error) {
+            console.error("Błąd synchronizacji lokalnych zamówień:", error);
+        }
+    }
+
+    async testFirebaseConnection() {
+        try {
+            const testRef = this.database.ref('connectionTest');
+            await testRef.set({
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                message: "Test połączenia z Firebase",
+                status: "success"
+            });
+            
+            const snapshot = await testRef.once('value');
+            console.log("Test połączenia z Firebase zakończony sukcesem:", snapshot.val());
+        } catch (error) {
+            console.error("Błąd testu połączenia z Firebase:", error);
+        }
+    }
     
     initEventListeners() {
         // Przyciski zamówienia
-        document.getElementById('start-order').addEventListener('click', () => this.openModal());
+        document.getElementById('start-order').addEventListener('click', () => {
+            this.openModal();
+            this.resetScrollPosition();
+        });
         
-        document.querySelector('.close').addEventListener('click', () => this.closeModal());
-        document.getElementById('add-to-order').addEventListener('click', () => this.addToOrder());
-        document.getElementById('submit-order').addEventListener('click', () => this.submitOrder());
+        document.querySelector('.close').addEventListener('click', this.closeModal.bind(this));
+        document.getElementById('add-to-order').addEventListener('click', this.addToOrder.bind(this));
+        document.getElementById('submit-order').addEventListener('click', this.submitOrder.bind(this));
         
         // Panel admina
-        document.getElementById('login-admin').addEventListener('click', () => this.loginAdmin());
-        document.getElementById('search-order').addEventListener('click', () => this.searchOrder());
+        document.getElementById('login-admin').addEventListener('click', this.loginAdmin.bind(this));
+        document.getElementById('search-order').addEventListener('click', this.searchOrder.bind(this));
         
         // Kliknięcie poza modalem
         window.addEventListener('click', (event) => {
@@ -44,89 +174,32 @@ class OrderSystem {
         });
     }
 
-    submitOrder() {
-        if (this.currentOrder.length === 0) {
-            alert('Dodaj przynajmniej jeden produkt do zamówienia!');
-            return;
+    resetScrollPosition() {
+        const scrollContainer = document.querySelector('.order-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.scrollTop = 0;
         }
-        
-        const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
-        const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
-        const notes = document.getElementById('order-notes').value;
-        
-        this.orders[orderNumber] = {
-            items: [...this.currentOrder],
-            total,
-            date: new Date().toLocaleString(),
-            status: 'Nowe',
-            notes: notes
-        };
-        
-        localStorage.setItem('orders', JSON.stringify(this.orders));
-        
-        // Ukryj formularz i pokaż potwierdzenie
-        document.getElementById('order-form').style.display = 'none';
-        document.getElementById('order-summary').style.display = 'none';
-        document.getElementById('submit-order-container').style.display = 'none';
-        document.getElementById('order-confirmation').style.display = 'block';
-        
-        // Ustaw numer zamówienia
-        const orderNumberElement = document.getElementById('order-number');
-        orderNumberElement.textContent = orderNumber;
-        document.getElementById('order-notes').value = '';
-        
-        // Inicjalizuj przycisk kopiowania
-        this.initCopyButton(orderNumber);
-    }
-
-    initCopyButton(orderNumber) {
-        const copyButton = document.getElementById('copy-order-number');
-        if (!copyButton) return;
-
-        copyButton.onclick = async () => {
-            try {
-                await navigator.clipboard.writeText(orderNumber);
-                this.showCopyNotification();
-            } catch (err) {
-                console.error('Błąd kopiowania:', err);
-                alert('Nie udało się skopiować numeru zamówienia');
-            }
-        };
-    }
-
-    showCopyNotification() {
-        const notification = document.createElement('div');
-        notification.className = 'copy-notification';
-        notification.textContent = 'Numer zamówienia skopiowany!';
-        document.body.appendChild(notification);
-        
-        setTimeout(() => notification.remove(), 2000);
     }
 
     openModal() {
         document.getElementById('order-modal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        
-        // Resetuj widok formularza
+        document.body.classList.add('modal-open');
         document.getElementById('order-form').style.display = 'block';
         document.getElementById('order-summary').style.display = 'block';
-        document.getElementById('submit-order-container').style.display = 'block';
+        document.getElementById('submit-order-container').classList.remove('hidden');
         document.getElementById('order-confirmation').style.display = 'none';
-        
+        document.getElementById('order-notes').value = '';
         this.currentOrder = [];
         this.updateOrderSummary();
     }
     
     closeModal() {
         document.getElementById('order-modal').style.display = 'none';
-        document.body.style.overflow = ''; // Odblokowanie przewijania tła
+        document.body.classList.remove('modal-open');
     }
     
     initFlavorFilter() {
-        // Sprawdź czy filtry już istnieją
-        if (document.getElementById('brand-filter')) {
-            return; // Jeśli tak, wyjdź z funkcji
-        }
+        if (document.getElementById('brand-filter')) return;
     
         const filterContainer = document.createElement('div');
         filterContainer.className = 'flavor-filters';
@@ -163,58 +236,42 @@ class OrderSystem {
         document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
     }
 
-filterFlavors() {
-    const flavorsList = document.getElementById('flavors-list');
-    flavorsList.innerHTML = '';
+    filterFlavors() {
+        const flavorsList = document.getElementById('flavors-list');
+        flavorsList.innerHTML = '';
 
-    const brandFilter = document.getElementById('brand-filter').value;
-    const typeFilter = document.getElementById('type-filter').value;
+        const brandFilter = document.getElementById('brand-filter').value;
+        const typeFilter = document.getElementById('type-filter').value;
 
-    flavors.forEach((flavor, index) => {
-        // Sprawdzanie filtra firmy
-        const brandMatch = 
-            brandFilter === 'all' ||
-            (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
-            (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
-            (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
-            (brandFilter === 'inne' && !flavor.includes('('));
+        flavors.forEach((flavor, index) => {
+            const brandMatch = 
+                brandFilter === 'all' ||
+                (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
+                (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
+                (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
+                (brandFilter === 'inne' && !flavor.includes('('));
 
-        // Sprawdzanie filtra typu
-        let typeMatch = false;
-        if (typeFilter === 'all') {
-            typeMatch = true;
-        } else {
-            const typeIndexes = flavorCategories[typeFilter] || [];
-            typeMatch = typeIndexes.includes(index);
-        }
+            let typeMatch = false;
+            if (typeFilter === 'all') {
+                typeMatch = true;
+            } else {
+                const typeIndexes = flavorCategories[typeFilter] || [];
+                typeMatch = typeIndexes.includes(index);
+            }
 
-        if (brandMatch && typeMatch) {
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
-            flavorsList.appendChild(li);
-        }
-    });
-}
+            if (brandMatch && typeMatch) {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
+                flavorsList.appendChild(li);
+            }
+        });
+    }
     
     formatFlavorName(flavor) {
-    // Usuwa niepotrzebne spacje i poprawia formatowanie
-    return flavor
-        .replace(/\s+/g, ' ') // Zamienia wiele spacji na jedną
-        .replace(/\s,/g, ',') // Usuwa spacje przed przecinkami
-        .replace(/\s\(/g, ' ('); // Dodaje spację przed nawiasem
-    }
-    
-    openModal() {
-        document.getElementById('order-modal').style.display = 'block';
-        document.getElementById('order-form').style.display = 'block';
-        document.getElementById('order-summary').style.display = 'block';
-        document.getElementById('order-confirmation').style.display = 'none';
-        this.currentOrder = [];
-        this.updateOrderSummary();
-    }
-    
-    closeModal() {
-        document.getElementById('order-modal').style.display = 'none';
+        return flavor
+            .replace(/\s+/g, ' ')
+            .replace(/\s,/g, ',')
+            .replace(/\s\(/g, ' (');
     }
     
     populateFlavors() {
@@ -224,16 +281,13 @@ filterFlavors() {
         flavors.forEach((flavor, index) => {
             const option = document.createElement('option');
             option.value = index;
-            option.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
+            option.textContent = `${index + 1}. ${this.formatFlavorName(flavor)}`;
             select.appendChild(option);
         });
     }
     
     setupPricePreview() {
-        // Sprawdź czy podgląd ceny już istnieje
-        if (document.getElementById('price-preview')) {
-            return; // Jeśli tak, wyjdź z funkcji
-        }
+        if (document.getElementById('price-preview')) return;
         
         const pricePreview = document.createElement('div');
         pricePreview.id = 'price-preview';
@@ -246,7 +300,7 @@ filterFlavors() {
             select.addEventListener('change', () => this.updatePricePreview());
         });
     }
-    
+
     updatePricePreview() {
         const size = document.getElementById('size-select').value;
         const strength = document.getElementById('strength-select').value;
@@ -280,7 +334,7 @@ filterFlavors() {
             size,
             strength: strength + 'mg',
             price,
-            flavorNumber: parseInt(flavorIndex) + 1 // Dodajemy numer smaku
+            flavorNumber: parseInt(flavorIndex) + 1
         });
         
         this.updateOrderSummary();
@@ -327,36 +381,27 @@ filterFlavors() {
             const li = document.createElement('li');
             li.className = 'order-item';
             
-            const itemInfo = document.createElement('div');
-            itemInfo.className = 'order-item-info';
-            itemInfo.innerHTML = `
-                <div class="flavor-name">
-                    <span class="flavor-number">${item.flavorNumber}.</span>
-                    ${this.formatFlavorName(item.flavor).split('(')[0].trim()}
+            li.innerHTML = `
+                <div class="order-item-info">
+                    <div class="flavor-name">
+                        <span class="flavor-number">${item.flavorNumber}.</span>
+                        ${this.formatFlavorName(item.flavor).split('(')[0].trim()}
+                    </div>
+                    <div class="item-details">
+                        (${item.size}, ${item.strength})
+                        <span class="item-quantity">${item.quantity}x</span>
+                    </div>
                 </div>
-                <div class="item-details">
-                    (${item.size}, ${item.strength})
-                    <span class="item-quantity">${item.quantity}x</span>
-                </div>
+                <div class="order-item-price">${item.totalPrice}zł</div>
+                <button class="remove-item">X</button>
             `;
             
-            const itemPrice = document.createElement('div');
-            itemPrice.className = 'order-item-price';
-            itemPrice.textContent = `${item.totalPrice}zł`;
-            
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = 'X';
-            removeBtn.className = 'remove-item';
-            removeBtn.addEventListener('click', () => {
+            li.querySelector('.remove-item').addEventListener('click', () => {
                 this.currentOrder = this.currentOrder.filter(i => 
                     `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${item.strength}`
                 );
                 this.updateOrderSummary();
             });
-            
-            li.appendChild(itemInfo);
-            li.appendChild(itemPrice);
-            li.appendChild(removeBtn);
             
             itemsList.appendChild(li);
             total += item.totalPrice;
@@ -364,127 +409,173 @@ filterFlavors() {
         
         orderTotal.textContent = `Razem: ${total}zł`;
     }
-
-    submitOrder() {
-    if (this.currentOrder.length === 0) {
-        alert('Dodaj przynajmniej jeden produkt do zamówienia!');
-        return;
-    }
-
-    const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
-    const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
-    const notes = document.getElementById('order-notes').value;
-
-    this.orders[orderNumber] = {
-        items: [...this.currentOrder],
-        total,
-        date: new Date().toLocaleString(),
-        status: 'Nowe',
-        notes: notes
-    };
-
-    localStorage.setItem('orders', JSON.stringify(this.orders));
-
-    // Ukryj elementy i pokaż potwierdzenie
-    document.getElementById('order-form').style.display = 'none';
-    document.getElementById('order-summary').style.display = 'none';
-    document.getElementById('submit-order-container').style.display = 'none';
-    document.getElementById('order-confirmation').style.display = 'block';
     
-    // Ustaw numer zamówienia
-    const orderNumberElement = document.getElementById('order-number');
-    orderNumberElement.textContent = orderNumber;
-
-    // Inicjalizuj przycisk kopiowania
-    this.initCopyButton(orderNumber);
-}
-
-initCopyButton(orderNumber) {
-    const copyButton = document.getElementById('copy-order-number');
-    if (!copyButton) return;
-
-    copyButton.onclick = async () => {
-        try {
-            await navigator.clipboard.writeText(orderNumber);
-            this.showCopyNotification();
-        } catch (err) {
-            console.error('Błąd kopiowania:', err);
-            alert('Nie udało się skopiować numeru zamówienia');
+    async submitOrder() {
+        if (this.currentOrder.length === 0) {
+            alert('Dodaj przynajmniej jeden produkt do zamówienia!');
+            return;
         }
-    };
-}
-
-showCopyNotification() {
-    const notification = document.createElement('div');
-    notification.className = 'copy-notification';
-    notification.textContent = 'Skopiowano numer zamówienia!';
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.remove(), 2000);
-}
+        
+        const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
+        const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
+        const notes = document.getElementById('order-notes').value;
+        
+        const orderData = {
+            items: [...this.currentOrder],
+            total,
+            date: new Date().toISOString(),
+            status: 'Nowe',
+            notes: notes,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+        
+        try {
+            // Zapisz do Firebase
+            await this.database.ref('orders/' + orderNumber).set(orderData);
+            
+            // Aktualizuj lokalną kopię
+            this.orders[orderNumber] = orderData;
+            localStorage.setItem('orders', JSON.stringify(this.orders));
+            
+            // Pokaż potwierdzenie
+            document.getElementById('order-form').style.display = 'none';
+            document.getElementById('order-summary').style.display = 'none';
+            document.getElementById('submit-order-container').classList.add('hidden');
+            document.getElementById('order-confirmation').style.display = 'block';
+            document.getElementById('order-number').textContent = orderNumber;
+            
+            console.log("Zamówienie zapisane:", orderNumber);
+            this.updateStats();
+            
+        } catch (error) {
+            console.error("Błąd zapisu zamówienia:", error);
+            alert('Wystąpił błąd podczas składania zamówienia. Spróbuj ponownie.');
+        }
+    }
     
     loginAdmin() {
         const password = document.getElementById('admin-password').value;
         if (password === this.adminPassword) {
             document.getElementById('admin-content').style.display = 'block';
+            this.updateStats();
         } else {
             alert('Nieprawidłowe hasło!');
         }
     }
     
-    searchOrder() {
+    async searchOrder() {
         const orderNumber = document.getElementById('order-search').value.trim();
-        const order = this.orders[orderNumber];
         const orderDetails = document.getElementById('order-details');
         
-        orderDetails.innerHTML = '';
-        
-        if (!order) {
-            orderDetails.innerHTML = '<p>Nie znaleziono zamówienia o podanym numerze</p>';
+        if (!orderNumber) {
+            orderDetails.innerHTML = '<p class="no-order">Wpisz numer zamówienia</p>';
             return;
         }
         
+        orderDetails.innerHTML = '<p class="loading">Wyszukiwanie zamówienia...</p>';
+        this.updateStats();
+        
+        try {
+            // Szukaj najpierw lokalnie
+            if (this.orders[orderNumber]) {
+                this.displayOrderDetails(orderNumber, this.orders[orderNumber]);
+                return;
+            }
+            
+            // Jeśli nie znaleziono lokalnie, sprawdź Firebase
+            const snapshot = await this.database.ref('orders/' + orderNumber).once('value');
+            const order = snapshot.val();
+            
+            if (!order) {
+                orderDetails.innerHTML = '<p class="no-order">Nie znaleziono zamówienia</p>';
+                return;
+            }
+            
+            // Zapisz w lokalnej kopii i wyświetl
+            this.orders[orderNumber] = order;
+            localStorage.setItem('orders', JSON.stringify(this.orders));
+            this.displayOrderDetails(orderNumber, order);
+            
+        } catch (error) {
+            console.error("Błąd wyszukiwania:", error);
+            orderDetails.innerHTML = '<p class="error">Błąd połączenia z bazą</p>';
+        }
+    }
+    
+    displayOrderDetails(orderNumber, order) {
+        const orderDetails = document.getElementById('order-details');
+        
         const orderHTML = `
-            <h3>Zamówienie ${orderNumber}</h3>
-            <p><strong>Data:</strong> ${order.date}</p>
-            <p><strong>Status:</strong> ${order.status}</p>
-            ${order.notes ? `<p><strong>Uwagi:</strong> ${order.notes}</p>` : ''}
-            <h4>Produkty:</h4>
-            <ul class="order-items-list">
-                ${order.items.map(item => `
-                    <li>
-                        <span class="flavor-number">${item.flavorNumber}.</span> 
-                        ${this.formatFlavorName(item.flavor).split('(')[0].trim()} (${item.size}, ${item.strength}) - ${item.price}zł
-                    </li>
-                `).join('')}
-            </ul>
-            <p><strong>Suma:</strong> ${order.total}zł</p>
-            <div class="form-group">
-                <label>Zmień status:</label>
-                <select id="status-select">
-                    <option ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
-                    <option ${order.status === 'W realizacji' ? 'selected' : ''}>W realizacji</option>
-                    <option ${order.status === 'Wysłane' ? 'selected' : ''}>Wysłane</option>
-                    <option ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
-                </select>
-                <button id="update-status" class="btn">Aktualizuj</button>
+            <div class="order-header">
+                <h3>Zamówienie ${orderNumber}</h3>
+                <p class="order-date"><strong>Data:</strong> ${new Date(order.date).toLocaleString()}</p>
+                <p class="order-status"><strong>Status:</strong> 
+                    <span class="status-badge ${order.status.toLowerCase().replace(' ', '-')}">
+                        ${order.status}
+                    </span>
+                </p>
+                ${order.notes ? `<p class="order-notes"><strong>Uwagi:</strong> ${order.notes}</p>` : ''}
+                
+                <h4>Produkty:</h4>
+                <ul class="order-items-list">
+                    ${order.items.map(item => `
+                        <li class="order-item-detail">
+                            <span class="flavor-number">${item.flavorNumber}.</span> 
+                            ${this.formatFlavorName(item.flavor).split('(')[0].trim()} 
+                            (${item.size}, ${item.strength}) - ${item.price}zł
+                        </li>
+                    `).join('')}
+                </ul>
+                
+                <p class="order-total"><strong>Suma:</strong> ${order.total}zł</p>
+                
+                <div class="order-actions">
+                    <div class="form-group">
+                        <label>Zmień status:</label>
+                        <select id="status-select" class="form-control">
+                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
+                            <option value="W realizacji" ${order.status === 'W realizacji' ? 'selected' : ''}>W realizacji</option>
+                            <option value="Wysłane" ${order.status === 'Wysłane' ? 'selected' : ''}>Wysłane</option>
+                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
+                        </select>
+                        <button id="update-status" class="btn">Aktualizuj status</button>
+                    </div>
+                </div>
             </div>
         `;
         
         orderDetails.innerHTML = orderHTML;
         
-        document.getElementById('update-status').addEventListener('click', () => {
+        document.getElementById('update-status').addEventListener('click', async () => {
             const newStatus = document.getElementById('status-select').value;
-            this.orders[orderNumber].status = newStatus;
-            localStorage.setItem('orders', JSON.stringify(this.orders));
-            this.searchOrder();
+            
+            try {
+                // Aktualizuj w Firebase
+                await this.database.ref(`orders/${orderNumber}/status`).set(newStatus);
+                await this.database.ref(`orders/${orderNumber}/updatedAt`).set(firebase.database.ServerValue.TIMESTAMP);
+                
+                // Aktualizuj lokalnie
+                this.orders[orderNumber].status = newStatus;
+                this.orders[orderNumber].updatedAt = Date.now();
+                localStorage.setItem('orders', JSON.stringify(this.orders));
+                
+                // Odśwież widok
+                this.displayOrderDetails(orderNumber, this.orders[orderNumber]);
+                this.updateStats();
+                alert('Status zamówienia został zaktualizowany!');
+                
+            } catch (error) {
+                console.error("Błąd aktualizacji statusu:", error);
+                alert("Wystąpił błąd podczas aktualizacji statusu");
+            }
         });
     }
 
     initScrollButton() {
         const scrollBtn = document.createElement('button');
         scrollBtn.className = 'scroll-top-btn';
-        scrollBtn.innerHTML = '↑';
+        scrollBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+        scrollBtn.setAttribute('aria-label', 'Przewiń do góry');
         document.body.appendChild(scrollBtn);
         
         window.addEventListener('scroll', () => {
@@ -533,6 +624,13 @@ showCopyNotification() {
                 plugins: {
                     legend: {
                         position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Zamówienia: ${context.raw}`;
+                            }
+                        }
                     }
                 }
             }
@@ -540,19 +638,22 @@ showCopyNotification() {
     }
 
     getFlavorsChartConfig() {
+        const topFlavors = this.getTopFlavors(5);
+        
         return {
             type: 'doughnut',
             data: {
-                labels: this.getTopFlavors(5).map(f => f.name),
+                labels: topFlavors.map(f => f.name),
                 datasets: [{
-                    data: this.getTopFlavors(5).map(f => f.count),
+                    data: topFlavors.map(f => f.count),
                     backgroundColor: [
                         '#ff6f61',
                         '#ff9a9e',
                         '#fad0c4',
                         '#ffcc00',
                         '#45a049'
-                    ]
+                    ],
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -560,6 +661,17 @@ showCopyNotification() {
                 plugins: {
                     legend: {
                         position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
@@ -571,7 +683,7 @@ showCopyNotification() {
         for (let i = 6; i >= 0; i--) {
             const date = new Date();
             date.setDate(date.getDate() - i);
-            days.push(date.toLocaleDateString('pl-PL'));
+            days.push(date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }));
         }
         return days;
     }
@@ -597,8 +709,8 @@ showCopyNotification() {
         
         Object.values(this.orders).forEach(order => {
             order.items.forEach(item => {
-                const flavorName = item.flavor.split('(')[0].trim();
-                flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + item.quantity;
+                const flavorName = this.formatFlavorName(item.flavor).split('(')[0].trim();
+                flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + (item.quantity || 1);
             });
         });
         
@@ -609,18 +721,27 @@ showCopyNotification() {
     }
 
     updateStats() {
-        document.getElementById('total-orders').textContent = Object.keys(this.orders).length;
-        document.getElementById('today-orders').textContent = this.getTodaysOrdersCount();
+        // Statystyki zamówień
+        const totalOrders = Object.keys(this.orders).length;
+        const todayOrders = this.getTodaysOrdersCount();
+        
+        // Aktualizuj UI
+        document.getElementById('total-orders').textContent = totalOrders;
+        document.getElementById('today-orders').textContent = todayOrders;
         document.getElementById('total-views').textContent = this.pageViews;
         
-        // Aktualizacja wykresów
-        this.ordersChart.data.datasets[0].data = this.getOrdersLast7Days();
-        this.ordersChart.update();
+        // Aktualizuj wykresy
+        if (this.ordersChart) {
+            this.ordersChart.data.datasets[0].data = this.getOrdersLast7Days();
+            this.ordersChart.update();
+        }
         
-        const topFlavors = this.getTopFlavors(5);
-        this.flavorsChart.data.labels = topFlavors.map(f => f.name);
-        this.flavorsChart.data.datasets[0].data = topFlavors.map(f => f.count);
-        this.flavorsChart.update();
+        if (this.flavorsChart) {
+            const topFlavors = this.getTopFlavors(5);
+            this.flavorsChart.data.labels = topFlavors.map(f => f.name);
+            this.flavorsChart.data.datasets[0].data = topFlavors.map(f => f.count);
+            this.flavorsChart.update();
+        }
     }
 
     getTodaysOrdersCount() {
@@ -629,97 +750,6 @@ showCopyNotification() {
             return new Date(order.date).toLocaleDateString() === today;
         }).length;
     }
-
-    // W metodzie searchOrder (na początku):
-    searchOrder() {
-        this.updateStats(); // Dodaj tę linijkę
-        // ... reszta istniejącej metody
-    }
-
-    searchOrder() {
-        const orderNumber = document.getElementById('order-search').value.trim();
-        const order = this.orders[orderNumber];
-        const orderDetails = document.getElementById('order-details');
-        
-        orderDetails.innerHTML = '';
-        
-        if (!order) {
-            orderDetails.innerHTML = '<p class="no-order">Nie znaleziono zamówienia o podanym numerze</p>';
-            return;
-        }
-        
-        const orderHTML = `
-            <div class="order-header">
-                <h3>Zamówienie ${orderNumber}</h3>
-                <p class="order-date"><strong>Data:</strong> ${order.date}</p>
-                <p class="order-status"><strong>Status:</strong> <span class="status-badge ${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span></p>
-                ${order.notes ? `<p class="order-notes"><strong>Uwagi:</strong> ${order.notes}</p>` : ''}
-            </div>
-            
-            <div class="order-items-section">
-                <h4>Produkty:</h4>
-                <ul class="order-items-list">
-                    ${order.items.map(item => `
-                        <li class="order-item-detail">
-                            <span class="flavor-number">${item.flavorNumber}.</span> 
-                            ${this.formatFlavorName(item.flavor).split('(')[0].trim()} 
-                            (${item.size}, ${item.strength}) - ${item.price}zł
-                        </li>
-                    `).join('')}
-                </ul>
-            </div>
-            
-            <div class="order-summary-section">
-                <p class="order-total"><strong>Suma:</strong> ${order.total}zł</p>
-            </div>
-            
-            <div class="order-actions">
-                <div class="form-group">
-                    <label>Zmień status:</label>
-                    <select id="status-select" class="form-control">
-                        <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
-                        <option value="W realizacji" ${order.status === 'W realizacji' ? 'selected' : ''}>W realizacji</option>
-                        <option value="Wysłane" ${order.status === 'Wysłane' ? 'selected' : ''}>Wysłane</option>
-                        <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
-                    </select>
-                    <button id="update-status" class="btn">Aktualizuj status</button>
-                </div>
-            </div>
-        `;
-        
-        orderDetails.innerHTML = orderHTML;
-        
-        document.getElementById('update-status').addEventListener('click', () => {
-            const newStatus = document.getElementById('status-select').value;
-            this.orders[orderNumber].status = newStatus;
-            localStorage.setItem('orders', JSON.stringify(this.orders));
-            this.searchOrder(); // Odśwież widok po zmianie
-            alert('Status zamówienia został zaktualizowany!');
-        });
-    }
-
-    openModal() {
-        document.getElementById('order-modal').style.display = 'block';
-        document.getElementById('order-form').style.display = 'block';
-        document.getElementById('order-summary').style.display = 'block';
-        document.getElementById('submit-order-container').classList.remove('hidden');// Dodana linia
-        document.getElementById('order-confirmation').style.display = 'none';
-        this.currentOrder = [];
-        this.updateOrderSummary();
-    }
-    
-    closeModal() {
-        document.getElementById('order-modal').style.display = 'none';
-        document.body.classList.remove('modal-open'); // Usuń klasę z body
-    }
-    
-    resetScrollPosition() {
-        const scrollContainer = document.querySelector('.order-scroll-container');
-        if (scrollContainer) {
-            scrollContainer.scrollTop = 0;
-        }
-    }
-    
 }
 
 // Inicjalizacja systemu
