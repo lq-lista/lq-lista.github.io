@@ -83,58 +83,95 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Wersja aplikacji:', AppData.version);
         };
 
-        // 2. Inicjalizacja interfejsu użytkownika (ulepszona)
-        const initUI = () => {
-            try {
-                // Lista smaków
-                const flavorsList = document.getElementById('flavors-list');
-                if (!flavorsList) throw new Error('Brak listy smaków (#flavors-list)');
-                
-                flavorsList.innerHTML = AppData.flavors
-                    .map((flavor, index) => 
-                        `<li><span class="flavor-number">${index + 1}.</span> ${flavor}</li>`
-                    )
-                    .join('');
+        // 2. Inicjalizacja interfejsu użytkownika (wersja poprawiona)
+const initUI = () => {
+    try {
+        // Funkcja bezpiecznego renderowania HTML
+        const sanitizeHTML = (input) => {
+            if (input === null || input === undefined) return '';
+            if (typeof input !== 'string') {
+                input = String(input);
+            }
+            return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        };
 
-                // Tabela cen (z zabezpieczeniem przed XSS)
-                const sanitizeHTML = (str) => {
-                    return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                };
-                
-                const pricingTable = document.getElementById('pricing-table');
-                if (pricingTable) {
-                    pricingTable.innerHTML = `
-                        <thead>
-                            <tr>${
-                                AppData.pricingData.headers
-                                .map(h => `<th>${sanitizeHTML(h)}</th>`)
-                                .join('')
-                            }</tr>
-                        </thead>
-                        <tbody>
-                            ${
-                                AppData.pricingData.rows
-                                .map(row => 
-                                    `<tr>${
-                                        row.map(cell => `<td>${sanitizeHTML(cell)}</td>`).join('')
-                                    }</tr>`
-                                )
-                                .join('')
-                            }
-                        </tbody>
-                    `;
+        // 1. Lista smaków
+        const flavorsList = document.getElementById('flavors-list');
+        if (flavorsList) {
+            try {
+                if (!Array.isArray(AppData.flavors)) {
+                    throw new Error('Dane smaków nie są w formacie tablicy');
                 }
 
-                // Aktualizacja roku
-                document.querySelectorAll('[data-current-year]').forEach(el => {
-                    el.textContent = new Date().getFullYear();
-                });
-
-            } catch (uiError) {
-                console.error('Błąd inicjalizacji UI:', uiError);
-                throw new Error(`Interfejs użytkownika: ${uiError.message}`);
+                flavorsList.innerHTML = AppData.flavors
+                    .map((flavor, index) => {
+                        const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
+                        return `<li><span class="flavor-number">${index + 1}.</span> ${displayName}</li>`;
+                    })
+                    .join('') || '<li>Brak dostępnych smaków</li>';
+            } catch (flavorError) {
+                console.error('Błąd ładowania listy smaków:', flavorError);
+                flavorsList.innerHTML = '<li class="error">Nie można załadować listy smaków</li>';
             }
-        };
+        }
+
+        // 2. Tabela cen
+        const pricingTable = document.getElementById('pricing-table');
+        if (pricingTable) {
+            try {
+                if (!AppData.pricingData || 
+                    !Array.isArray(AppData.pricingData.headers) || 
+                    !Array.isArray(AppData.pricingData.rows)) {
+                    throw new Error('Nieprawidłowy format danych cenowych');
+                }
+
+                const renderTableRow = (cells) => {
+                    return cells.map(cell => `<td>${sanitizeHTML(cell)}</td>`).join('');
+                };
+
+                pricingTable.innerHTML = `
+                    <thead>
+                        <tr>${renderTableRow(AppData.pricingData.headers)}</tr>
+                    </thead>
+                    <tbody>
+                        ${AppData.pricingData.rows.map(row => `<tr>${renderTableRow(row)}</tr>`).join('')}
+                    </tbody>
+                `;
+            } catch (pricingError) {
+                console.error('Błąd ładowania tabeli cen:', pricingError);
+                pricingTable.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="error">
+                            Nie można załadować cennika
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // 3. Aktualizacja roku
+        document.querySelectorAll('[data-current-year]').forEach(el => {
+            try {
+                el.textContent = new Date().getFullYear();
+            } catch (yearError) {
+                console.error('Błąd aktualizacji roku:', yearError);
+                el.textContent = '2023';
+            }
+        });
+
+        // 4. Inicjalizacja dodatkowych komponentów UI
+        try {
+            // Tutaj możesz dodać inne elementy UI do inicjalizacji
+            // np. tooltipy, akordeony itp.
+        } catch (componentsError) {
+            console.error('Błąd inicjalizacji komponentów UI:', componentsError);
+        }
+
+    } catch (uiError) {
+        console.error('Krytyczny błąd inicjalizacji UI:', uiError);
+        throw new Error(`Interfejs użytkownika: ${uiError.message}`);
+    }
+};
 
         // 3. Inicjalizacja systemu zamówień (ulepszona)
         const initOrderSystem = () => {
