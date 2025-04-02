@@ -852,6 +852,53 @@ body.modal-open {
     overflow: hidden;
 }
 
+/* Style dla sekcji numeru zamówienia */
+.order-number-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.copy-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.copy-btn:hover {
+    background: #45a049;
+    transform: scale(1.05);
+}
+
+.copy-btn i {
+    font-size: 1rem;
+}
+
+/* Animacja potwierdzenia kopiowania */
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.copied-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    z-index: 1000;
+    animation: fadeOut 2s ease-in-out forwards;
+    animation-delay: 1s;
+}
+
 /* Responsywność */
 @media (max-width: 768px) {
     .why-us-content {
