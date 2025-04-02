@@ -1,5 +1,11 @@
 class OrderSystem {
     constructor() {
+
+        // Sprawdź czy dane są załadowane
+        if (typeof AppData === 'undefined') {
+            throw new Error('Dane aplikacji (AppData) nie zostały załadowane!');
+        }
+    
         // Inicjalizacja właściwości
         this.currentOrder = [];
         this.orders = {};
@@ -276,9 +282,15 @@ class OrderSystem {
     
     populateFlavors() {
         const select = document.getElementById('flavor-select');
+        if (!select) {
+            console.error('Element #flavor-select nie znaleziony');
+            return;
+        }
+        
         select.innerHTML = '<option value="">Wybierz smak</option>';
         
-        flavors.forEach((flavor, index) => {
+        // Użyj AppData.flavors zamiast bezpośrednio flavors
+        AppData.flavors.forEach((flavor, index) => {
             const option = document.createElement('option');
             option.value = index;
             option.textContent = `${index + 1}. ${this.formatFlavorName(flavor)}`;
