@@ -317,11 +317,11 @@ filterFlavors() {
         alert('Dodaj przynajmniej jeden produkt do zamówienia!');
         return;
     }
-    
+
     const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
     const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
     const notes = document.getElementById('order-notes').value;
-    
+
     this.orders[orderNumber] = {
         items: [...this.currentOrder],
         total,
@@ -329,45 +329,45 @@ filterFlavors() {
         status: 'Nowe',
         notes: notes
     };
-    
+
     localStorage.setItem('orders', JSON.stringify(this.orders));
-    
-    // Ukryj formularz i pokaż potwierdzenie
+
+    // Ukryj elementy i pokaż potwierdzenie
     document.getElementById('order-form').style.display = 'none';
     document.getElementById('order-summary').style.display = 'none';
     document.getElementById('submit-order-container').style.display = 'none';
     document.getElementById('order-confirmation').style.display = 'block';
-    document.getElementById('order-number').textContent = orderNumber;
     
-    // Inicjalizacja kopiowania dopiero po wyświetleniu potwierdzenia
-    setTimeout(() => {
-        this.setupCopyButton(orderNumber);
-    }, 100);
-    }
+    // Ustaw numer zamówienia
+    const orderNumberElement = document.getElementById('order-number');
+    orderNumberElement.textContent = orderNumber;
 
-setupCopyButton(orderNumber) {
+    // Inicjalizuj przycisk kopiowania
+    this.initCopyButton(orderNumber);
+}
+
+initCopyButton(orderNumber) {
     const copyButton = document.getElementById('copy-order-number');
-    
-    copyButton.addEventListener('click', async () => {
+    if (!copyButton) return;
+
+    copyButton.onclick = async () => {
         try {
             await navigator.clipboard.writeText(orderNumber);
-            
-            // Pokazanie powiadomienia
-            const notification = document.createElement('div');
-            notification.className = 'copy-notification';
-            notification.textContent = 'Numer zamówienia skopiowany!';
-            document.body.appendChild(notification);
-            
-            // Ukryj powiadomienie po 2 sekundach
-            setTimeout(() => {
-                notification.remove();
-            }, 2000);
-            
+            this.showCopyNotification();
         } catch (err) {
             console.error('Błąd kopiowania:', err);
             alert('Nie udało się skopiować numeru zamówienia');
         }
-    });
+    };
+}
+
+showCopyNotification() {
+    const notification = document.createElement('div');
+    notification.className = 'copy-notification';
+    notification.textContent = 'Skopiowano numer zamówienia!';
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.remove(), 2000);
 }
     
     loginAdmin() {
