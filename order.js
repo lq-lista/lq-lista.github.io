@@ -313,33 +313,62 @@ filterFlavors() {
     }
     
     submitOrder() {
-        if (this.currentOrder.length === 0) {
-            alert('Dodaj przynajmniej jeden produkt do zamówienia!');
-            return;
-        }
-        
-        const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
-        const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
-        const notes = document.getElementById('order-notes').value;
-        
-        this.orders[orderNumber] = {
-            items: [...this.currentOrder],
-            total,
-            date: new Date().toLocaleString(),
-            status: 'Nowe',
-            notes: notes
-        };
-        
-        localStorage.setItem('orders', JSON.stringify(this.orders));
-        
-        // Ukryj formularz i przycisk, pokaż potwierdzenie
-        document.getElementById('order-form').style.display = 'none';
-        document.getElementById('order-summary').style.display = 'none';
-        document.getElementById('submit-order-container').classList.add('hidden'); // Dodana linia
-        document.getElementById('order-confirmation').style.display = 'block';
-        document.getElementById('order-number').textContent = orderNumber;
-        document.getElementById('order-notes').value = '';
+    submitOrder() {
+    if (this.currentOrder.length === 0) {
+        alert('Dodaj przynajmniej jeden produkt do zamówienia!');
+        return;
     }
+    
+    const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
+    const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
+    const notes = document.getElementById('order-notes').value;
+    
+    this.orders[orderNumber] = {
+        items: [...this.currentOrder],
+        total,
+        date: new Date().toLocaleString(),
+        status: 'Nowe',
+        notes: notes
+    };
+    
+    localStorage.setItem('orders', JSON.stringify(this.orders));
+    
+    // Ukryj formularz i przycisk, pokaż potwierdzenie
+    document.getElementById('order-form').style.display = 'none';
+    document.getElementById('order-summary').style.display = 'none';
+    document.getElementById('submit-order-container').classList.add('hidden');
+    document.getElementById('order-confirmation').style.display = 'block';
+    document.getElementById('order-number').textContent = orderNumber;
+    document.getElementById('order-notes').value = '';
+    
+    // Inicjalizacja funkcji kopiowania
+    this.setupCopyButton(orderNumber);
+}
+
+setupCopyButton(orderNumber) {
+    const copyButton = document.getElementById('copy-order-number');
+    
+    copyButton.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(orderNumber);
+            
+            // Pokazanie powiadomienia
+            const notification = document.createElement('div');
+            notification.className = 'copy-notification';
+            notification.textContent = 'Numer zamówienia skopiowany!';
+            document.body.appendChild(notification);
+            
+            // Ukryj powiadomienie po 2 sekundach
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
+            
+        } catch (err) {
+            console.error('Błąd kopiowania:', err);
+            alert('Nie udało się skopiować numeru zamówienia');
+        }
+    });
+}
     
     loginAdmin() {
         const password = document.getElementById('admin-password').value;
