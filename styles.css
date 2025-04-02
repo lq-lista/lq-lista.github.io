@@ -539,19 +539,6 @@ h3 {
     color: #666;
 }
 
-/* Desktop styles */
-@media (min-width: 768px) {
-    .order-item {
-        flex-direction: row;
-        align-items: center;
-    }
-    
-    .order-item-details {
-        gap: 15px;
-        margin-left: auto;
-    }
-}
-
 /* Custom scrollbar */
 .order-items-container::-webkit-scrollbar {
     width: 8px;
@@ -921,6 +908,19 @@ body.modal-open {
     margin: 15px 0;
     display: inline-flex;
     align-items: center;
+}
+
+/* Desktop styles */
+@media (min-width: 768px) {
+    .order-item {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .order-item-details {
+        gap: 15px;
+        margin-left: auto;
+    }
 }
 
 /* Responsywność */
