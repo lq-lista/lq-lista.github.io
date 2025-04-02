@@ -16,18 +16,15 @@ class OrderSystem {
     
     initEventListeners() {
         // Przyciski zamówienia
-        document.getElementById('start-order').addEventListener('click', () => {
-            this.openModal();
-            this.resetScrollPosition();
-        });
+        document.getElementById('start-order').addEventListener('click', () => this.openModal());
         
-        document.querySelector('.close').addEventListener('click', this.closeModal.bind(this));
-        document.getElementById('add-to-order').addEventListener('click', this.addToOrder.bind(this));
-        document.getElementById('submit-order').addEventListener('click', this.submitOrder.bind(this));
+        document.querySelector('.close').addEventListener('click', () => this.closeModal());
+        document.getElementById('add-to-order').addEventListener('click', () => this.addToOrder());
+        document.getElementById('submit-order').addEventListener('click', () => this.submitOrder());
         
         // Panel admina
-        document.getElementById('login-admin').addEventListener('click', this.loginAdmin.bind(this));
-        document.getElementById('search-order').addEventListener('click', this.searchOrder.bind(this));
+        document.getElementById('login-admin').addEventListener('click', () => this.loginAdmin());
+        document.getElementById('search-order').addEventListener('click', () => this.searchOrder());
         
         // Kliknięcie poza modalem
         window.addEventListener('click', (event) => {
@@ -47,19 +44,75 @@ class OrderSystem {
         });
     }
 
-    resetScrollPosition() {
-        const scrollContainer = document.querySelector('.order-scroll-container');
-        if (scrollContainer) {
-            scrollContainer.scrollTop = 0;
+    submitOrder() {
+        if (this.currentOrder.length === 0) {
+            alert('Dodaj przynajmniej jeden produkt do zamówienia!');
+            return;
         }
+        
+        const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
+        const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
+        const notes = document.getElementById('order-notes').value;
+        
+        this.orders[orderNumber] = {
+            items: [...this.currentOrder],
+            total,
+            date: new Date().toLocaleString(),
+            status: 'Nowe',
+            notes: notes
+        };
+        
+        localStorage.setItem('orders', JSON.stringify(this.orders));
+        
+        // Ukryj formularz i pokaż potwierdzenie
+        document.getElementById('order-form').style.display = 'none';
+        document.getElementById('order-summary').style.display = 'none';
+        document.getElementById('submit-order-container').style.display = 'none';
+        document.getElementById('order-confirmation').style.display = 'block';
+        
+        // Ustaw numer zamówienia
+        const orderNumberElement = document.getElementById('order-number');
+        orderNumberElement.textContent = orderNumber;
+        document.getElementById('order-notes').value = '';
+        
+        // Inicjalizuj przycisk kopiowania
+        this.initCopyButton(orderNumber);
+    }
+
+    initCopyButton(orderNumber) {
+        const copyButton = document.getElementById('copy-order-number');
+        if (!copyButton) return;
+
+        copyButton.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(orderNumber);
+                this.showCopyNotification();
+            } catch (err) {
+                console.error('Błąd kopiowania:', err);
+                alert('Nie udało się skopiować numeru zamówienia');
+            }
+        };
+    }
+
+    showCopyNotification() {
+        const notification = document.createElement('div');
+        notification.className = 'copy-notification';
+        notification.textContent = 'Numer zamówienia skopiowany!';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.remove(), 2000);
     }
 
     openModal() {
         document.getElementById('order-modal').style.display = 'block';
-        document.body.style.overflow = 'hidden'; // Blokada przewijania tła
+        document.body.style.overflow = 'hidden';
+        
+        // Resetuj widok formularza
         document.getElementById('order-form').style.display = 'block';
         document.getElementById('order-summary').style.display = 'block';
+        document.getElementById('submit-order-container').style.display = 'block';
         document.getElementById('order-confirmation').style.display = 'none';
+        
         this.currentOrder = [];
         this.updateOrderSummary();
     }
