@@ -462,6 +462,10 @@ class OrderSystem {
             const li = document.createElement('li');
             li.className = 'order-item';
             
+            // Sprawdzamy czy to urządzenie mobilne
+            const isMobile = window.matchMedia("(max-width: 768px)").matches;
+            const quantityDisplay = isMobile ? `${item.quantity}×` : `${item.quantity}x`;
+            
             li.innerHTML = `
                 <div class="order-item-info">
                     <div class="flavor-name">
@@ -470,7 +474,7 @@ class OrderSystem {
                     </div>
                     <div class="item-details">
                         (${item.size}, ${item.strength})
-                        <span class="item-quantity">${item.quantity}x</span>
+                        <span class="item-quantity">${quantityDisplay}</span>
                     </div>
                 </div>
                 <div class="order-item-price">${item.totalPrice}zł</div>
@@ -518,12 +522,32 @@ class OrderSystem {
             this.orders[orderNumber] = orderData;
             localStorage.setItem('orders', JSON.stringify(this.orders));
             
-            // Pokaż potwierdzenie
+            // Pokaż potwierdzenie z przyciskiem kopiowania
             document.getElementById('order-form').style.display = 'none';
             document.getElementById('order-summary').style.display = 'none';
             document.getElementById('submit-order-container').classList.add('hidden');
             document.getElementById('order-confirmation').style.display = 'block';
-            document.getElementById('order-number').textContent = orderNumber;
+            
+            const orderNumberElement = document.getElementById('order-number');
+            orderNumberElement.innerHTML = `
+                Twój numer zamówienia: ${orderNumber}
+                <button class="copy-order-number" title="Kopiuj numer zamówienia">
+                    <i class="far fa-copy"></i>
+                </button>
+            `;
+            
+            // Dodaj obsługę kliknięcia przycisku kopiowania
+            orderNumberElement.querySelector('.copy-order-number').addEventListener('click', () => {
+                navigator.clipboard.writeText(orderNumber).then(() => {
+                    const btn = orderNumberElement.querySelector('.copy-order-number');
+                    btn.innerHTML = '<i class="fas fa-check"></i>';
+                    btn.title = 'Skopiowano!';
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="far fa-copy"></i>';
+                        btn.title = 'Kopiuj numer zamówienia';
+                    }, 2000);
+                });
+            });
             
             console.log("Zamówienie zapisane:", orderNumber);
             this.updateStats();
