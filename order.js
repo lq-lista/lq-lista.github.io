@@ -676,51 +676,65 @@ class OrderSystem {
 
     initCharts() {
         try {
-            // 1. Zniszcz istniejące wykresy
+            // Najpierw usuń istniejące wykresy
             this.destroyCharts();
-
-            // 2. Pobierz elementy canvas
-            const ordersCtx = this.getCanvasContext('ordersChart');
-            const flavorsCtx = this.getCanvasContext('flavorsChart');
-            
-            if (!ordersCtx || !flavorsCtx) {
-                console.warn('Nie można zainicjować wykresów - brak canvas');
-                return;
-            }
-
-            // 3. Przygotuj dane z walidacją
-            const chartData = this.prepareChartData();
-            if (!chartData.valid) {
-                console.warn('Nie można zainicjować wykresów - nieprawidłowe dane');
-                return;
-            }
-
-            // 4. Stwórz nowe wykresy
-            this.createCharts(ordersCtx, flavorsCtx, chartData);
-
+    
+            // Dodaj krótkie opóźnienie aby zapewnić czyszczenie pamięci
+            setTimeout(() => {
+                const ordersCtx = document.getElementById('ordersChart')?.getContext('2d');
+                const flavorsCtx = document.getElementById('flavorsChart')?.getContext('2d');
+    
+                if (!ordersCtx || !flavorsCtx) {
+                    console.log('Elementy canvas nie znalezione - pomijam inicjalizację wykresów');
+                    return;
+                }
+    
+                // Sprawdź czy canvas jest wolny
+                if (ordersCtx.canvas.__chart || flavorsCtx.canvas.__chart) {
+                    console.log('Canvas wciąż używany - ponawiam próbę za 500ms');
+                    setTimeout(() => this.initCharts(), 500);
+                    return;
+                }
+    
+                // Przygotuj dane
+                const chartData = {
+                    last7Days: this.getLast7Days().map(String),
+                    ordersData: this.getOrdersLast7Days().map(Number),
+                    topFlavors: this.getTopFlavors(5)
+                };
+    
+                // Stwórz nowe wykresy
+                this.createCharts(ordersCtx, flavorsCtx, chartData);
+            }, 100);
         } catch (error) {
-            console.error('Krytyczny błąd inicjalizacji wykresów:', error);
-            this.destroyCharts(); // Wyczyść ewentualne częściowo utworzone wykresy
+            console.log('Błąd inicjalizacji wykresów - ponawiam próbę', error);
+            setTimeout(() => this.initCharts(), 1000);
         }
     }
 
     destroyCharts() {
         try {
             if (this.ordersChart instanceof Chart) {
+                // Oznacz canvas jako wolny przed zniszczeniem
+                const canvas = this.ordersChart.canvas;
+                if (canvas) canvas.__chart = null;
                 this.ordersChart.destroy();
                 this.ordersChart = null;
             }
         } catch (e) {
-            console.warn('Błąd niszczenia wykresu zamówień:', e);
+            console.log('Błąd niszczenia wykresu zamówień:', e);
         }
-
+    
         try {
             if (this.flavorsChart instanceof Chart) {
+                // Oznacz canvas jako wolny przed zniszczeniem
+                const canvas = this.flavorsChart.canvas;
+                if (canvas) canvas.__chart = null;
                 this.flavorsChart.destroy();
                 this.flavorsChart = null;
             }
         } catch (e) {
-            console.warn('Błąd niszczenia wykresu smaków:', e);
+            console.log('Błąd niszczenia wykresu smaków:', e);
         }
     }
 
@@ -816,6 +830,10 @@ class OrderSystem {
 
     createCharts(ordersCtx, flavorsCtx, { last7Days, ordersData, topFlavors }) {
         try {
+            // Oznacz canvas jako używany
+            ordersCtx.canvas.__chart = true;
+            flavorsCtx.canvas.__chart = true;
+    
             this.ordersChart = new Chart(ordersCtx, {
                 type: 'line',
                 data: {
@@ -826,45 +844,31 @@ class OrderSystem {
                         borderColor: '#ff6f61',
                         backgroundColor: 'rgba(255, 111, 97, 0.1)',
                         tension: 0.3,
-                        fill: true,
-                        borderWidth: 2
+                        fill: true
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    animation: {
+                        onComplete: () => {
+                            // Po zakończeniu animacji oznacz jako gotowe
+                            ordersCtx.canvas.__chart = this.ordersChart;
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'top',
-                            labels: {
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            enabled: true,
-                            mode: 'index',
-                            intersect: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
                         }
                     }
                 }
             });
-
+    
             this.flavorsChart = new Chart(flavorsCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: topFlavors.map(f => f.name),
+                    labels: topFlavors.map(f => String(f.name)),
                     datasets: [{
-                        data: topFlavors.map(f => f.count),
+                        data: topFlavors.map(f => Number(f.count)),
                         backgroundColor: [
                             '#ff6f61',
                             '#ff9a9e',
@@ -872,42 +876,30 @@ class OrderSystem {
                             '#ffcc00',
                             '#45a049'
                         ],
-                        borderWidth: 1,
-                        hoverOffset: 10
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    animation: {
+                        onComplete: () => {
+                            // Po zakończeniu animacji oznacz jako gotowe
+                            flavorsCtx.canvas.__chart = this.flavorsChart;
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'right',
-                            labels: {
-                                font: {
-                                    size: 12
-                                },
-                                padding: 20
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
                         }
-                    },
-                    cutout: '60%'
+                    }
                 }
             });
-
+    
         } catch (error) {
-            console.error('Błąd tworzenia wykresów:', error);
-            this.destroyCharts();
+            console.log('Błąd tworzenia wykresów:', error);
+            // W przypadku błędu oznacz canvas jako wolny
+            if (ordersCtx?.canvas) ordersCtx.canvas.__chart = null;
+            if (flavorsCtx?.canvas) flavorsCtx.canvas.__chart = null;
             throw error;
         }
     }
