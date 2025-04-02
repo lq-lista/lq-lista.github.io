@@ -83,14 +83,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Wersja aplikacji:', AppData.version);
         };
 
-        // 2. Inicjalizacja interfejsu użytkownika (wersja poprawiona)
-const initUI = () => {
+
+    // 2. Inicjalizacja interfejsu użytkownika (ostateczna wersja)
+    const initUI = () => {
     try {
-        // Funkcja bezpiecznego renderowania HTML
+        // Funkcja bezpiecznego renderowania HTML (ostateczna wersja)
         const sanitizeHTML = (input) => {
-            if (input === null || input === undefined) return '';
+            // Obsłuż wszystkie przypadki brzegowe
+            if (input === null || input === undefined || input === false) return '';
+            if (typeof input === 'boolean') return input ? 'true' : 'false';
+            if (typeof input === 'number') return String(input);
             if (typeof input !== 'string') {
-                input = String(input);
+                try {
+                    input = String(input);
+                } catch (e) {
+                    console.warn('Nie można przekonwertować wartości na string:', input);
+                    return '';
+                }
             }
             return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         };
@@ -100,13 +109,20 @@ const initUI = () => {
         if (flavorsList) {
             try {
                 if (!Array.isArray(AppData.flavors)) {
-                    throw new Error('Dane smaków nie są w formacie tablicy');
+                    console.warn('AppData.flavors nie jest tablicą:', AppData.flavors);
+                    flavorsList.innerHTML = '<li>Brak danych o smakach</li>';
+                    return;
                 }
 
                 flavorsList.innerHTML = AppData.flavors
                     .map((flavor, index) => {
-                        const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
-                        return `<li><span class="flavor-number">${index + 1}.</span> ${displayName}</li>`;
+                        try {
+                            const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
+                            return `<li><span class="flavor-number">${index + 1}.</span> ${displayName}</li>`;
+                        } catch (e) {
+                            console.warn('Błąd przetwarzania smaku:', flavor, e);
+                            return `<li><span class="flavor-number">${index + 1}.</span> Nieznany smak</li>`;
+                        }
                     })
                     .join('') || '<li>Brak dostępnych smaków</li>';
             } catch (flavorError) {
@@ -115,26 +131,40 @@ const initUI = () => {
             }
         }
 
-        // 2. Tabela cen
+        // 2. Tabela cen (bardziej defensywna wersja)
         const pricingTable = document.getElementById('pricing-table');
         if (pricingTable) {
             try {
-                if (!AppData.pricingData || 
-                    !Array.isArray(AppData.pricingData.headers) || 
-                    !Array.isArray(AppData.pricingData.rows)) {
-                    throw new Error('Nieprawidłowy format danych cenowych');
+                if (!AppData.pricingData) {
+                    throw new Error('Brak danych pricingData');
                 }
 
+                // Bezpieczne pobranie headers i rows z domyślnymi wartościami
+                const headers = Array.isArray(AppData.pricingData.headers) 
+                    ? AppData.pricingData.headers 
+                    : [];
+                const rows = Array.isArray(AppData.pricingData.rows) 
+                    ? AppData.pricingData.rows 
+                    : [];
+
                 const renderTableRow = (cells) => {
-                    return cells.map(cell => `<td>${sanitizeHTML(cell)}</td>`).join('');
+                    if (!Array.isArray(cells)) return '';
+                    return cells.map(cell => {
+                        try {
+                            return `<td>${sanitizeHTML(cell)}</td>`;
+                        } catch (e) {
+                            console.warn('Błąd renderowania komórki:', cell);
+                            return '<td>?</td>';
+                        }
+                    }).join('');
                 };
 
                 pricingTable.innerHTML = `
                     <thead>
-                        <tr>${renderTableRow(AppData.pricingData.headers)}</tr>
+                        <tr>${renderTableRow(headers)}</tr>
                     </thead>
                     <tbody>
-                        ${AppData.pricingData.rows.map(row => `<tr>${renderTableRow(row)}</tr>`).join('')}
+                        ${rows.map(row => `<tr>${renderTableRow(row)}</tr>`).join('')}
                     </tbody>
                 `;
             } catch (pricingError) {
@@ -155,17 +185,9 @@ const initUI = () => {
                 el.textContent = new Date().getFullYear();
             } catch (yearError) {
                 console.error('Błąd aktualizacji roku:', yearError);
-                el.textContent = '2023';
+                el.textContent = new Date().getFullYear().toString(); // Dodatkowe zabezpieczenie
             }
         });
-
-        // 4. Inicjalizacja dodatkowych komponentów UI
-        try {
-            // Tutaj możesz dodać inne elementy UI do inicjalizacji
-            // np. tooltipy, akordeony itp.
-        } catch (componentsError) {
-            console.error('Błąd inicjalizacji komponentów UI:', componentsError);
-        }
 
     } catch (uiError) {
         console.error('Krytyczny błąd inicjalizacji UI:', uiError);
