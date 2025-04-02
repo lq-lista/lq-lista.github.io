@@ -503,30 +503,27 @@ h3 {
     background: #fff;
 }
 
-/* Nowe style dla elementów zamówienia */
+/* Mobile-first styles */
 .order-item {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 10px;
-    align-items: center;
-}
-
-.order-item-info {
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    gap: 5px;
+    padding: 10px;
+}
+
+.order-item-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
 }
 
 .flavor-name {
     display: flex;
+    align-items: center;
     gap: 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.flavor-number {
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .flavor-text {
@@ -535,28 +532,24 @@ h3 {
     text-overflow: ellipsis;
 }
 
-.item-details {
+.order-item-details {
     display: flex;
-    gap: 8px;
+    justify-content: space-between;
     font-size: 0.9em;
     color: #666;
 }
 
-.order-item-price {
-    font-weight: bold;
-    color: #ff6f61;
-    text-align: right;
-    min-width: 60px;
-}
-
-.remove-item {
-    background: #ff4f42;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 5px 10px;
-    cursor: pointer;
-    margin-left: 10px;
+/* Desktop styles */
+@media (min-width: 768px) {
+    .order-item {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .order-item-details {
+        gap: 15px;
+        margin-left: auto;
+    }
 }
 
 /* Custom scrollbar */
