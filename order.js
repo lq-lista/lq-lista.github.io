@@ -467,19 +467,19 @@ class OrderSystem {
             const quantityDisplay = isMobile ? `${item.quantity}×` : `${item.quantity}x`;
             
             li.innerHTML = `
-                <div class="order-item-info">
-                    <div class="flavor-name">
-                        <span class="flavor-number">${item.flavorNumber}.</span>
-                        ${this.formatFlavorName(item.flavor).split('(')[0].trim()}
-                    </div>
-                    <div class="item-details">
-                        (${item.size}, ${item.strength})
-                        <span class="item-quantity">${quantityDisplay}</span>
-                    </div>
-                </div>
-                <div class="order-item-price">${item.totalPrice}zł</div>
-                <button class="remove-item">X</button>
-            `;
+        <div class="order-item-info">
+            <div class="flavor-name">
+                <span class="flavor-number">${item.flavorNumber}</span>
+                ${this.formatFlavorName(item.flavor).split('(')[0].trim()}
+            </div>
+            <div class="item-details">
+            (${item.size}, ${item.strength})
+                <span class="item-quantity">${quantityDisplay}</span>
+            </div>
+        </div>
+        <div class="order-item-price">${item.totalPrice}zł</div>
+        <button class="remove-item">X</button>
+    `;
             
             li.querySelector('.remove-item').addEventListener('click', () => {
                 this.currentOrder = this.currentOrder.filter(i => 
