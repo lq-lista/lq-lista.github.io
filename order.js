@@ -609,28 +609,89 @@ class OrderSystem {
     }
 
     initCharts() {
-        // Najpierw zniszcz istniejące wykresy jeśli są
-        if (this.ordersChart) {
-            this.ordersChart.destroy();
-        }
-        if (this.flavorsChart) {
-            this.flavorsChart.destroy();
-        }
+        try {
+            // Najpierw zniszcz istniejące wykresy jeśli są
+            if (this.ordersChart instanceof Chart) {
+                this.ordersChart.destroy();
+                this.ordersChart = null;
+            }
+            if (this.flavorsChart instanceof Chart) {
+                this.flavorsChart.destroy();
+                this.flavorsChart = null;
+            }
     
-        // Pobierz elementy canvas
-        const ordersCtx = document.getElementById('ordersChart')?.getContext('2d');
-        const flavorsCtx = document.getElementById('flavorsChart')?.getContext('2d');
+            // Pobierz elementy canvas
+            const ordersCtx = document.getElementById('ordersChart')?.getContext('2d');
+            const flavorsCtx = document.getElementById('flavorsChart')?.getContext('2d');
     
-        if (!ordersCtx || !flavorsCtx) {
-            console.warn('Nie znaleziono elementów canvas dla wykresów');
-            return;
+            if (!ordersCtx || !flavorsCtx) {
+                console.warn('Nie znaleziono elementów canvas dla wykresów');
+                return;
+            }
+    
+            // Sprawdź czy elementy canvas nie są już używane
+            if (ordersCtx.canvas.chart || flavorsCtx.canvas.chart) {
+                console.warn('Canvas jest już używany przez inny wykres');
+                return;
+            }
+    
+            // Inicjalizacja nowych wykresów z bezpiecznymi danymi
+            const ordersData = this.getOrdersLast7Days().map(Number);
+            const last7Days = this.getLast7Days().map(String); // Upewnij się, że etykiety są stringami
+    
+            this.ordersChart = new Chart(ordersCtx, {
+                type: 'line',
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Zamówienia z ostatnich 7 dni',
+                        data: ordersData,
+                        borderColor: '#ff6f61',
+                        backgroundColor: 'rgba(255, 111, 97, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+    
+            const topFlavors = this.getTopFlavors(5);
+            this.flavorsChart = new Chart(flavorsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: topFlavors.map(f => String(f.name)), // Upewnij się, że etykiety są stringami
+                    datasets: [{
+                        data: topFlavors.map(f => Number(f.count)),
+                        backgroundColor: [
+                            '#ff6f61',
+                            '#ff9a9e',
+                            '#fad0c4',
+                            '#ffcc00',
+                            '#45a049'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+    
+        } catch (error) {
+            console.error('Błąd inicjalizacji wykresów:', error);
         }
-    
-        // Inicjalizacja nowych wykresów
-        this.ordersChart = new Chart(ordersCtx, this.getOrdersChartConfig());
-        this.flavorsChart = new Chart(flavorsCtx, this.getFlavorsChartConfig());
-        
-        console.log('Wykresy zostały poprawnie zainicjalizowane');
     }
 
     getOrdersChartConfig() {
@@ -713,7 +774,7 @@ class OrderSystem {
             date.setDate(date.getDate() - i);
             days.push(date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }));
         }
-        return days;
+        return days.map(String); // Upewnij się, że zwracane są stringi
     }
 
     getOrdersLast7Days() {
@@ -736,14 +797,18 @@ class OrderSystem {
         const flavorCounts = {};
         
         Object.values(this.orders).forEach(order => {
-            order.items.forEach(item => {
-                const flavorName = this.formatFlavorName(item.flavor).split('(')[0].trim();
-                flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + (item.quantity || 1);
-            });
+            if (order && order.items) {
+                order.items.forEach(item => {
+                    if (item && item.flavor) {
+                        const flavorName = this.formatFlavorName(item.flavor).split('(')[0].trim();
+                        flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + (item.quantity || 1);
+                    }
+                });
+            }
         });
         
         return Object.entries(flavorCounts)
-            .map(([name, count]) => ({ name, count }))
+            .map(([name, count]) => ({ name: String(name), count: Number(count) })) // Upewnij się o typach
             .sort((a, b) => b.count - a.count)
             .slice(0, limit);
     }
@@ -764,74 +829,38 @@ class OrderSystem {
             safeUpdate('today-orders', todayOrders);
             safeUpdate('total-views', this.pageViews);
     
-            // 2. Aktualizacja wykresów z obsługą błędów
-            const updateChart = (chart, config) => {
-                if (!chart) return;
-                
+            // 2. Aktualizacja wykresów tylko jeśli istnieją
+            if (this.ordersChart && this.flavorsChart) {
                 try {
-                    // Zachowaj aktualne opcje przed aktualizacją
-                    const currentOptions = chart.options;
+                    // Przygotowanie danych
+                    const last7Days = this.getLast7Days().map(String);
+                    const ordersData = this.getOrdersLast7Days().map(Number);
+                    const topFlavors = this.getTopFlavors(5);
                     
-                    // Zastosuj nowe dane
-                    chart.data = config.data;
+                    // Aktualizacja danych wykresu zamówień
+                    this.ordersChart.data.labels = last7Days;
+                    this.ordersChart.data.datasets[0].data = ordersData;
                     
-                    // Przywróć opcje i animacje
-                    chart.options = { 
-                        ...currentOptions,
-                        animation: {
-                            duration: 500,
-                            easing: 'easeOutQuart'
-                        }
-                    };
+                    // Aktualizacja danych wykresu smaków
+                    this.flavorsChart.data.labels = topFlavors.map(f => String(f.name));
+                    this.flavorsChart.data.datasets[0].data = topFlavors.map(f => Number(f.count));
                     
-                    chart.update();
+                    // Aktualizacja wykresów z animacją
+                    this.ordersChart.update();
+                    this.flavorsChart.update();
+                    
                 } catch (chartError) {
-                    console.error('Błąd aktualizacji wykresu:', chartError);
-                    // Próba ponownej inicjalizacji jeśli wykres jest uszkodzony
+                    console.error('Błąd aktualizacji wykresów:', chartError);
+                    // Próba ponownej inicjalizacji
                     this.initCharts();
                 }
-            };
-    
-            // Przygotowanie danych dla wykresów
-            const ordersChartConfig = {
-                data: {
-                    labels: this.getLast7Days(),
-                    datasets: [{
-                        ...this.ordersChart?.data?.datasets?.[0] || {},
-                        data: this.getOrdersLast7Days()
-                    }]
-                }
-            };
-    
-            const topFlavors = this.getTopFlavors(5);
-            const flavorsChartConfig = {
-                data: {
-                    labels: topFlavors.map(f => f.name),
-                    datasets: [{
-                        ...this.flavorsChart?.data?.datasets?.[0] || {},
-                        data: topFlavors.map(f => f.count)
-                    }]
-                }
-            };
-    
-            // Aktualizuj wykresy z płynnymi przejściami
-            updateChart(this.ordersChart, ordersChartConfig);
-            updateChart(this.flavorsChart, flavorsChartConfig);
-    
-            // Logowanie sukcesu
-            console.log('Statystyki zaktualizowane', { 
-                totalOrders, 
-                todayOrders,
-                flavors: topFlavors.length 
-            });
-    
-        } catch (error) {
-            console.error('Błąd podczas aktualizacji statystyk:', error);
-            
-            // Awaryjna inicjalizacja wykresów
-            if (!this.ordersChart || !this.flavorsChart) {
+            } else {
+                // Jeśli wykresy nie istnieją, zainicjuj je
                 this.initCharts();
             }
+            
+        } catch (error) {
+            console.error('Błąd podczas aktualizacji statystyk:', error);
         }
     }
 
