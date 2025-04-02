@@ -332,17 +332,18 @@ filterFlavors() {
     
     localStorage.setItem('orders', JSON.stringify(this.orders));
     
-    // Ukryj formularz i przycisk, pokaż potwierdzenie
+    // Ukryj formularz i pokaż potwierdzenie
     document.getElementById('order-form').style.display = 'none';
     document.getElementById('order-summary').style.display = 'none';
-    document.getElementById('submit-order-container').classList.add('hidden');
+    document.getElementById('submit-order-container').style.display = 'none';
     document.getElementById('order-confirmation').style.display = 'block';
     document.getElementById('order-number').textContent = orderNumber;
-    document.getElementById('order-notes').value = '';
     
-    // Inicjalizacja funkcji kopiowania
-    this.setupCopyButton(orderNumber);
-}
+    // Inicjalizacja kopiowania dopiero po wyświetleniu potwierdzenia
+    setTimeout(() => {
+        this.setupCopyButton(orderNumber);
+    }, 100);
+    }
 
 setupCopyButton(orderNumber) {
     const copyButton = document.getElementById('copy-order-number');
