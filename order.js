@@ -311,8 +311,7 @@ filterFlavors() {
         
         orderTotal.textContent = `Razem: ${total}zł`;
     }
-    
-    submitOrder() {
+
     submitOrder() {
     if (this.currentOrder.length === 0) {
         alert('Dodaj przynajmniej jeden produkt do zamówienia!');
