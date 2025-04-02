@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Dodana biblioteka Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- W <head> -->
+    <!-- Firebase 9 (compat wersja dla łatwiejszej migracji) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <header>
@@ -119,14 +123,9 @@
         </div>
         
         <div id="order-confirmation" style="display:none;">
-    <h3>Zamówienie złożone!</h3>
-    <div class="order-number-container">
-        <p>Twój numer zamówienia: <strong id="order-number"></strong></p>
-        <button id="copy-order-number" class="btn copy-btn" title="Kopiuj numer zamówienia">
-            <i class="far fa-copy"></i>
-        </button>
-    </div>
-    <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
+            <h3>Zamówienie złożone!</h3>
+            <p>Twój numer zamówienia: <strong id="order-number"></strong></p>
+            <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
         </div>
     </div>
 </div>
