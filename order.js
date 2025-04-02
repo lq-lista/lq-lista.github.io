@@ -1032,37 +1032,69 @@ class OrderSystem {
         const flavorCounts = {};
         
         try {
-            Object.values(this.orders || {}).forEach(order => {
+            // Dodatkowe zabezpieczenie przed brakiem orders
+            const orders = this.orders || {};
+            
+            Object.values(orders).forEach(order => {
                 try {
-                    if (order && order.items && Array.isArray(order.items)) {
+                    // Sprawdź czy order.items istnieje i jest tablicą
+                    if (order?.items && Array.isArray(order.items)) {
                         order.items.forEach(item => {
                             try {
-                                if (item && item.flavor) {
+                                if (item?.flavor) {
                                     const flavorName = this.formatFlavorName(item.flavor).split('(')[0].trim();
                                     if (flavorName) {
-                                        flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + (item.quantity || 1);
+                                        const quantity = Number(item.quantity) || 1;
+                                        flavorCounts[flavorName] = (flavorCounts[flavorName] || 0) + quantity;
                                     }
                                 }
-                            } catch (e) {
-                                console.warn('Błąd przetwarzania smaku:', item, e);
+                            } catch (itemError) {
+                                console.warn('Błąd przetwarzania pozycji zamówienia:', item, itemError);
                             }
                         });
                     }
-                } catch (e) {
-                    console.warn('Błąd przetwarzania zamówienia:', order, e);
+                } catch (orderError) {
+                    console.warn('Błąd przetwarzania zamówienia:', order, orderError);
                 }
             });
-        } catch (e) {
-            console.error('Błąd przetwarzania zamówień:', e);
+        } catch (error) {
+            console.error('Błąd przetwarzania zamówień:', error);
         }
         
-        return Object.entries(flavorCounts)
+        // Zawsze zwracaj poprawną strukturę danych, nawet jeśli pusta
+        const result = Object.entries(flavorCounts)
             .map(([name, count]) => ({ 
-                name: String(name || 'Nieznany'), 
+                name: String(name || 'Nieznany smak'), 
                 count: Number(count) || 0 
             }))
             .sort((a, b) => b.count - a.count)
             .slice(0, limit);
+    
+        // Jeśli brak danych, zwróć przynajmniej jedną pozycję
+        return result.length > 0 ? result : [
+            { name: 'Brak danych', count: 0 }
+        ];
+    }
+
+    getValidatedFlavors() {
+        try {
+            const flavors = this.getTopFlavors(5);
+            
+            // Zmienione kryterium walidacji - akceptujemy też brak danych
+            return {
+                valid: Array.isArray(flavors),
+                data: flavors.map(f => ({
+                    name: String(f.name || ''),
+                    count: Number(f.count) || 0
+                }))
+            };
+        } catch (e) {
+            console.warn('Błąd walidacji smaków:', e);
+            return {
+                valid: true, // Zmienione na true, aby pokazać przynajmniej pusty wykres
+                data: [{ name: 'Brak danych', count: 0 }]
+            };
+        }
     }
 
     updateStats() {
