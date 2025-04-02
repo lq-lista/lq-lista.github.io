@@ -12,21 +12,55 @@
     <!-- Dodana biblioteka Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Dodatkowe style dla przycisków kopiowania */
+        /* Style dla przycisku kopiowania */
         .copy-order-number {
             display: inline-flex;
             align-items: center;
-            background: #f0f0f0;
+            background: #4CAF50;
+            color: white;
             border: none;
             border-radius: 4px;
-            padding: 2px 8px;
+            padding: 4px 12px;
             margin-left: 10px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             font-size: 0.9em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+        
         .copy-order-number:hover {
-            background: #e0e0e0;
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .copy-order-number:active {
+            transform: translateY(0);
+        }
+        
+        .copy-order-number.copied {
+            background: #2E7D32;
+            animation: pulse 0.5s;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Dodatkowe style dla emoji w sekcji "Dlaczego my" */
+        .benefit span {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        /* Poprawka dla przycisku zamówienia na mobile */
+        .order-button {
+            font-size: 1rem;
+            padding: 12px 20px;
+            border-radius: 30px;
         }
     </style>
 </head>
@@ -77,11 +111,11 @@
         <a href="#" id="admin-link" class="admin-link">Panel admina</a>
     </footer>
 
-    <!-- Modal zamówienia - POPRAWIONA WERSJA Z SUWAKIEM -->
+    <!-- Modal zamówienia -->
     <div id="order-modal" class="modal">
         <div class="modal-content">
             <span class="close">×</span>
-            <div class="order-scroll-container"> <!-- DODANY KONTENER Z SUWAKIEM -->
+            <div class="order-scroll-container">
                 <h2>Tworzenie zamówienia</h2>
                 
                 <div id="order-form">
@@ -139,11 +173,14 @@
             </div>
             
             <div id="order-confirmation" style="display:none;">
-                <h3>Zamówienie złożone!</h3>
-                <p>Twój numer zamówienia: <span id="order-number"></span>
-                    <button class="copy-order-number" title="Kopiuj numer zamówienia">[Kopiuj]</button>
-                </p>
-                <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
+                <h3>Zamówienie złożone! 🎉</h3>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 15px 0;">
+                    <p style="margin: 0;">Twój numer zamówienia: <strong id="order-number"></strong></p>
+                    <button class="copy-order-number" title="Kopiuj numer zamówienia">
+                        Kopiuj
+                    </button>
+                </div>
+                <p style="margin-top: 10px; text-align: center;">Zachowaj ten numer, aby śledzić status zamówienia.</p>
             </div>
         </div>
     </div>
@@ -208,8 +245,31 @@
         // Aktualizacja roku w stopce
         document.getElementById('current-year').textContent = new Date().getFullYear();
         
-        // Dodatkowe zabezpieczenie przed błędami
+        // Obsługa przycisku kopiowania
         document.addEventListener('DOMContentLoaded', function() {
+            // Funkcja do kopiowania numeru zamówienia
+            function handleCopyClick(e) {
+                if (e.target.classList.contains('copy-order-number')) {
+                    const orderNumber = e.target.parentElement.querySelector('#order-number').textContent;
+                    navigator.clipboard.writeText(orderNumber).then(() => {
+                        const btn = e.target;
+                        btn.textContent = 'Skopiowano!';
+                        btn.classList.add('copied');
+                        setTimeout(() => {
+                            btn.textContent = 'Kopiuj';
+                            btn.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Błąd kopiowania do schowka:', err);
+                        alert('Nie udało się skopiować numeru zamówienia. Skopiuj go ręcznie.');
+                    });
+                }
+            }
+            
+            // Nasłuchiwanie kliknięć w całym dokumencie
+            document.body.addEventListener('click', handleCopyClick);
+            
+            // Dodatkowe zabezpieczenie przed błędami
             if (!window.Chart) {
                 console.warn('Chart.js nie został załadowany!');
             }
