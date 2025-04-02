@@ -898,6 +898,42 @@ body.modal-open {
     to { transform: translateY(0); }
 }
 
+/* Dodaj to na końcu pliku styles.css */
+.copy-order-number {
+    display: inline-flex;
+    align-items: center;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copy-order-number:hover {
+    background: #e0e0e0;
+}
+
+.copy-order-number i {
+    margin-right: 5px;
+    font-size: 14px;
+}
+
+#order-confirmation {
+    text-align: center;
+    padding: 20px;
+}
+
+#order-number {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ff6f61;
+    margin: 15px 0;
+    display: inline-flex;
+    align-items: center;
+}
+
 /* Responsywność */
 @media (max-width: 768px) {
     .why-us-content {
