@@ -140,3 +140,5 @@ const AppData = (() => {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = AppData;
 }
+
+window.AppData = AppData
