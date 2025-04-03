@@ -437,28 +437,10 @@ class OrderSystem {
     }
     
     updateOrderSummary() {
-        const orderContainer = document.getElementById('order-summary');
+        const itemsList = document.getElementById('order-items');
         const orderTotal = document.getElementById('order-total');
         
-        // Zachowaj istniejące pole z uwagami
-        const notes = document.getElementById('order-notes')?.value || '';
-        
-        // Nowa struktura z zachowaniem uwag
-        orderContainer.innerHTML = `
-            <h3>Twoje zamówienie:</h3>
-            <div class="order-items-container">
-                <div class="order-items-scrollable" id="order-items"></div>
-            </div>
-            <div class="order-notes-container">
-                <label for="order-notes">Uwagi do zamówienia:</label>
-                <textarea id="order-notes" class="form-control" rows="3" 
-                          placeholder="Podaj model swojego e-peta i szczególne preferencje...">${notes}</textarea>
-            </div>
-            <div id="order-total" class="sticky-total"></div>
-        `;
-        
-        // Reszta funkcji pozostaje bez zmian...
-        const itemsList = document.getElementById('order-items');
+        itemsList.innerHTML = '';
         let total = 0;
         
         const groupedItems = {};
@@ -476,43 +458,41 @@ class OrderSystem {
             }
         });
         
-        Object.values(groupedItems).forEach(item => {
-            const itemElement = document.createElement('div');
-            itemElement.className = 'order-item';
-            itemElement.innerHTML = `
-                <div class="order-item-main">
-                    <span class="flavor-name">
+        Object.values(groupedItems).forEach((item) => {
+            const li = document.createElement('li');
+            li.className = 'order-item';
+            
+            // Sprawdzamy czy to urządzenie mobilne
+            const isMobile = window.matchMedia("(max-width: 768px)").matches;
+            const quantityDisplay = isMobile ? `${item.quantity}×` : `${item.quantity}x`;
+            
+            li.innerHTML = `
+                <div class="order-item-info">
+                    <div class="flavor-name">
                         <span class="flavor-number">${item.flavorNumber}.</span>
-                        <span class="flavor-text">${this.formatFlavorName(item.flavor).split('(')[0].trim()}</span>
-                    </span>
-                    <span class="item-quantity">${item.quantity}x</span>
+                        ${this.formatFlavorName(item.flavor).split('(')[0].trim()}
+                    </div>
+                    <div class="item-details">
+                        (${item.size}, ${item.strength})
+                        <span class="item-quantity">${quantityDisplay}</span>
+                    </div>
                 </div>
-                <div class="order-item-details">
-                    <span class="size-strength">${item.size}, ${item.strength}</span>
-                    <span class="item-price">${item.totalPrice}zł</span>
-                </div>
+                <div class="order-item-price">${item.totalPrice}zł</div>
                 <button class="remove-item">X</button>
             `;
             
-            itemElement.querySelector('.remove-item').addEventListener('click', () => {
+            li.querySelector('.remove-item').addEventListener('click', () => {
                 this.currentOrder = this.currentOrder.filter(i => 
-                    `${i.flavorNumber}-${i.size}-${i.strength}` !== 
-                    `${item.flavorNumber}-${item.size}-${item.strength}`
+                    `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${item.strength}`
                 );
                 this.updateOrderSummary();
             });
             
-            itemsList.appendChild(itemElement);
+            itemsList.appendChild(li);
             total += item.totalPrice;
         });
         
-        // Aktualizacja podsumowania
-        orderTotal.innerHTML = `
-            <div class="order-total-container">
-                <span>Razem:</span>
-                <span class="total-amount">${total}zł</span>
-            </div>
-        `;
+        orderTotal.textContent = `Razem: ${total}zł`;
     }
     
     async submitOrder() {
