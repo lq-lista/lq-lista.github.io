@@ -910,6 +910,139 @@ body.modal-open {
     align-items: center;
 }
 
+/* Kontener z zamówieniami */
+.order-items-scrollable {
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-bottom: 15px;
+}
+
+/* Stałe podsumowanie */
+.order-total-container {
+    position: sticky;
+    bottom: 0;
+    background: #f8f8f8;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.1em;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+.total-amount {
+    color: #ff6f61;
+    font-weight: bold;
+}
+
+/* Nowe style dla kontenera zamówienia */
+.order-summary {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.order-items-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.order-items-scrollable {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.sticky-total {
+    position: sticky;
+    bottom: 0;
+    background: #f8f8f8;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+.order-total-container {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.total-amount {
+    color: #ff6f61;
+}
+
+/* Style dla pojedynczego produktu */
+.order-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.order-item-main {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+}
+
+.flavor-name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+}
+
+.flavor-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.order-item-details {
+    display: flex;
+    justify-content: space-between;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.remove-item {
+    align-self: center;
+    background: #ff4f42;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+/* Responsywność */
+@media (max-height: 700px) {
+    .order-items-scrollable {
+        max-height: 40vh;
+    }
+}
+
+@media (max-height: 600px) {
+    .order-items-scrollable {
+        max-height: 35vh;
+    }
+}
+
 /* Desktop styles */
 @media (min-width: 768px) {
     .order-item {
