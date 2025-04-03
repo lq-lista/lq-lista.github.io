@@ -6,61 +6,52 @@
     <meta name="description" content="Sklep z liquidami - szeroki wybór smaków i mocnych wrażeń">
     <title>Sole - Sklep z Liquidami | Smaki i Cennik</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Firebase 9 (compat wersja dla łatwiejszej migracji) -->
+    <!-- Firebase i Chart.js -->
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
-    <!-- Dodana biblioteka Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Style dla przycisku kopiowania */
-        .copy-order-number {
-            display: inline-flex;
+        .copy-btn-container {
+            display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .copy-order-btn {
             background: #4CAF50;
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 4px 12px;
-            margin-left: 10px;
+            border-radius: 20px;
+            padding: 8px 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
+            transition: all 0.3s;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        
-        .copy-order-number:hover {
+        .copy-order-btn:hover {
             background: #45a049;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
-        
-        .copy-order-number:active {
-            transform: translateY(0);
-        }
-        
-        .copy-order-number.copied {
+        .copy-order-btn.copied {
             background: #2E7D32;
             animation: pulse 0.5s;
         }
-        
         @keyframes pulse {
             0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
-
-        /* Dodatkowe style dla emoji w sekcji "Dlaczego my" */
-        .benefit span {
-            font-size: 2.5rem;
-            display: block;
-            margin-bottom: 15px;
-        }
-
-        /* Poprawka dla przycisku zamówienia na mobile */
-        .order-button {
-            font-size: 1rem;
-            padding: 12px 20px;
-            border-radius: 30px;
+        .order-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff6f61;
         }
     </style>
 </head>
@@ -90,17 +81,17 @@
                 <div class="benefit">
                     <span>⚗️</span>
                     <h3>Spersonalizowane liquidy</h3>
-                    <p>Dopasowujemy skład i proporcje PG/VG specjalnie pod Twój model e-peta dla optymalnego smaku i produkcji pary</p>
+                    <p>Dopasowujemy skład i proporcje PG/VG specjalnie pod Twój model e-peta</p>
                 </div>
                 <div class="benefit">
                     <span>✔️</span>
                     <h3>Doświadczenie</h3>
-                    <p>5 lat tworzenia liquidów pod konkretne urządzenia - znamy charakterystykę każdego modelu</p>
+                    <p>5 lat tworzenia liquidów pod konkretne urządzenia</p>
                 </div>
                 <div class="benefit">
                     <span>🛠️</span>
                     <h3>Optymalizacja</h3>
-                    <p>Uwzględniamy moc grzałki, opór i konstrukcję Twojego e-peta przy doborze mocy nikotyny i składu</p>
+                    <p>Uwzględniamy moc grzałki i konstrukcję Twojego e-peta</p>
                 </div>
             </div>
         </section>
@@ -163,7 +154,7 @@
                     <div class="form-group notes-group">
                         <label for="order-notes">Uwagi do zamówienia:</label>
                         <textarea id="order-notes" class="form-control" rows="3" 
-                                  placeholder="Podaj model swojego e-peta (np. Vaporesso XROS, Geekvape Wenax) i szczególne preferencje. Robimy liquidy specjalnie dopasowane do Twojego urządzenia!"></textarea>
+                                  placeholder="Podaj model swojego e-peta i preferencje..."></textarea>
                     </div>
                 </div>
             </div>
@@ -174,13 +165,15 @@
             
             <div id="order-confirmation" style="display:none;">
                 <h3>Zamówienie złożone! 🎉</h3>
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 15px 0;">
-                    <p style="margin: 0;">Twój numer zamówienia: <strong id="order-number"></strong></p>
-                    <button class="copy-order-number" title="Kopiuj numer zamówienia">
-                        Kopiuj
+                <div class="copy-btn-container">
+                    <span>Twój numer:</span>
+                    <span id="order-number" class="order-number"></span>
+                    <button class="copy-order-btn">
+                        <span class="btn-text">Kopiuj</span>
+                        <span class="btn-icon">📋</span>
                     </button>
                 </div>
-                <p style="margin-top: 10px; text-align: center;">Zachowaj ten numer, aby śledzić status zamówienia.</p>
+                <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
             </div>
         </div>
     </div>
@@ -247,29 +240,39 @@
         
         // Obsługa przycisku kopiowania
         document.addEventListener('DOMContentLoaded', function() {
-            // Funkcja do kopiowania numeru zamówienia
-            function handleCopyClick(e) {
-                if (e.target.classList.contains('copy-order-number')) {
-                    const orderNumber = e.target.parentElement.querySelector('#order-number').textContent;
-                    navigator.clipboard.writeText(orderNumber).then(() => {
-                        const btn = e.target;
-                        btn.textContent = 'Skopiowano!';
+            // Funkcja kopiująca do schowka
+            function copyToClipboard(text) {
+                return navigator.clipboard.writeText(text);
+            }
+            
+            // Obsługa kliknięcia przycisku kopiowania
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.copy-order-btn')) {
+                    const btn = e.target.closest('.copy-order-btn');
+                    const orderNumber = document.getElementById('order-number').textContent;
+                    
+                    copyToClipboard(orderNumber).then(() => {
+                        const btnText = btn.querySelector('.btn-text');
+                        const btnIcon = btn.querySelector('.btn-icon');
+                        
+                        // Zmiana wyglądu przycisku
+                        btnText.textContent = 'Skopiowano!';
+                        btnIcon.textContent = '✔️';
                         btn.classList.add('copied');
+                        
+                        // Powrót do pierwotnego stanu po 2 sekundach
                         setTimeout(() => {
-                            btn.textContent = 'Kopiuj';
+                            btnText.textContent = 'Kopiuj';
+                            btnIcon.textContent = '📋';
                             btn.classList.remove('copied');
                         }, 2000);
                     }).catch(err => {
-                        console.error('Błąd kopiowania do schowka:', err);
-                        alert('Nie udało się skopiować numeru zamówienia. Skopiuj go ręcznie.');
+                        console.error('Błąd kopiowania: ', err);
                     });
                 }
-            }
+            });
             
-            // Nasłuchiwanie kliknięć w całym dokumencie
-            document.body.addEventListener('click', handleCopyClick);
-            
-            // Dodatkowe zabezpieczenie przed błędami
+            // Sprawdzenie czy Chart.js jest załadowany
             if (!window.Chart) {
                 console.warn('Chart.js nie został załadowany!');
             }
