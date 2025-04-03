@@ -1030,6 +1030,35 @@ body.modal-open {
     cursor: pointer;
 }
 
+.order-notes-container {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.order-notes-container label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+#order-notes {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ff6f61;
+    border-radius: 4px;
+    min-height: 80px;
+    resize: vertical;
+    transition: all 0.3s;
+}
+
+#order-notes:focus {
+    border-color: #ff4f42;
+    box-shadow: 0 0 0 3px rgba(255, 111, 97, 0.2);
+    outline: none;
+}
+
 /* Responsywność */
 @media (max-height: 700px) {
     .order-items-scrollable {
