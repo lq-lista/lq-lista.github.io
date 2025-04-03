@@ -440,19 +440,27 @@ class OrderSystem {
         const orderContainer = document.getElementById('order-summary');
         const orderTotal = document.getElementById('order-total');
         
-        // Wyczyść i stwórz nową strukturę
+        // Zachowaj istniejące pole z uwagami
+        const notes = document.getElementById('order-notes')?.value || '';
+        
+        // Nowa struktura z zachowaniem uwag
         orderContainer.innerHTML = `
             <h3>Twoje zamówienie:</h3>
             <div class="order-items-container">
                 <div class="order-items-scrollable" id="order-items"></div>
             </div>
+            <div class="order-notes-container">
+                <label for="order-notes">Uwagi do zamówienia:</label>
+                <textarea id="order-notes" class="form-control" rows="3" 
+                          placeholder="Podaj model swojego e-peta i szczególne preferencje...">${notes}</textarea>
+            </div>
             <div id="order-total" class="sticky-total"></div>
         `;
         
+        // Reszta funkcji pozostaje bez zmian...
         const itemsList = document.getElementById('order-items');
         let total = 0;
         
-        // Grupowanie produktów
         const groupedItems = {};
         this.currentOrder.forEach(item => {
             const key = `${item.flavorNumber}-${item.size}-${item.strength}`;
@@ -468,7 +476,6 @@ class OrderSystem {
             }
         });
         
-        // Dodawanie produktów do listy
         Object.values(groupedItems).forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.className = 'order-item';
