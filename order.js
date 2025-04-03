@@ -1,1149 +1,1214 @@
-/* ===== GLOBAL STYLES & ANIMATIONS ===== */
-body {
-    font-family: 'Arial', sans-serif;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-    color: #333;
-    animation: gradientBackground 10s ease infinite;
-    line-height: 1.6;
-}
-
-@keyframes gradientBackground {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-/* ===== HEADER & TYPOGRAPHY ===== */
-header {
-    padding: 20px 0;
-    text-align: center;
-}
-
-h1 {
-    font-size: 3rem;
-    color: #fff;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    margin: 20px auto;
-    padding: 20px;
-    background: linear-gradient(135deg, #ff6f61, #ffcc00);
-    border-radius: 10px;
-    max-width: 90%;
-}
-
-h2 {
-    font-size: 2rem;
-    color: #555;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-}
-
-h3 {
-    font-size: 1.5rem;
-    color: #ff6f61;
-    margin-top: 0;
-}
-
-/* ===== LAYOUT CONTAINERS ===== */
-.container {
-    max-width: 800px;
-    margin: 20px auto;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
-
-.flavors, .pricing, .why-us {
-    margin-bottom: 30px;
-}
-
-.footer {
-    text-align: center;
-    margin-top: 30px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-/* ===== PRICING TABLE STYLES ===== */
-#pricing-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    background: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-#pricing-table th, #pricing-table td {
-    padding: 12px;
-    text-align: center;
-    border-bottom: 1px solid #ddd;
-}
-
-#pricing-table th {
-    background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-    color: #fff;
-    font-weight: bold;
-}
-
-#pricing-table tr:hover {
-    background: #f8f8f8;
-}
-
-#pricing-table td {
-    color: #555;
-}
-
-/* ===== ORDER MODAL STYLES ===== */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.7);
-}
-
-.modal-content {
-    background-color: #fff;
-    margin: 2% auto;
-    padding: 25px;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    position: relative;
-    overflow: hidden;
-}
-
-.close {
-    color: #aaa;
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.close:hover {
-    color: #333;
-}
-
-/* ===== ORDER FORM STYLES ===== */
-#order-form {
-    overflow-y: auto;
-    flex: 1;
-    padding-right: 10px;
-    margin-bottom: 15px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    color: #555;
-}
-
-.form-control {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-    transition: border 0.3s;
-}
-
-.form-control:focus {
-    border-color: #ff6f61;
-    outline: none;
-}
-
-#order-notes {
-    min-height: 80px;
-    resize: vertical;
-}
-
-/* ===== IMPROVED ORDER SUMMARY WITH SCROLL ===== */
-#order-summary {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    max-height: 50vh;
-    min-height: 150px;
-    overflow: hidden;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background: #f9f9f9;
-    position: relative;
-}
-
-.order-items-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    margin: 0;
-    scrollbar-width: thin;
-    scrollbar-color: #ff6f61 #f1f1f1;
-    max-height: calc(50vh - 120px);
-}
-
-#order-items {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#order-items:empty::before {
-    content: "Twój koszyk jest pusty";
-    display: block;
-    text-align: center;
-    color: #888;
-    padding: 20px;
-}
-
-.order-item {
-    padding: 12px;
-    margin-bottom: 8px;
-    background: #fff;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: transform 0.2s;
-}
-
-.order-item:hover {
-    transform: translateY(-2px);
-}
-
-.order-item-info {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    min-width: 0;
-}
-
-.order-item-info span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.order-item-price {
-    font-weight: bold;
-    margin: 0 15px;
-    color: #ff6f61;
-    min-width: 50px;
-    text-align: right;
-}
-
-.remove-item {
-    background: #ff4f42;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    padding: 5px 10px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.remove-item:hover {
-    background: #e53935;
-}
-
-#order-total {
-    font-weight: bold;
-    font-size: 1.2rem;
-    text-align: right;
-    margin: 15px 0;
-    padding: 10px;
-    background: #f0f0f0;
-    border-radius: 4px;
-}
-
-/* ===== SUBMIT BUTTON CONTAINER ===== */
-#submit-order-container {
-    position: sticky;
-    bottom: 0;
-    background: white;
-    padding: 15px 0;
-    margin-top: 10px;
-    border-top: 1px solid #eee;
-    z-index: 10;
-}
-
-#submit-order {
-    width: 100%;
-    padding: 14px;
-    font-size: 1.1rem;
-    background: #4CAF50;
-    transition: all 0.3s;
-    font-weight: bold;
-}
-
-#submit-order:hover {
-    background: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-/* ===== BUTTON STYLES ===== */
-.btn {
-    display: inline-block;
-    background: #ff6f61;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-    text-align: center;
-}
-
-.btn:hover {
-    background: #ff4f42;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.order-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #ff6f61;
-    color: white;
-    border: none;
-    padding: 15px 25px;
-    border-radius: 50px;
-    font-size: 16px;
-    cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    z-index: 100;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.order-button:hover {
-    background: #ff4f42;
-    transform: scale(1.05);
-}
-
-/* ===== PRICE PREVIEW ===== */
-#price-preview {
-    display: block;
-    margin: 10px 0;
-    padding: 10px;
-    background: #f8f8f8;
-    border-radius: 4px;
-    font-weight: bold;
-    color: #ff6f61;
-    text-align: center;
-}
-
-/* ===== FLAVOR LIST STYLES ===== */
-#flavors-list {
-    list-style-type: none;
-    padding: 0;
-}
-
-#flavors-list li {
-    padding: 12px;
-    margin: 8px 0;
-    background: #f8f8f8;
-    border-radius: 8px;
-    transition: background 0.3s, transform 0.2s;
-    cursor: pointer;
-}
-
-#flavors-list li:hover {
-    background: #ff6f61;
-    color: #fff;
-    transform: translateX(10px);
-}
-
-.flavor-number {
-    color: #ff6f61;
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-/* ===== FILTER STYLES ===== */
-.flavor-filters {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: #f8f8f8;
-    border-radius: 8px;
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    flex: 1;
-    min-width: 150px;
-}
-
-.filter-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-/* ===== ADMIN PANEL STYLES ===== */
-.admin-panel {
-    background: white;
-    padding: 20px;
-    margin: 20px auto;
-    border-radius: 8px;
-    max-width: 800px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-#admin-content {
-    margin-top: 20px;
-}
-
-#order-details {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f8f8;
-    border-radius: 8px;
-}
-
-.order-items-list {
-    padding-left: 20px;
-}
-
-.order-items-list li {
-    margin-bottom: 5px;
-}
-
-#status-select {
-    padding: 8px;
-    border-radius: 4px;
-    margin-right: 10px;
-}
-
-/* ===== SCROLL TO TOP BUTTON ===== */
-.scroll-top-btn {
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    background: #ff6f61;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    cursor: pointer;
-    display: none;
-    z-index: 99;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    transition: all 0.3s;
-}
-
-.scroll-top-btn:hover {
-    background: #ff4f42;
-}
-
-.scroll-top-btn.show {
-    display: block;
-}
-
-/* ===== CUSTOM SCROLLBARS ===== */
-.order-items-container::-webkit-scrollbar {
-    width: 10px;
-}
-
-.order-items-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-    margin: 5px 0;
-}
-
-.order-items-container::-webkit-scrollbar-thumb {
-    background: #ff6f61;
-    border-radius: 10px;
-    border: 2px solid #f1f1f1;
-}
-
-.order-items-container::-webkit-scrollbar-thumb:hover {
-    background: #ff4f42;
-}
-
-/* ===== IMPROVED ORDER SUMMARY ===== */
-.order-items-container {
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background: #fff;
-}
-
-/* Mobile-first styles */
-.order-item {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 10px;
-}
-
-.order-item-main {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-}
-
-.flavor-name {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex: 1;
-    min-width: 0;
-}
-
-.flavor-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.order-item-details {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.9em;
-    color: #666;
-}
-
-/* Custom scrollbar */
-.order-items-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.order-items-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.order-items-container::-webkit-scrollbar-thumb {
-    background: #ff6f61;
-    border-radius: 10px;
-}
-
-.order-items-container::-webkit-scrollbar-thumb:hover {
-    background: #ff4f42;
-}
-
-/* ===== ADMIN STATS STYLES ===== */
-.stats-section {
-    margin-top: 30px;
-    padding: 20px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.stat-card {
-    background: #f8f8f8;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    border-left: 4px solid #ff6f61;
-}
-
-.stat-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #ff6f61;
-}
-
-.stat-label {
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.charts-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 30px;
-    margin-top: 30px;
-}
-
-/* ===== ADMIN PANEL STYLES ===== */
-.admin-panel {
-    background: white;
-    padding: 20px;
-    margin: 20px auto;
-    border-radius: 8px;
-    max-width: 800px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-#admin-content {
-    margin-top: 20px;
-}
-
-#order-search {
-    padding: 10px;
-    width: 200px;
-    margin-right: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-#order-details {
-    margin-top: 20px;
-    padding: 20px;
-    background: #f8f8f8;
-    border-radius: 8px;
-    border-left: 4px solid #ff6f61;
-}
-
-.order-header {
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
-}
-
-.order-date, .order-status, .order-notes {
-    margin: 5px 0;
-}
-
-.order-items-section {
-    margin: 20px 0;
-}
-
-.order-items-list {
-    padding-left: 20px;
-    list-style-type: none;
-}
-
-.order-item-detail {
-    padding: 10px;
-    margin-bottom: 8px;
-    background: white;
-    border-radius: 4px;
-    border-left: 3px solid #ff6f61;
-}
-
-.order-summary-section {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-    text-align: right;
-}
-
-.order-total {
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-.order-actions {
-    margin-top: 25px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
-}
-
-.status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    font-weight: bold;
-}
-
-.status-badge.nowe {
-    background: #ff6f61;
-    color: white;
-}
-
-.status-badge.w-realizacji {
-    background: #ffcc00;
-    color: #333;
-}
-
-.status-badge.wysłane {
-    background: #4CAF50;
-    color: white;
-}
-
-.status-badge.zakończone {
-    background: #555;
-    color: white;
-}
-
-.no-order {
-    text-align: center;
-    padding: 20px;
-    color: #888;
-    font-style: italic;
-}
-/* Dodatkowe style dla uwag */
-.notes-group {
-    margin-top: 15px;
-    position: sticky;
-    bottom: 0;
-    background: white;
-    padding-bottom: 10px;
-}
-
-#order-notes {
-    width: 100%;
-    box-sizing: border-box;
-    margin-top: 5px;
-}
-
-/* Styl dla kontenera z suwakiem */
-.order-scroll-container {
-    max-height: 65vh;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #ff6f61 #f1f1f1;
-    padding-right: 5px;
-}
-
-.order-scroll-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.order-scroll-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.order-scroll-container::-webkit-scrollbar-thumb {
-    background: #ff6f61;
-    border-radius: 10px;
-}
-
-.order-scroll-container::-webkit-scrollbar-thumb:hover {
-    background: #ff4f42;
-}
-
-/* Blokada przewijania tła gdy modal jest otwarty */
-body.modal-open {
-    overflow: hidden;
-}
-
-.tooltip {
-    position: relative;
-    display: inline-block;
-    cursor: help;
-    color: #ff6f61;
-}
-
-.tooltip:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    z-index: 100;
-}
-
-/* Stylizacja sekcji "Dlaczego my" */
-.why-us-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.benefit {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    text-align: center;
-}
-
-.benefit i {
-    font-size: 2.5rem;
-    color: #ff6f61;
-    margin-bottom: 15px;
-}
-
-.benefit h3 {
-    color: #ff6f61;
-    margin: 10px 0;
-}
-
-/* Lepsze stylowanie textarea */
-#order-notes {
-    min-height: 100px;
-    border: 2px solid #ff6f61;
-    transition: all 0.3s;
-}
-
-#order-notes:focus {
-    border-color: #ff4f42;
-    box-shadow: 0 0 0 3px rgba(255, 111, 97, 0.2);
-}
-
-#submit-order-container {
-    transition: opacity 0.3s ease;
-}
-
-#submit-order-container.hidden {
-    opacity: 0;
-    height: 0;
-    padding: 0;
-    margin: 0;
-    overflow: hidden;
-}
-
-/* Komunikaty o błędach */
-.global-error {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: #ff6f61;
-    color: white;
-    padding: 15px;
-    z-index: 10000;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-
-.global-error .error-content {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.global-error button {
-    background: white;
-    color: #ff6f61;
-    border: none;
-    padding: 8px 15px;
-    margin-right: 10px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.offline-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: #ff9800;
-    color: white;
-    text-align: center;
-    padding: 10px;
-    z-index: 9999;
-    animation: slideDown 0.5s ease-out;
-}
-
-@keyframes slideDown {
-    from { transform: translateY(-100%); }
-    to { transform: translateY(0); }
-}
-
-/* Dodaj to na końcu pliku styles.css */
-.copy-order-number {
-    display: inline-flex;
-    align-items: center;
-    background: #f0f0f0;
-    border: none;
-    border-radius: 4px;
-    padding: 2px 8px;
-    margin-left: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.copy-order-number:hover {
-    background: #e0e0e0;
-}
-
-.copy-order-number i {
-    margin-right: 5px;
-    font-size: 14px;
-}
-
-#order-confirmation {
-    text-align: center;
-    padding: 20px;
-}
-
-#order-number {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #ff6f61;
-    margin: 15px 0;
-    display: inline-flex;
-    align-items: center;
-}
-
-/* Kontener z zamówieniami */
-.order-items-scrollable {
-    max-height: 50vh;
-    overflow-y: auto;
-    padding-right: 5px;
-    margin-bottom: 15px;
-}
-
-/* Stałe podsumowanie */
-.order-total-container {
-    position: sticky;
-    bottom: 0;
-    background: #f8f8f8;
-    padding: 12px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    font-weight: bold;
-    font-size: 1.1em;
-    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-    z-index: 10;
-}
-
-.total-amount {
-    color: #ff6f61;
-    font-weight: bold;
-}
-
-/* Responsywność */
-@media (max-height: 700px) {
-    .order-items-scrollable {
-        max-height: 40vh;
+class OrderSystem {
+    constructor() {
+        try {
+            // Sprawdź czy dane są załadowane
+            if (typeof AppData === 'undefined') {
+                throw new Error('Dane aplikacji (AppData) nie zostały załadowane!');
+            }
+
+            // Inicjalizacja właściwości z wartościami domyślnymi
+            this.currentOrder = [];
+            this.orders = {};
+            this.adminPassword = "admin123";
+            this.pageViews = 0;
+            this.ordersChart = null;
+            this.flavorsChart = null;
+            
+            // Inicjalizacja Firebase
+            this.initializeFirebase();
+            
+            // Inicjalizacja danych lokalnych
+            this.initializeLocalData().catch(e => {
+                console.error('Błąd inicjalizacji danych lokalnych:', e);
+            });
+            
+            // Inicjalizacja UI i eventów
+            this.initUIComponents();
+            
+            // Inicjalizacja statystyk
+            this.initStatistics();
+            
+            // Test połączenia z Firebase
+            this.testFirebaseConnection().catch(e => {
+                console.error('Błąd testu połączenia Firebase:', e);
+            });
+
+        } catch (error) {
+            console.error('Błąd inicjalizacji OrderSystem:', error);
+            throw error;
+        }
     }
-}
 
-@media (max-height: 600px) {
-    .order-items-scrollable {
-        max-height: 35vh;
-    }
-}
+    initializeFirebase() {
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyAfYyYUOcdjfpupkWMTUZfup6xmRRZJ68w",
+                authDomain: "lq-lista.firebaseapp.com",
+                databaseURL: "https://lq-lista-default-rtdb.europe-west1.firebasedatabase.app",
+                projectId: "lq-lista",
+                storageBucket: "lq-lista.firebasestorage.app",
+                messagingSenderId: "642905853097",
+                appId: "1:642905853097:web:ca850099dcdc002f9b2db8"
+            };
 
-/* Desktop styles */
-@media (min-width: 768px) {
-    .order-item {
-        flex-direction: row;
-        align-items: center;
+            if (typeof firebase === 'undefined') {
+                console.warn('Firebase nie został załadowany');
+                return;
+            }
+
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            
+            this.database = firebase.database();
+            this.testConnection().catch(e => {
+                console.error('Błąd testu połączenia:', e);
+            });
+
+        } catch (error) {
+            console.error('Błąd inicjalizacji Firebase:', error);
+            throw error;
+        }
     }
     
-    .order-item-details {
-        gap: 15px;
-        margin-left: auto;
+    async testConnection() {
+        try {
+            if (!this.database) {
+                throw new Error('Brak zainicjalizowanej bazy danych');
+            }
+            await this.database.ref('.info/connected').once('value');
+            console.log("Połączenie z Firebase działa poprawnie!");
+        } catch (error) {
+            console.error("Błąd połączenia z Firebase:", error);
+            throw error;
+        }
+    }
+
+    async initializeLocalData() {
+        try {
+            const localOrders = localStorage.getItem('orders');
+            this.orders = localOrders ? JSON.parse(localOrders) : {};
+            
+            if (Object.keys(this.orders).length > 0) {
+                await this.syncLocalOrdersToFirebase();
+            }
+        } catch (error) {
+            console.error("Błąd inicjalizacji danych lokalnych:", error);
+            this.orders = {};
+            throw error;
+        }
+    }
+
+    initUIComponents() {
+        try {
+            this.initEventListeners();
+            this.populateFlavors();
+            this.setupPricePreview();
+            this.initFlavorFilter();
+            this.initScrollButton();
+        } catch (error) {
+            console.error('Błąd inicjalizacji komponentów UI:', error);
+            throw error;
+        }
+    }
+
+    initStatistics() {
+        try {
+            this.pageViews = parseInt(localStorage.getItem('pageViews')) || 0;
+            this.initCharts();
+            this.trackPageView();
+        } catch (error) {
+            console.error('Błąd inicjalizacji statystyk:', error);
+            throw error;
+        }
+    }
+
+    async syncOrdersFromFirebase() {
+        try {
+            console.log("Rozpoczynanie synchronizacji z Firebase...");
+            const snapshot = await this.database.ref('orders').once('value');
+            const firebaseOrders = snapshot.val() || {};
+            
+            let updated = false;
+            
+            // Aktualizuj lokalne zamówienia tylko jeśli w Firebase są nowsze wersje
+            for (const [orderId, firebaseOrder] of Object.entries(firebaseOrders)) {
+                if (!this.orders[orderId] || 
+                    (this.orders[orderId].updatedAt || 0) < firebaseOrder.updatedAt) {
+                    this.orders[orderId] = firebaseOrder;
+                    updated = true;
+                }
+            }
+            
+            if (updated) {
+                localStorage.setItem('orders', JSON.stringify(this.orders));
+                console.log("Zaktualizowano lokalne zamówienia z Firebase");
+                this.updateStats();
+            }
+            
+        } catch (error) {
+            console.error("Błąd synchronizacji z Firebase:", error);
+        }
+    }
+
+    async syncLocalOrdersToFirebase() {
+        try {
+            console.log("Rozpoczynanie synchronizacji lokalnych zamówień z Firebase...");
+            const updates = {};
+            
+            // Przygotuj aktualizacje dla wszystkich zamówień
+            for (const [orderId, order] of Object.entries(this.orders)) {
+                updates[`orders/${orderId}`] = order;
+            }
+            
+            // Wykonaj zbiorczą aktualizację
+            await this.database.ref().update(updates);
+            console.log("Zsynchroniczowano lokalne zamówienia z Firebase");
+            
+        } catch (error) {
+            console.error("Błąd synchronizacji lokalnych zamówień:", error);
+        }
+    }
+
+    async testFirebaseConnection() {
+        try {
+            const testRef = this.database.ref('connectionTest');
+            await testRef.set({
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                message: "Test połączenia z Firebase",
+                status: "success"
+            });
+            
+            const snapshot = await testRef.once('value');
+            console.log("Test połączenia z Firebase zakończony sukcesem:", snapshot.val());
+        } catch (error) {
+            console.error("Błąd testu połączenia z Firebase:", error);
+        }
+    }
+    
+    initEventListeners() {
+        // Przyciski zamówienia
+        document.getElementById('start-order').addEventListener('click', () => {
+            this.openModal();
+            this.resetScrollPosition();
+        });
+        
+        document.querySelector('.close').addEventListener('click', this.closeModal.bind(this));
+        document.getElementById('add-to-order').addEventListener('click', this.addToOrder.bind(this));
+        document.getElementById('submit-order').addEventListener('click', this.submitOrder.bind(this));
+        
+        // Panel admina
+        document.getElementById('login-admin').addEventListener('click', this.loginAdmin.bind(this));
+        document.getElementById('search-order').addEventListener('click', this.searchOrder.bind(this));
+        
+        // Kliknięcie poza modalem
+        window.addEventListener('click', (event) => {
+            if (event.target === document.getElementById('order-modal')) {
+                this.closeModal();
+            }
+        });
+
+        // Link do panelu admina
+        document.getElementById('admin-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('admin-panel').style.display = 'block';
+            window.scrollTo({
+                top: document.getElementById('admin-panel').offsetTop,
+                behavior: 'smooth'
+            });
+        });
+    }
+
+    resetScrollPosition() {
+        const scrollContainer = document.querySelector('.order-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.scrollTop = 0;
+        }
+    }
+
+    openModal() {
+        document.getElementById('order-modal').style.display = 'block';
+        document.body.classList.add('modal-open');
+        document.getElementById('order-form').style.display = 'block';
+        document.getElementById('order-summary').style.display = 'block';
+        document.getElementById('submit-order-container').classList.remove('hidden');
+        document.getElementById('order-confirmation').style.display = 'none';
+        document.getElementById('order-notes').value = '';
+        this.currentOrder = [];
+        this.updateOrderSummary();
+    }
+    
+    closeModal() {
+        document.getElementById('order-modal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+    
+    initFlavorFilter() {
+        if (document.getElementById('brand-filter')) return;
+    
+        const filterContainer = document.createElement('div');
+        filterContainer.className = 'flavor-filters';
+        filterContainer.innerHTML = `
+            <div class="filter-group">
+                <label>Firma:</label>
+                <select id="brand-filter" class="form-control">
+                    <option value="all">Wszystkie firmy</option>
+                    <option value="funk">Funk Claro</option>
+                    <option value="aroma">Aroma King</option>
+                    <option value="wanna">Wanna Be Cool</option>
+                    <option value="inne">Inne</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Typ smaku:</label>
+                <select id="type-filter" class="form-control">
+                    <option value="all">Wszystkie typy</option>
+                    <option value="owocowe">Owocowe</option>
+                    <option value="miętowe">Miętowe</option>
+                    <option value="słodkie">Słodkie</option>
+                    <option value="cytrusowe">Cytrusowe</option>
+                    <option value="energy">Energy drink</option>
+                </select>
+            </div>
+        `;
+    
+        const flavorsSection = document.querySelector('.flavors');
+        if (flavorsSection) {
+            flavorsSection.insertBefore(filterContainer, document.getElementById('flavors-list'));
+        }
+        
+        document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
+        document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
+    }
+
+    filterFlavors() {
+        const flavorsList = document.getElementById('flavors-list');
+        if (!flavorsList) return;
+    
+        try {
+            const brandFilter = document.getElementById('brand-filter')?.value || 'all';
+            const typeFilter = document.getElementById('type-filter')?.value || 'all';
+            const flavors = AppData?.flavors || [];
+            const flavorCategories = AppData?.flavorCategories || {};
+    
+            flavorsList.innerHTML = '';
+    
+            flavors.forEach((flavor, index) => {
+                try {
+                    const brandMatch = 
+                        brandFilter === 'all' ||
+                        (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
+                        (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
+                        (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
+                        (brandFilter === 'inne' && !flavor.includes('('));
+    
+                    let typeMatch = false;
+                    if (typeFilter === 'all') {
+                        typeMatch = true;
+                    } else {
+                        const typeIndexes = flavorCategories[typeFilter] || [];
+                        typeMatch = typeIndexes.includes(index);
+                    }
+    
+                    if (brandMatch && typeMatch) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
+                        flavorsList.appendChild(li);
+                    }
+                } catch (e) {
+                    console.warn(`Błąd przetwarzania smaku ${index}:`, e);
+                }
+            });
+        } catch (error) {
+            console.error('Błąd filtrowania smaków:', error);
+            flavorsList.innerHTML = '<li>Błąd ładowania listy smaków</li>';
+        }
+    }
+    
+    formatFlavorName(flavor) {
+        if (!flavor) return '';
+        try {
+            return String(flavor)
+                .replace(/\s+/g, ' ')
+                .replace(/\s,/g, ',')
+                .replace(/\s\(/g, ' (');
+        } catch (e) {
+            console.warn('Błąd formatowania nazwy smaku:', flavor, e);
+            return String(flavor);
+        }
+    }
+    
+    populateFlavors() {
+        const select = document.getElementById('flavor-select');
+        if (!select) {
+            console.error('Element #flavor-select nie znaleziony');
+            return;
+        }
+        
+        select.innerHTML = '<option value="">Wybierz smak</option>';
+        
+        // Użyj AppData.flavors zamiast bezpośrednio flavors
+        AppData.flavors.forEach((flavor, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${index + 1}. ${this.formatFlavorName(flavor)}`;
+            select.appendChild(option);
+        });
+    }
+    
+    setupPricePreview() {
+        if (document.getElementById('price-preview')) return;
+        
+        const pricePreview = document.createElement('div');
+        pricePreview.id = 'price-preview';
+        pricePreview.textContent = 'Cena: -';
+        document.getElementById('strength-select').insertAdjacentElement('afterend', pricePreview);
+        
+        [document.getElementById('flavor-select'), 
+         document.getElementById('size-select'), 
+         document.getElementById('strength-select')].forEach(select => {
+            select.addEventListener('change', () => this.updatePricePreview());
+        });
+    }
+
+    updatePricePreview() {
+        const size = document.getElementById('size-select').value;
+        const strength = document.getElementById('strength-select').value;
+        const pricePreview = document.getElementById('price-preview');
+        
+        if (size && strength) {
+            const price = this.calculatePrice(size, strength);
+            pricePreview.textContent = `Cena: ${price}zł`;
+            pricePreview.style.color = '#ff6f61';
+        } else {
+            pricePreview.textContent = 'Cena: -';
+            pricePreview.style.color = '';
+        }
+    }
+    
+    addToOrder() {
+        try {
+            const flavorIndex = document.getElementById('flavor-select').value;
+            const size = document.getElementById('size-select').value;
+            const strength = document.getElementById('strength-select').value;
+            
+            if (!flavorIndex || !size || !strength) {
+                alert('Proszę wybrać smak, pojemność i moc nikotyny!');
+                return;
+            }
+            
+            // Używamy AppData.flavors zamiast globalnej zmiennej flavors
+            const flavors = AppData?.flavors || [];
+            if (!flavors[flavorIndex]) {
+                throw new Error(`Nie znaleziono smaku o indeksie ${flavorIndex}`);
+            }
+            
+            const price = this.calculatePrice(size, strength);
+            const flavorName = flavors[flavorIndex];
+            
+            this.currentOrder.push({
+                flavor: flavorName,
+                size,
+                strength: strength + 'mg',
+                price,
+                flavorNumber: parseInt(flavorIndex) + 1
+            });
+            
+            this.updateOrderSummary();
+        } catch (error) {
+            console.error('Błąd dodawania do zamówienia:', error);
+            alert('Wystąpił błąd podczas dodawania produktu. Spróbuj ponownie.');
+        }
+    }
+    
+    calculatePrice(size, strength) {
+        const strengthNum = parseInt(strength);
+        let price;
+        
+        if (size === '10ml') {
+            price = strengthNum >= 18 ? 16 : (strengthNum >= 12 ? 15 : (strengthNum >= 6 ? 14 : 13));
+        } else if (size === '30ml') {
+            price = strengthNum >= 18 ? 40 : (strengthNum >= 12 ? 38 : (strengthNum >= 6 ? 37 : 36));
+        } else { // 60ml
+            price = strengthNum >= 18 ? 70 : (strengthNum >= 12 ? 68 : (strengthNum >= 6 ? 67 : 66));
+        }
+        
+        return price;
+    }
+    
+    updateOrderSummary() {
+        const orderContainer = document.getElementById('order-summary');
+        const orderTotal = document.getElementById('order-total');
+        
+        // Wyczyść i stwórz nową strukturę
+        orderContainer.innerHTML = `
+            <h3>Twoje zamówienie:</h3>
+            <div class="order-items-container">
+                <div class="order-items-scrollable" id="order-items"></div>
+            </div>
+            <div id="order-total" class="sticky-total"></div>
+        `;
+        
+        const itemsList = document.getElementById('order-items');
+        let total = 0;
+        
+        // Grupowanie produktów
+        const groupedItems = {};
+        this.currentOrder.forEach(item => {
+            const key = `${item.flavorNumber}-${item.size}-${item.strength}`;
+            if (!groupedItems[key]) {
+                groupedItems[key] = {
+                    ...item,
+                    quantity: 1,
+                    totalPrice: item.price
+                };
+            } else {
+                groupedItems[key].quantity++;
+                groupedItems[key].totalPrice += item.price;
+            }
+        });
+        
+        // Dodawanie produktów do listy
+        Object.values(groupedItems).forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'order-item';
+            itemElement.innerHTML = `
+                <div class="order-item-main">
+                    <span class="flavor-name">
+                        <span class="flavor-number">${item.flavorNumber}.</span>
+                        <span class="flavor-text">${this.formatFlavorName(item.flavor).split('(')[0].trim()}</span>
+                    </span>
+                    <span class="item-quantity">${item.quantity}x</span>
+                </div>
+                <div class="order-item-details">
+                    <span class="size-strength">${item.size}, ${item.strength}</span>
+                    <span class="item-price">${item.totalPrice}zł</span>
+                </div>
+                <button class="remove-item">X</button>
+            `;
+            
+            itemElement.querySelector('.remove-item').addEventListener('click', () => {
+                this.currentOrder = this.currentOrder.filter(i => 
+                    `${i.flavorNumber}-${i.size}-${i.strength}` !== 
+                    `${item.flavorNumber}-${item.size}-${item.strength}`
+                );
+                this.updateOrderSummary();
+            });
+            
+            itemsList.appendChild(itemElement);
+            total += item.totalPrice;
+        });
+        
+        // Aktualizacja podsumowania
+        orderTotal.innerHTML = `
+            <div class="order-total-container">
+                <span>Razem:</span>
+                <span class="total-amount">${total}zł</span>
+            </div>
+        `;
+    }
+    
+    async submitOrder() {
+        if (this.currentOrder.length === 0) {
+            alert('Dodaj przynajmniej jeden produkt do zamówienia!');
+            return;
+        }
+        
+        const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
+        const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
+        const notes = document.getElementById('order-notes').value;
+        
+        const orderData = {
+            items: [...this.currentOrder],
+            total,
+            date: new Date().toISOString(),
+            status: 'Nowe',
+            notes: notes,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+        
+        try {
+            // Zapisz do Firebase
+            await this.database.ref('orders/' + orderNumber).set(orderData);
+            
+            // Aktualizuj lokalną kopię
+            this.orders[orderNumber] = orderData;
+            localStorage.setItem('orders', JSON.stringify(this.orders));
+            
+            // Pokaż potwierdzenie z przyciskiem kopiowania
+            document.getElementById('order-form').style.display = 'none';
+            document.getElementById('order-summary').style.display = 'none';
+            document.getElementById('submit-order-container').classList.add('hidden');
+            document.getElementById('order-confirmation').style.display = 'block';
+            
+            const orderNumberElement = document.getElementById('order-number');
+            orderNumberElement.innerHTML = `
+                Twój numer zamówienia: ${orderNumber}
+                <button class="copy-order-number" title="Kopiuj numer zamówienia">
+                    <i class="far fa-copy"></i>
+                </button>
+            `;
+            
+            // Dodaj obsługę kliknięcia przycisku kopiowania
+            orderNumberElement.querySelector('.copy-order-number').addEventListener('click', () => {
+                navigator.clipboard.writeText(orderNumber).then(() => {
+                    const btn = orderNumberElement.querySelector('.copy-order-number');
+                    btn.innerHTML = '<i class="fas fa-check"></i>';
+                    btn.title = 'Skopiowano!';
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="far fa-copy"></i>';
+                        btn.title = 'Kopiuj numer zamówienia';
+                    }, 2000);
+                });
+            });
+            
+            console.log("Zamówienie zapisane:", orderNumber);
+            this.updateStats();
+            
+        } catch (error) {
+            console.error("Błąd zapisu zamówienia:", error);
+            alert('Wystąpił błąd podczas składania zamówienia. Spróbuj ponownie.');
+        }
+    }
+    
+    loginAdmin() {
+        const password = document.getElementById('admin-password').value;
+        if (password === this.adminPassword) {
+            document.getElementById('admin-content').style.display = 'block';
+            this.updateStats();
+        } else {
+            alert('Nieprawidłowe hasło!');
+        }
+    }
+    
+    async searchOrder() {
+        const orderNumber = document.getElementById('order-search').value.trim();
+        const orderDetails = document.getElementById('order-details');
+        
+        if (!orderNumber) {
+            orderDetails.innerHTML = '<p class="no-order">Wpisz numer zamówienia</p>';
+            return;
+        }
+        
+        orderDetails.innerHTML = '<p class="loading">Wyszukiwanie zamówienia...</p>';
+        this.updateStats();
+        
+        try {
+            // Szukaj najpierw lokalnie
+            if (this.orders[orderNumber]) {
+                this.displayOrderDetails(orderNumber, this.orders[orderNumber]);
+                return;
+            }
+            
+            // Jeśli nie znaleziono lokalnie, sprawdź Firebase
+            const snapshot = await this.database.ref('orders/' + orderNumber).once('value');
+            const order = snapshot.val();
+            
+            if (!order) {
+                orderDetails.innerHTML = '<p class="no-order">Nie znaleziono zamówienia</p>';
+                return;
+            }
+            
+            // Zapisz w lokalnej kopii i wyświetl
+            this.orders[orderNumber] = order;
+            localStorage.setItem('orders', JSON.stringify(this.orders));
+            this.displayOrderDetails(orderNumber, order);
+            
+        } catch (error) {
+            console.error("Błąd wyszukiwania:", error);
+            orderDetails.innerHTML = '<p class="error">Błąd połączenia z bazą</p>';
+        }
+    }
+    
+    displayOrderDetails(orderNumber, order) {
+        const orderDetails = document.getElementById('order-details');
+        
+        const orderHTML = `
+            <div class="order-header">
+                <h3>Zamówienie ${orderNumber}</h3>
+                <p class="order-date"><strong>Data:</strong> ${new Date(order.date).toLocaleString()}</p>
+                <p class="order-status"><strong>Status:</strong> 
+                    <span class="status-badge ${order.status.toLowerCase().replace(' ', '-')}">
+                        ${order.status}
+                    </span>
+                </p>
+                ${order.notes ? `<p class="order-notes"><strong>Uwagi:</strong> ${order.notes}</p>` : ''}
+                
+                <h4>Produkty:</h4>
+                <ul class="order-items-list">
+                    ${order.items.map(item => `
+                        <li class="order-item-detail">
+                            <span class="flavor-number">${item.flavorNumber}.</span> 
+                            ${this.formatFlavorName(item.flavor).split('(')[0].trim()} 
+                            (${item.size}, ${item.strength}) - ${item.price}zł
+                        </li>
+                    `).join('')}
+                </ul>
+                
+                <p class="order-total"><strong>Suma:</strong> ${order.total}zł</p>
+                
+                <div class="order-actions">
+                    <div class="form-group">
+                        <label>Zmień status:</label>
+                        <select id="status-select" class="form-control">
+                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
+                            <option value="W realizacji" ${order.status === 'W realizacji' ? 'selected' : ''}>W realizacji</option>
+                            <option value="Wysłane" ${order.status === 'Wysłane' ? 'selected' : ''}>Wysłane</option>
+                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
+                        </select>
+                        <button id="update-status" class="btn">Aktualizuj status</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        orderDetails.innerHTML = orderHTML;
+        
+        document.getElementById('update-status').addEventListener('click', async () => {
+            const newStatus = document.getElementById('status-select').value;
+            
+            try {
+                // Aktualizuj w Firebase
+                await this.database.ref(`orders/${orderNumber}/status`).set(newStatus);
+                await this.database.ref(`orders/${orderNumber}/updatedAt`).set(firebase.database.ServerValue.TIMESTAMP);
+                
+                // Aktualizuj lokalnie
+                this.orders[orderNumber].status = newStatus;
+                this.orders[orderNumber].updatedAt = Date.now();
+                localStorage.setItem('orders', JSON.stringify(this.orders));
+                
+                // Odśwież widok
+                this.displayOrderDetails(orderNumber, this.orders[orderNumber]);
+                this.updateStats();
+                alert('Status zamówienia został zaktualizowany!');
+                
+            } catch (error) {
+                console.error("Błąd aktualizacji statusu:", error);
+                alert("Wystąpił błąd podczas aktualizacji statusu");
+            }
+        });
+    }
+
+    initScrollButton() {
+        const scrollBtn = document.createElement('button');
+        scrollBtn.className = 'scroll-top-btn';
+        scrollBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+        scrollBtn.setAttribute('aria-label', 'Przewiń do góry');
+        document.body.appendChild(scrollBtn);
+        
+        window.addEventListener('scroll', () => {
+            scrollBtn.classList.toggle('show', window.scrollY > 300);
+        });
+        
+        scrollBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    trackPageView() {
+        this.pageViews++;
+        localStorage.setItem('pageViews', this.pageViews);
+        this.updateStats();
+    }
+
+    initCharts() {
+        try {
+            // Najpierw usuń istniejące wykresy
+            this.destroyCharts();
+    
+            // Dodaj krótkie opóźnienie aby zapewnić czyszczenie pamięci
+            setTimeout(() => {
+                const ordersCtx = document.getElementById('ordersChart')?.getContext('2d');
+                const flavorsCtx = document.getElementById('flavorsChart')?.getContext('2d');
+    
+                if (!ordersCtx || !flavorsCtx) {
+                    console.log('Elementy canvas nie znalezione - pomijam inicjalizację wykresów');
+                    return;
+                }
+    
+                // Sprawdź czy canvas jest wolny
+                if (ordersCtx.canvas.__chart || flavorsCtx.canvas.__chart) {
+                    console.log('Canvas wciąż używany - ponawiam próbę za 500ms');
+                    setTimeout(() => this.initCharts(), 500);
+                    return;
+                }
+    
+                // Przygotuj dane
+                const chartData = {
+                    last7Days: this.getLast7Days().map(String),
+                    ordersData: this.getOrdersLast7Days().map(Number),
+                    topFlavors: this.getTopFlavors(5)
+                };
+    
+                // Stwórz nowe wykresy
+                this.createCharts(ordersCtx, flavorsCtx, chartData);
+            }, 100);
+        } catch (error) {
+            console.log('Błąd inicjalizacji wykresów - ponawiam próbę', error);
+            setTimeout(() => this.initCharts(), 1000);
+        }
+    }
+
+    destroyCharts() {
+        try {
+            if (this.ordersChart instanceof Chart) {
+                // Oznacz canvas jako wolny przed zniszczeniem
+                const canvas = this.ordersChart.canvas;
+                if (canvas) canvas.__chart = null;
+                this.ordersChart.destroy();
+                this.ordersChart = null;
+            }
+        } catch (e) {
+            console.log('Błąd niszczenia wykresu zamówień:', e);
+        }
+    
+        try {
+            if (this.flavorsChart instanceof Chart) {
+                // Oznacz canvas jako wolny przed zniszczeniem
+                const canvas = this.flavorsChart.canvas;
+                if (canvas) canvas.__chart = null;
+                this.flavorsChart.destroy();
+                this.flavorsChart = null;
+            }
+        } catch (e) {
+            console.log('Błąd niszczenia wykresu smaków:', e);
+        }
+    }
+
+    getCanvasContext(id) {
+        try {
+            const canvas = document.getElementById(id);
+            if (!canvas) {
+                console.warn(`Nie znaleziono elementu canvas #${id}`);
+                return null;
+            }
+
+            // Sprawdź czy canvas nie jest już używany
+            if (canvas.chart) {
+                console.warn(`Canvas #${id} jest już używany przez inny wykres`);
+                return null;
+            }
+
+            return canvas.getContext('2d');
+        } catch (e) {
+            console.warn(`Błąd pobierania kontekstu canvas #${id}:`, e);
+            return null;
+        }
+    }
+
+    prepareChartData() {
+        try {
+            const last7Days = this.getValidatedDays();
+            const ordersData = this.getValidatedOrders();
+            const topFlavors = this.getValidatedFlavors();
+
+            return {
+                valid: last7Days.valid && ordersData.valid && topFlavors.valid,
+                last7Days: last7Days.data,
+                ordersData: ordersData.data,
+                topFlavors: topFlavors.data
+            };
+        } catch (e) {
+            console.warn('Błąd przygotowywania danych wykresów:', e);
+            return { valid: false };
+        }
+    }
+
+    getValidatedDays() {
+        try {
+            const days = this.getLast7Days();
+            if (!Array.isArray(days) || days.length !== 7) {
+                throw new Error('Nieprawidłowa struktura danych dni');
+            }
+            return {
+                valid: true,
+                data: days.map(day => String(day || ''))
+            };
+        } catch (e) {
+            console.warn('Błąd walidacji dni:', e);
+            return { valid: false };
+        }
+    }
+
+    getValidatedOrders() {
+        try {
+            const orders = this.getOrdersLast7Days();
+            if (!Array.isArray(orders) || orders.length !== 7) {
+                throw new Error('Nieprawidłowa struktura danych zamówień');
+            }
+            return {
+                valid: true,
+                data: orders.map(val => Number(val) || 0)
+            };
+        } catch (e) {
+            console.warn('Błąd walidacji zamówień:', e);
+            return { valid: false };
+        }
+    }
+
+    getValidatedFlavors() {
+        try {
+            const flavors = this.getTopFlavors(5);
+            if (!Array.isArray(flavors) || flavors.length === 0) {
+                throw new Error('Nieprawidłowa struktura danych smaków');
+            }
+            return {
+                valid: true,
+                data: flavors.map(f => ({
+                    name: String(f.name || ''),
+                    count: Number(f.count) || 0
+                }))
+            };
+        } catch (e) {
+            console.warn('Błąd walidacji smaków:', e);
+            return { valid: false };
+        }
+    }
+
+    createCharts(ordersCtx, flavorsCtx, { last7Days, ordersData, topFlavors }) {
+        try {
+            // Oznacz canvas jako używany
+            ordersCtx.canvas.__chart = true;
+            flavorsCtx.canvas.__chart = true;
+    
+            this.ordersChart = new Chart(ordersCtx, {
+                type: 'line',
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Zamówienia z ostatnich 7 dni',
+                        data: ordersData,
+                        borderColor: '#ff6f61',
+                        backgroundColor: 'rgba(255, 111, 97, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        onComplete: () => {
+                            // Po zakończeniu animacji oznacz jako gotowe
+                            ordersCtx.canvas.__chart = this.ordersChart;
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+    
+            this.flavorsChart = new Chart(flavorsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: topFlavors.map(f => String(f.name)),
+                    datasets: [{
+                        data: topFlavors.map(f => Number(f.count)),
+                        backgroundColor: [
+                            '#ff6f61',
+                            '#ff9a9e',
+                            '#fad0c4',
+                            '#ffcc00',
+                            '#45a049'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        onComplete: () => {
+                            // Po zakończeniu animacji oznacz jako gotowe
+                            flavorsCtx.canvas.__chart = this.flavorsChart;
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+    
+        } catch (error) {
+            console.log('Błąd tworzenia wykresów:', error);
+            // W przypadku błędu oznacz canvas jako wolny
+            if (ordersCtx?.canvas) ordersCtx.canvas.__chart = null;
+            if (flavorsCtx?.canvas) flavorsCtx.canvas.__chart = null;
+            throw error;
+        }
+    }
+
+    updateCharts() {
+        if (!this.ordersChart || !this.flavorsChart) {
+            this.initCharts();
+            return;
+        }
+
+        try {
+            const chartData = this.prepareChartData();
+            if (!chartData.valid) {
+                console.warn('Nie można zaktualizować wykresów - nieprawidłowe dane');
+                return;
+            }
+
+            // Aktualizacja wykresu zamówień
+            if (this.isChartValid(this.ordersChart)) {
+                this.ordersChart.data.labels = chartData.last7Days;
+                this.ordersChart.data.datasets[0].data = chartData.ordersData;
+                this.ordersChart.update();
+            }
+
+            // Aktualizacja wykresu smaków
+            if (this.isChartValid(this.flavorsChart)) {
+                this.flavorsChart.data.labels = chartData.topFlavors.map(f => f.name);
+                this.flavorsChart.data.datasets[0].data = chartData.topFlavors.map(f => f.count);
+                this.flavorsChart.update();
+            }
+
+        } catch (error) {
+            console.error('Błąd aktualizacji wykresów:', error);
+            this.initCharts(); // Próba ponownej inicjalizacji
+        }
+    }
+
+    isChartValid(chart) {
+        return chart instanceof Chart && 
+               typeof chart.update === 'function' &&
+               chart.data && 
+               chart.data.datasets &&
+               chart.data.datasets.length > 0;
+    }
+    
+    getOrdersChartConfig() {
+        return {
+            type: 'line',
+            data: {
+                labels: this.getLast7Days(),
+                datasets: [{
+                    label: 'Zamówienia z ostatnich 7 dni',
+                    data: this.getOrdersLast7Days(),
+                    borderColor: '#ff6f61',
+                    backgroundColor: 'rgba(255, 111, 97, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Zamówienia: ${context.raw}`;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    getFlavorsChartConfig() {
+        const topFlavors = this.getTopFlavors(5);
+        
+        return {
+            type: 'doughnut',
+            data: {
+                labels: topFlavors.map(f => f.name),
+                datasets: [{
+                    data: topFlavors.map(f => f.count),
+                    backgroundColor: [
+                        '#ff6f61',
+                        '#ff9a9e',
+                        '#fad0c4',
+                        '#ffcc00',
+                        '#45a049'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    getLast7Days() {
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            days.push(date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }));
+        }
+        return days.map(String); // Upewnij się, że zwracane są stringi
+    }
+
+    getOrdersLast7Days() {
+        const counts = [0, 0, 0, 0, 0, 0, 0];
+        const today = new Date();
+        
+        Object.values(this.orders).forEach(order => {
+            const orderDate = new Date(order.date);
+            const diffDays = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
+            
+            if (diffDays >= 0 && diffDays < 7) {
+                counts[6 - diffDays]++;
+            }
+        });
+        
+        return counts;
+    }
+
+    getTopFlavors(limit = 5) {
+        const flavorCounts = {};
+        
+        try {
+            // Używamy AppData.flavors jako źródła danych
+            const allFlavors = AppData?.flavors || [];
+            const orders = this.orders || {};
+            
+            Object.values(orders).forEach(order => {
+                try {
+                    if (order?.items && Array.isArray(order.items)) {
+                        order.items.forEach(item => {
+                            try {
+                                if (item?.flavor) {
+                                    // Szukamy pełnej nazwy smaku na podstawie flavorNumber
+                                    const flavorIndex = (item.flavorNumber || 1) - 1;
+                                    const flavorName = allFlavors[flavorIndex] || item.flavor;
+                                    const formattedName = this.formatFlavorName(flavorName).split('(')[0].trim();
+                                    
+                                    if (formattedName) {
+                                        const quantity = Number(item.quantity) || 1;
+                                        flavorCounts[formattedName] = (flavorCounts[formattedName] || 0) + quantity;
+                                    }
+                                }
+                            } catch (itemError) {
+                                console.warn('Błąd przetwarzania pozycji:', item, itemError);
+                            }
+                        });
+                    }
+                } catch (orderError) {
+                    console.warn('Błąd przetwarzania zamówienia:', order, orderError);
+                }
+            });
+        } catch (error) {
+            console.error('Błąd przetwarzania zamówień:', error);
+        }
+        
+        // Zawsze zwracamy poprawną strukturę danych
+        const result = Object.entries(flavorCounts)
+            .map(([name, count]) => ({ 
+                name: String(name || 'Nieznany smak'), 
+                count: Number(count) || 0 
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, limit);
+    
+        return result.length > 0 ? result : [{ name: 'Brak danych', count: 0 }];
+    }
+    
+    getValidatedFlavors() {
+        try {
+            const flavors = this.getTopFlavors(5);
+            return {
+                valid: true, // Zawsze zwracamy true, aby pokazać wykres
+                data: flavors
+            };
+        } catch (e) {
+            console.warn('Błąd walidacji smaków:', e);
+            return {
+                valid: true,
+                data: [{ name: 'Brak danych', count: 0 }]
+            };
+        }
+    }
+
+    updateStats() {
+        try {
+            // 1. Aktualizacja statystyk tekstowych
+            const totalOrders = Object.keys(this.orders).length;
+            const todayOrders = this.getTodaysOrdersCount();
+            
+            // Bezpieczna aktualizacja UI
+            const safeUpdate = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            };
+            
+            safeUpdate('total-orders', totalOrders);
+            safeUpdate('today-orders', todayOrders);
+            safeUpdate('total-views', this.pageViews);
+    
+            // 2. Aktualizacja wykresów tylko jeśli istnieją
+            if (this.ordersChart && this.flavorsChart) {
+                try {
+                    // Przygotowanie danych
+                    const last7Days = this.getLast7Days().map(String);
+                    const ordersData = this.getOrdersLast7Days().map(Number);
+                    const topFlavors = this.getTopFlavors(5);
+                    
+                    // Aktualizacja danych wykresu zamówień
+                    this.ordersChart.data.labels = last7Days;
+                    this.ordersChart.data.datasets[0].data = ordersData;
+                    
+                    // Aktualizacja danych wykresu smaków
+                    this.flavorsChart.data.labels = topFlavors.map(f => String(f.name));
+                    this.flavorsChart.data.datasets[0].data = topFlavors.map(f => Number(f.count));
+                    
+                    // Aktualizacja wykresów z animacją
+                    this.ordersChart.update();
+                    this.flavorsChart.update();
+                    
+                } catch (chartError) {
+                    console.error('Błąd aktualizacji wykresów:', chartError);
+                    // Próba ponownej inicjalizacji
+                    this.initCharts();
+                }
+            } else {
+                // Jeśli wykresy nie istnieją, zainicjuj je
+                this.initCharts();
+            }
+            
+        } catch (error) {
+            console.error('Błąd podczas aktualizacji statystyk:', error);
+        }
+    }
+
+    getTodaysOrdersCount() {
+        const today = new Date().toLocaleDateString();
+        return Object.values(this.orders).filter(order => {
+            return new Date(order.date).toLocaleDateString() === today;
+        }).length;
     }
 }
 
-/* Responsywność */
-@media (max-width: 768px) {
-    .why-us-content {
-        grid-template-columns: 1fr;
-    }
+// Bezpieczna inicjalizacja systemu
+try {
+    const orderSystem = new OrderSystem();
+} catch (error) {
+    console.error('Błąd inicjalizacji systemu zamówień:', error);
+    // Tutaj możesz dodać kod wyświetlający komunikat o błędzie użytkownikowi
 }
-
-/* Responsywność dla mniejszych ekranów */
-@media (max-height: 700px) {
-    .order-scroll-container {
-        max-height: 55vh;
-    }
-}
-
-@media (max-height: 600px) {
-    .order-scroll-container {
-        max-height: 50vh;
-    }
-}
-
-/* Blokada przewijania tła gdy modal jest otwarty */
-body.modal-open {
-    overflow: hidden;
-}
-
-@media (max-width: 480px) {
-    .modal-content {
-        width: 95%;
-        max-width: 350px;
-        padding: 12px;
-    }
-    
-    #order-form {
-        padding-right: 5px;
-    }
-    
-    .form-group {
-        margin-bottom: 12px;
-    }
-    
-    #order-notes {
-        min-height: 60px;
-    }
-    
-    /* Zwiększenie miejsca na klawiaturę */
-    #order-modal {
-        align-items: flex-start;
-        padding-top: 20px;
-    }
-}
-
-/* Dodatkowe style dla bardzo małych ekranów */
-@media (max-width: 360px) {
-    .modal-content {
-        max-width: 320px;
-    }
-}
-
-/* Lepsze zarządzanie przestrzenią na mobile */
-@media (max-width: 768px) {
-    #order-form {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    #order-summary {
-        order: 3; /* Przesuwa podsumowanie na dół */
-        margin-top: 15px;
-    }
-    
-    .notes-group {
-        order: 2;
-    }
-}
-
-@media (min-width: 768px) {
-    .charts-container {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-/* ===== RESPONSIVE STYLES ===== */
-@media (max-width: 768px) {
-    h1 {
-        font-size: 2rem;
-        padding: 15px;
-    }
-    
-    .modal-content {
-        width: 90%;
-        max-width: 400px; /* Zmniejszona maksymalna szerokość */
-        margin: 5% auto;
-        padding: 15px;
-        overflow-y: auto;
-        max-height: 90vh;
-    }
-    
-    .order-button {
-        padding: 12px 20px;
-        font-size: 14px;
-        bottom: 15px;
-        right: 15px;
-    }
-    
-    #order-summary {
-        max-height: 45vh;
-    }
-    
-    .order-items-container {
-        max-height: calc(45vh - 120px);
-    }
-    
-    .order-item {
-        flex-wrap: wrap;
-    }
-    
-    .order-item-info {
-        width: 100%;
-        margin-bottom: 5px;
-    }
-    
-    .order-item-price {
-        margin-left: 0;
-        text-align: left;
-    }
-    
-    .flavor-filters {
-        flex-direction: column;
-    }
-    
-    .filter-group {
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    h1 {
-        font-size: 1.8rem;
-    }
-    
-    h2 {
-        font-size: 1.5rem;
-    }
-    
-    .container {
-        padding: 15px;
-        margin: 10px auto;
-    }
-    
-    .form-control, .btn {
-        padding: 8px 12px;
-    }
-    
-    #order-summary {
-        max-height: 40vh;
-    }
-    
-    .order-items-container {
-        max-height: calc(40vh - 120px);
-    }
-}
-
-@media (max-height: 800px) {
-    #order-summary {
-        max-height: 45vh;
-    }
-    
-    .order-items-container {
-        max-height: calc(45vh - 120px);
-    }
-}
-
-@media (max-height: 600px) {
-    #order-summary {
-        max-height: 40vh;
-    }
-    
-    .order-items-container {
-        max-height: calc(40vh - 120px);
-    }
-}
-
