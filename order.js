@@ -443,6 +443,7 @@ class OrderSystem {
         itemsList.innerHTML = '';
         let total = 0;
         
+        // Grupowanie identycznych produktów
         const groupedItems = {};
         this.currentOrder.forEach(item => {
             const key = `${item.flavorNumber}-${item.size}-${item.strength}`;
@@ -458,42 +459,54 @@ class OrderSystem {
             }
         });
         
-        Object.values(groupedItems).forEach((item) => {
-            const li = document.createElement('li');
-            li.className = 'order-item';
-            
-            // Sprawdzamy czy to urządzenie mobilne
-            const isMobile = window.matchMedia("(max-width: 768px)").matches;
-            const quantityDisplay = isMobile ? `${item.quantity}×` : `${item.quantity}x`;
-            
-            // W sekcji renderowania zamówienia zmień na:
-li.innerHTML = `
-<div class="order-item-main">
-    <span class="flavor-name">
-        <span class="flavor-number">${item.flavorNumber}</span>
-        <span class="flavor-text">${this.formatFlavorName(item.flavor).split('(')[0].trim()}</span>
-    </span>
-    <span class="item-quantity">${item.quantity}x</span>
-</div>
-<div class="order-item-details">
-    <span class="size-strength">${item.size}, ${item.strength}</span>
-    <span class="item-price">${item.totalPrice}zł</span>
-</div>
-<button class="remove-item">X</button>
-`;
-            
-            li.querySelector('.remove-item').addEventListener('click', () => {
+        // Tworzenie scrollowalnej listy produktów
+        itemsList.innerHTML = `
+            <div class="order-items-scrollable">
+                ${Object.values(groupedItems).map(item => `
+                    <div class="order-item">
+                        <div class="order-item-main">
+                            <span class="flavor-name">
+                                <span class="flavor-number">${item.flavorNumber}</span>
+                                <span class="flavor-text">${this.formatFlavorName(item.flavor).split('(')[0].trim()}</span>
+                            </span>
+                            <span class="item-quantity">${item.quantity}x</span>
+                        </div>
+                        <div class="order-item-details">
+                            <span class="size-strength">${item.size}, ${item.strength}</span>
+                            <span class="item-price">${item.totalPrice}zł</span>
+                        </div>
+                        <button class="remove-item">X</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        // Dodanie event listenerów do przycisków usuwania
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const itemElement = e.target.closest('.order-item');
+                const flavorNumber = itemElement.querySelector('.flavor-number').textContent;
+                const size = itemElement.querySelector('.size-strength').textContent.split(',')[0].trim();
+                const strength = itemElement.querySelector('.size-strength').textContent.split(',')[1].trim();
+                
                 this.currentOrder = this.currentOrder.filter(i => 
-                    `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${item.strength}`
+                    `${i.flavorNumber}-${i.size}-${i.strength}` !== 
+                    `${flavorNumber}-${size}-${strength.replace('mg', '').trim()}`
                 );
                 this.updateOrderSummary();
             });
-            
-            itemsList.appendChild(li);
-            total += item.totalPrice;
         });
         
-        orderTotal.textContent = `Razem: ${total}zł`;
+        // Obliczenie sumy całkowitej
+        total = Object.values(groupedItems).reduce((sum, item) => sum + item.totalPrice, 0);
+        
+        // Aktualizacja podsumowania (stały element na dole)
+        orderTotal.innerHTML = `
+            <div class="order-total-container">
+                <span>Razem:</span>
+                <span class="total-amount">${total}zł</span>
+            </div>
+        `;
     }
     
     async submitOrder() {
