@@ -199,6 +199,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
 
+                // Dopasuj rozmiary czcionek dla mobile
+                if (window.matchMedia("(max-width: 768px)").matches) {
+                    document.querySelectorAll('h2').forEach(h2 => {
+                        h2.style.fontSize = '1.5rem';
+                    });
+
+                    document.querySelectorAll('.benefit h3').forEach(h3 => {
+                        h3.style.fontSize = '1.2rem';
+                    });
+                }
+
             } catch (uiError) {
                 console.error('Krytyczny błąd inicjalizacji UI:', uiError);
                 throw new Error(`Interfejs użytkownika: ${uiError.message}`);
