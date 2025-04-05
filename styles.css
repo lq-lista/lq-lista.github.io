@@ -143,6 +143,11 @@ h3 {
     transition: transform 0.2s ease;
 }
 
+#pricing-table td:first-child {
+    font-weight: bold;
+    color: #ff6f61;
+}
+
 /* ===== ORDER MODAL STYLES ===== */
 .modal {
     display: none;

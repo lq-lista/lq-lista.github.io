@@ -673,19 +673,6 @@ class OrderSystem {
                     </ul>
                     
                     <p class="order-total"><strong>Suma:</strong> ${order.total}zł</p>
-                    
-                    <div class="order-actions">
-                        <div class="form-group">
-                            <label>Zmień status:</label>
-                            <select id="status-select" class="form-control">
-                                <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
-                                <option value="W realizacji" ${order.status === 'W realizacji' ? 'selected' : ''}>W realizacji</option>
-                                <option value="Wysłane" ${order.status === 'Wysłane' ? 'selected' : ''}>Wysłane</option>
-                                <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
-                            </select>
-                            <button id="update-status" class="btn">Aktualizuj status</button>
-                        </div>
-                    </div>
                 </div>
             `;
             
@@ -911,27 +898,29 @@ class OrderSystem {
 
     updateStats() {
         try {
-            // 1. Aktualizacja statystyk tekstowych
-            const totalOrders = Object.keys(this.orders || {}).length;
+            const totalOrders = Object.keys(this.orders).length;
             const todayOrders = this.getTodaysOrdersCount();
-            
-            // Bezpieczna aktualizacja UI
+            const recentOrders = Object.entries(this.orders).slice(-5).reverse();
+
             const safeUpdate = (id, value) => {
-                try {
-                    const element = document.getElementById(id);
-                    if (element) element.textContent = String(value || 0);
-                } catch (e) {
-                    console.warn(`Błąd aktualizacji elementu ${id}:`, e);
-                }
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
             };
-            
+
             safeUpdate('total-orders', totalOrders);
             safeUpdate('today-orders', todayOrders);
-            safeUpdate('total-views', this.pageViews);
-    
-            // 2. Aktualizacja wykresów
-            this.updateCharts();
-            
+
+            const recentOrdersContainer = document.getElementById('recent-orders');
+            if (recentOrdersContainer) {
+                recentOrdersContainer.innerHTML = recentOrders.map(([orderId, order]) => `
+                    <tr>
+                        <td>${orderId}</td>
+                        <td>${new Date(order.date).toLocaleString()}</td>
+                        <td>${order.total}zł</td>
+                        <td>${order.status}</td>
+                    </tr>
+                `).join('');
+            }
         } catch (error) {
             console.error('Błąd podczas aktualizacji statystyk:', error);
         }
