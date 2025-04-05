@@ -345,40 +345,48 @@ const renderAdminCharts = () => {
     const ordersCtx = document.getElementById('ordersChart').getContext('2d');
     const flavorsCtx = document.getElementById('flavorsChart').getContext('2d');
 
-    ordersChartInstance = new Chart(ordersCtx, {
-        type: 'line',
-        data: ordersData,
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
+    try {
+        ordersChartInstance = new Chart(ordersCtx, {
+            type: 'line',
+            data: ordersData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Błąd tworzenia wykresu zamówień:', error);
+    }
 
-    flavorsChartInstance = new Chart(flavorsCtx, {
-        type: 'doughnut',
-        data: flavorsData,
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'right'
+    try {
+        flavorsChartInstance = new Chart(flavorsCtx, {
+            type: 'doughnut',
+            data: flavorsData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
                 }
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Błąd tworzenia wykresu smaków:', error);
+    }
 };
 
 // Zapobiegaj wielokrotnemu wywoływaniu renderAdminCharts
 if (!window.__chartsInitialized) {
     window.__chartsInitialized = true;
-    renderAdminCharts();
+    document.addEventListener('DOMContentLoaded', renderAdminCharts);
 }
