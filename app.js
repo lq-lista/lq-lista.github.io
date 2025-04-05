@@ -302,6 +302,16 @@ const renderAdminCharts = () => {
         adminPanel.appendChild(chartsContainer);
     }
 
+    // Niszczenie istniejących wykresów, jeśli istnieją
+    if (ordersChartInstance) {
+        ordersChartInstance.destroy();
+        ordersChartInstance = null;
+    }
+    if (flavorsChartInstance) {
+        flavorsChartInstance.destroy();
+        flavorsChartInstance = null;
+    }
+
     // Dane do wykresów
     const ordersData = {
         labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
@@ -330,14 +340,6 @@ const renderAdminCharts = () => {
             hoverOffset: 4
         }]
     };
-
-    // Niszczenie istniejących wykresów, jeśli istnieją
-    if (ordersChartInstance) {
-        ordersChartInstance.destroy();
-    }
-    if (flavorsChartInstance) {
-        flavorsChartInstance.destroy();
-    }
 
     // Inicjalizacja wykresów
     const ordersCtx = document.getElementById('ordersChart').getContext('2d');
@@ -375,5 +377,8 @@ const renderAdminCharts = () => {
     });
 };
 
-// Wywołanie funkcji po załadowaniu panelu admina
-renderAdminCharts();
+// Zapobiegaj wielokrotnemu wywoływaniu renderAdminCharts
+if (!window.__chartsInitialized) {
+    window.__chartsInitialized = true;
+    renderAdminCharts();
+}
