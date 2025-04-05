@@ -139,29 +139,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                     throw new Error('Brak danych pricingData');
                 }
 
-                // Bezpieczne pobranie headers i rows z domyślnymi wartościami
                 const headers = Array.isArray(AppData.pricingData.headers) 
                     ? AppData.pricingData.headers 
                     : [];
                 const rows = Array.isArray(AppData.pricingData.rows) 
                     ? AppData.pricingData.rows 
                     : [];
+                const descriptions = AppData.pricingData.descriptions || {};
 
-                const renderTableRow = (cells) => {
+                const renderTableRow = (cells, isHeader = false) => {
                     if (!Array.isArray(cells)) return '';
-                    return cells.map(cell => {
+                    return cells.map((cell, cellIndex) => {
                         try {
-                            return `<td>${sanitizeHTML(cell)}</td>`;
+                            if (isHeader) {
+                                return `<th>${sanitizeHTML(cell)}</th>`;
+                            } else {
+                                const headerKey = headers[cellIndex]?.toLowerCase().replace('/', '').replace('mg', '');
+                                const tooltip = descriptions[headerKey] ? `data-tooltip="${sanitizeHTML(descriptions[headerKey])}"` : '';
+                                return `<td ${tooltip}>${sanitizeHTML(cell)}${cellIndex > 0 ? 'zł' : ''}</td>`;
+                            }
                         } catch (e) {
                             console.warn('Błąd renderowania komórki:', cell);
-                            return '<td>?</td>';
+                            return isHeader ? '<th>?</th>' : '<td>?</td>';
                         }
                     }).join('');
                 };
 
                 pricingTable.innerHTML = `
                     <thead>
-                        <tr>${renderTableRow(headers)}</tr>
+                        <tr>${renderTableRow(headers, true)}</tr>
                     </thead>
                     <tbody>
                         ${rows.map(row => `<tr>${renderTableRow(row)}</tr>`).join('')}
