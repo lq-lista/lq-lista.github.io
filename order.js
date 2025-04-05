@@ -28,20 +28,32 @@ class OrderSystem {
                 });
             }
 
-            this.initMiniCharts();
+            // Inicjalizacja wykresów z opóźnieniem
+            setTimeout(() => {
+                try {
+                    this.initMiniCharts();
+                } catch (initError) {
+                    console.error('Błąd inicjalizacji wykresów:', initError);
+                }
+            }, 500);
             
             // Nasłuchuj zmian statusów w czasie rzeczywistym
             if (this.database) {
                 this.database.ref('orders').on('value', (snapshot) => {
-                    this.orders = snapshot.val() || {};
-                    localStorage.setItem('orders', JSON.stringify(this.orders));
-                    this.updateStats();
+                    try {
+                        this.orders = snapshot.val() || {};
+                        localStorage.setItem('orders', JSON.stringify(this.orders));
+                        this.updateStats();
+                    } catch (updateError) {
+                        console.error('Błąd aktualizacji danych:', updateError);
+                    }
                 });
             }
 
         } catch (error) {
             console.error('Błąd inicjalizacji OrderSystem:', error);
-            throw error;
+            // Wyświetl przyjazny komunikat o błędzie
+            showError(new Error('Wystąpił problem podczas ładowania systemu zamówień. Odśwież stronę.'));
         }
     }
 
@@ -925,42 +937,69 @@ class OrderSystem {
             const totalOrders = Object.keys(this.orders).length;
             const todayOrders = this.getTodaysOrdersCount();
             
-            // Bezpieczna aktualizacja UI
-            const safeUpdate = (id, value) => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.textContent = value;
-                    element.style.animation = 'pulse 0.5s'; // Efekt wizualny
-                    setTimeout(() => element.style.animation = '', 500);
-                }
-            };
-            
-            safeUpdate('total-orders', totalOrders);
-            safeUpdate('today-orders', todayOrders);
-            safeUpdate('total-views', this.pageViews);
-    
+            document.getElementById('total-orders').textContent = totalOrders;
+            document.getElementById('today-orders').textContent = todayOrders;
+            document.getElementById('total-views').textContent = this.pageViews;
+
             // 2. Aktualizacja ostatnich zamówień
             const recentOrders = Object.entries(this.orders)
                 .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
                 .slice(0, 5);
-    
-            const recentOrdersContainer = document.getElementById('recent-orders');
-            if (recentOrdersContainer) {
-                recentOrdersContainer.innerHTML = recentOrders.map(([orderId, order]) => `
-                    <tr>
-                        <td>${orderId}</td>
-                        <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
-                        <td>${order.total}zł</td>
-                        <td class="status-${order.status.toLowerCase()}">${order.status}</td>
-                    </tr>
-                `).join('') || '<tr><td colspan="4">Brak danych</td></tr>';
-            }
-    
-            // 3. Aktualizacja wykresów
-            this.updateCharts();
-    
+                
+            const recentOrdersHTML = recentOrders.map(([orderId, order]) => `
+                <tr>
+                    <td>${orderId}</td>
+                    <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
+                    <td>${order.total}zł</td>
+                    <td class="status-${order.status.toLowerCase().replace(' ', '-')}">
+                        ${order.status}
+                    </td>
+                    <td>
+                        <select class="status-select" data-order-id="${orderId}">
+                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
+                            <option value="W trakcie" ${order.status === 'W trakcie' ? 'selected' : ''}>W trakcie</option>
+                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
+                            <option value="Anulowane" ${order.status === 'Anulowane' ? 'selected' : ''}>Anulowane</option>
+                        </select>
+                        <button class="action-btn save-btn" data-order-id="${orderId}">Zapisz</button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
+            
+            document.getElementById('recent-orders').innerHTML = recentOrdersHTML;
+
+            // 3. Dodanie event listenerów do przycisków
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const orderId = e.target.getAttribute('data-order-id');
+                    const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
+                    this.updateOrderStatus(orderId, select.value);
+                });
+            });
+
+            // 4. Bezpieczna aktualizacja mini wykresów
+            setTimeout(() => {
+                try {
+                    if (!this.miniOrdersChart || !this.miniFlavorsChart) {
+                        this.initMiniCharts();
+                    } else {
+                        // Tylko aktualizuj dane jeśli wykresy istnieją
+                        this.miniOrdersChart.data.labels = this.getLast7Days();
+                        this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
+                        this.miniOrdersChart.update();
+                        
+                        this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
+                        this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
+                        this.miniFlavorsChart.update();
+                    }
+                } catch (chartError) {
+                    console.error('Błąd aktualizacji mini wykresów:', chartError);
+                    // Próba ponownej inicjalizacji
+                    this.initMiniCharts();
+                }
+            }, 100);
         } catch (error) {
-            console.error('Błąd podczas aktualizacji statystyk:', error);
+            console.error('Błąd aktualizacji statystyk:', error);
         }
     }
 
@@ -1107,57 +1146,6 @@ class OrderSystem {
         }
     }
 
-    updateStats() {
-        try {
-            // 1. Aktualizacja statystyk tekstowych
-            const totalOrders = Object.keys(this.orders).length;
-            const todayOrders = this.getTodaysOrdersCount();
-            
-            // Bezpieczna aktualizacja UI
-            const safeUpdate = (id, value) => {
-                const element = document.getElementById(id);
-                if (element) element.textContent = value;
-            };
-            
-            safeUpdate('total-orders', totalOrders);
-            safeUpdate('today-orders', todayOrders);
-            safeUpdate('total-views', this.pageViews);
-    
-            // 2. Aktualizacja wykresów tylko jeśli istnieją
-            if (this.ordersChart && this.flavorsChart) {
-                try {
-                    // Przygotowanie danych
-                    const last7Days = this.getLast7Days().map(String);
-                    const ordersData = this.getOrdersLast7Days().map(Number);
-                    const topFlavors = this.getTopFlavors(5);
-                    
-                    // Aktualizacja danych wykresu zamówień
-                    this.ordersChart.data.labels = last7Days;
-                    this.ordersChart.data.datasets[0].data = ordersData;
-                    
-                    // Aktualizacja danych wykresu smaków
-                    this.flavorsChart.data.labels = topFlavors.map(f => String(f.name));
-                    this.flavorsChart.data.datasets[0].data = topFlavors.map(f => Number(f.count));
-                    
-                    // Aktualizacja wykresów z animacją
-                    this.ordersChart.update();
-                    this.flavorsChart.update();
-                    
-                } catch (chartError) {
-                    console.error('Błąd aktualizacji wykresów:', chartError);
-                    // Próba ponownej inicjalizacji
-                    this.initCharts();
-                }
-            } else {
-                // Jeśli wykresy nie istnieją, zainicjuj je
-                this.initCharts();
-            }
-            
-        } catch (error) {
-            console.error('Błąd podczas aktualizacji statystyk:', error);
-        }
-    }
-
     getTodaysOrdersCount() {
         const today = new Date().toLocaleDateString();
         return Object.values(this.orders).filter(order => {
@@ -1165,59 +1153,96 @@ class OrderSystem {
         }).length;
     }
 
-    // Dodaj nową metodę do inicjalizacji mini wykresów
+    // Poprawiona metoda initMiniCharts
     initMiniCharts() {
-        // Wykres zamówień
-        const miniOrdersCtx = document.getElementById('miniOrdersChart').getContext('2d');
-        this.miniOrdersChart = new Chart(miniOrdersCtx, {
-            type: 'bar',
-            data: {
-                labels: this.getLast7Days(),
-                datasets: [{
-                    label: 'Zamówienia z ostatnich 7 dni',
-                    data: this.getOrdersLast7Days(),
-                    backgroundColor: 'rgba(255, 111, 97, 0.7)',
-                    borderColor: '#ff6f61',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
-        });
+        // Najpierw zniszcz istniejące wykresy jeśli są
+        if (this.miniOrdersChart instanceof Chart) {
+            this.miniOrdersChart.destroy();
+            this.miniOrdersChart = null;
+        }
+        
+        if (this.miniFlavorsChart instanceof Chart) {
+            this.miniFlavorsChart.destroy();
+            this.miniFlavorsChart = null;
+        }
 
-        // Wykres smaków
-        const miniFlavorsCtx = document.getElementById('miniFlavorsChart').getContext('2d');
-        this.miniFlavorsChart = new Chart(miniFlavorsCtx, {
-            type: 'doughnut',
-            data: {
-                labels: this.getTopFlavors(5).map(f => f.name),
-                datasets: [{
-                    data: this.getTopFlavors(5).map(f => f.count),
-                    backgroundColor: [
-                        '#ff6f61',
-                        '#ff9a9e',
-                        '#fad0c4',
-                        '#ffcc00',
-                        '#45a049'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right' }
+        // Pobierz elementy canvas ponownie
+        const miniOrdersCanvas = document.getElementById('miniOrdersChart');
+        const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
+        
+        // Sprawdź czy elementy istnieją i czy są wolne
+        if (!miniOrdersCanvas || !miniFlavorsCanvas) return;
+        
+        // Oznacz canvas jako używany
+        miniOrdersCanvas.__chart = true;
+        miniFlavorsCanvas.__chart = true;
+
+        try {
+            // Wykres zamówień
+            this.miniOrdersChart = new Chart(miniOrdersCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: this.getLast7Days(),
+                    datasets: [{
+                        label: 'Zamówienia z ostatnich 7 dni',
+                        data: this.getOrdersLast7Days(),
+                        backgroundColor: 'rgba(255, 111, 97, 0.7)',
+                        borderColor: '#ff6f61',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    },
+                    animation: {
+                        onComplete: () => {
+                            miniOrdersCanvas.__chart = this.miniOrdersChart;
+                        }
+                    }
                 }
-            }
-        });
+            });
+
+            // Wykres smaków
+            this.miniFlavorsChart = new Chart(miniFlavorsCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: this.getTopFlavors(5).map(f => f.name),
+                    datasets: [{
+                        data: this.getTopFlavors(5).map(f => f.count),
+                        backgroundColor: [
+                            '#ff6f61',
+                            '#ff9a9e',
+                            '#fad0c4',
+                            '#ffcc00',
+                            '#45a049'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    },
+                    animation: {
+                        onComplete: () => {
+                            miniFlavorsCanvas.__chart = this.miniFlavorsChart;
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Błąd tworzenia mini wykresów:', error);
+            // W przypadku błędu oznacz canvas jako wolny
+            miniOrdersCanvas.__chart = null;
+            miniFlavorsCanvas.__chart = null;
+        }
     }
 
     // Nowa metoda do aktualizacji statusu
@@ -1290,22 +1315,46 @@ class OrderSystem {
                 });
             });
 
-            // 4. Aktualizacja mini wykresów
-            if (this.miniOrdersChart && this.miniFlavorsChart) {
-                this.miniOrdersChart.data.labels = this.getLast7Days();
-                this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
-                this.miniOrdersChart.update();
-                
-                this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
-                this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
-                this.miniFlavorsChart.update();
-            } else {
-                this.initMiniCharts();
-            }
-
+            // 4. Bezpieczna aktualizacja mini wykresów
+            setTimeout(() => {
+                try {
+                    if (!this.miniOrdersChart || !this.miniFlavorsChart) {
+                        this.initMiniCharts();
+                    } else {
+                        // Tylko aktualizuj dane jeśli wykresy istnieją
+                        this.miniOrdersChart.data.labels = this.getLast7Days();
+                        this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
+                        this.miniOrdersChart.update();
+                        
+                        this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
+                        this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
+                        this.miniFlavorsChart.update();
+                    }
+                } catch (chartError) {
+                    console.error('Błąd aktualizacji mini wykresów:', chartError);
+                    // Próba ponownej inicjalizacji
+                    this.initMiniCharts();
+                }
+            }, 100);
         } catch (error) {
             console.error('Błąd aktualizacji statystyk:', error);
         }
+    }
+
+    // Funkcja pomocnicza do bezpiecznego niszczenia wykresów
+    destroyChartSafely(chartInstance) {
+        try {
+            if (chartInstance && typeof chartInstance.destroy === 'function') {
+                const canvas = chartInstance.canvas;
+                if (canvas) {
+                    canvas.__chart = null;
+                }
+                chartInstance.destroy();
+            }
+        } catch (e) {
+            console.warn('Błąd podczas niszczenia wykresu:', e);
+        }
+        return null;
     }
 }
 
