@@ -17,48 +17,75 @@ class UIModule {
     initEventListeners() {
         try {
             // Modal zamówienia
-            document.getElementById('start-order').addEventListener('click', () => {
-                this.openModal();
-                this.resetScrollPosition();
-            });
-            
-            document.querySelector('.close').addEventListener('click', this.closeModal.bind(this));
-            
-            // Formularz zamówienia
-            document.getElementById('add-to-order').addEventListener('click', () => {
-                this.orderSystem.orders.addToOrder();
-            });
-            
-            document.getElementById('submit-order').addEventListener('click', () => {
-                this.orderSystem.orders.submitOrder();
-            });
-            
-            // Panel admina
-            document.getElementById('login-admin').addEventListener('click', () => {
-                this.orderSystem.orders.loginAdmin();
-            });
-            
-            document.getElementById('search-order').addEventListener('click', () => {
-                this.orderSystem.orders.searchOrder();
-            });
-            
-            // Zamknięcie modala kliknięciem poza nim
-            window.addEventListener('click', (event) => {
-                if (event.target === document.getElementById('order-modal')) {
-                    this.closeModal();
-                }
-            });
-
-            // Link do panelu admina
-            document.getElementById('admin-link').addEventListener('click', (e) => {
-                e.preventDefault();
-                document.getElementById('admin-panel').style.display = 'block';
-                window.scrollTo({
-                    top: document.getElementById('admin-panel').offsetTop,
-                    behavior: 'smooth'
+            const startOrderBtn = document.getElementById('start-order');
+            if (startOrderBtn) {
+                startOrderBtn.addEventListener('click', () => {
+                    this.openModal();
+                    this.resetScrollPosition();
                 });
-            });
-
+            }
+    
+            const closeModalBtn = document.querySelector('.close');
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', this.closeModal.bind(this));
+            }
+    
+            // Formularz zamówienia
+            const addToOrderBtn = document.getElementById('add-to-order');
+            if (addToOrderBtn) {
+                addToOrderBtn.addEventListener('click', () => {
+                    this.orderSystem.orders.addToOrder();
+                });
+            }
+    
+            const submitOrderBtn = document.getElementById('submit-order');
+            if (submitOrderBtn) {
+                submitOrderBtn.addEventListener('click', () => {
+                    this.orderSystem.orders.submitOrder();
+                });
+            }
+    
+            // Panel admina
+            const loginAdminBtn = document.getElementById('login-admin');
+            if (loginAdminBtn) {
+                loginAdminBtn.addEventListener('click', () => {
+                    this.orderSystem.orders.loginAdmin();
+                });
+            }
+    
+            const searchOrderBtn = document.getElementById('search-order');
+            if (searchOrderBtn) {
+                searchOrderBtn.addEventListener('click', () => {
+                    this.orderSystem.orders.searchOrder();
+                });
+            }
+    
+            // Zamknięcie modala kliknięciem poza nim
+            const orderModal = document.getElementById('order-modal');
+            if (orderModal) {
+                window.addEventListener('click', (event) => {
+                    if (event.target === orderModal) {
+                        this.closeModal();
+                    }
+                });
+            }
+    
+            // Link do panelu admina
+            const adminLink = document.getElementById('admin-link');
+            if (adminLink) {
+                adminLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const adminPanel = document.getElementById('admin-panel');
+                    if (adminPanel) {
+                        adminPanel.style.display = 'block';
+                        window.scrollTo({
+                            top: adminPanel.offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            }
+    
             // Kopiowanie numeru zamówienia
             document.body.addEventListener('click', (e) => {
                 if (e.target.classList.contains('copy-order-btn') || 
@@ -66,7 +93,7 @@ class UIModule {
                     this.handleCopyOrderNumber(e);
                 }
             });
-
+    
             // Aktualizacja podglądu ceny
             ['flavor-select', 'size-select', 'strength-select'].forEach(id => {
                 const element = document.getElementById(id);
@@ -76,7 +103,7 @@ class UIModule {
                     });
                 }
             });
-
+    
         } catch (error) {
             console.error('Błąd inicjalizacji event listenerów:', error);
             throw error;
@@ -124,13 +151,24 @@ class UIModule {
 
     openModal() {
         try {
-            document.getElementById('order-modal').style.display = 'block';
-            document.body.classList.add('modal-open');
-            document.getElementById('order-form').style.display = 'block';
-            document.getElementById('order-summary').style.display = 'block';
-            document.getElementById('submit-order-container').classList.remove('hidden');
-            document.getElementById('order-confirmation').style.display = 'none';
-            document.getElementById('order-notes').value = '';
+            const modal = document.getElementById('order-modal');
+            if (modal) {
+                modal.style.display = 'block';
+                document.body.classList.add('modal-open');
+            }
+    
+            const orderForm = document.getElementById('order-form');
+            const orderSummary = document.getElementById('order-summary');
+            const submitOrderContainer = document.getElementById('submit-order-container');
+            const orderConfirmation = document.getElementById('order-confirmation');
+            const orderNotes = document.getElementById('order-notes');
+    
+            if (orderForm) orderForm.style.display = 'block';
+            if (orderSummary) orderSummary.style.display = 'block';
+            if (submitOrderContainer) submitOrderContainer.classList.remove('hidden');
+            if (orderConfirmation) orderConfirmation.style.display = 'none';
+            if (orderNotes) orderNotes.value = '';
+    
             this.orderSystem.currentOrder = [];
             this.orderSystem.orders.updateOrderSummary();
         } catch (error) {
@@ -140,8 +178,11 @@ class UIModule {
     
     closeModal() {
         try {
-            document.getElementById('order-modal').style.display = 'none';
-            document.body.classList.remove('modal-open');
+            const modal = document.getElementById('order-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.classList.remove('modal-open');
+            }
         } catch (error) {
             console.error('Błąd zamykania modala:', error);
         }
