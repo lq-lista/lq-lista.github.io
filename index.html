@@ -63,37 +63,6 @@
     <main class="container">
         <section class="flavors">
             <h2>Nasze Smaki</h2>
-            
-            <div class="flavor-filters">
-                <div class="filter-group">
-                    <label>Firma:</label>
-                    <select id="brand-filter" class="form-control">
-                        <option value="all">Wszystkie firmy</option>
-                        <option value="izi">IZI PIZI</option>
-                        <option value="wanna">WANNA BE COOL</option>
-                        <option value="funk">FUNK CLARO</option>
-                        <option value="aroma">AROMA KING</option>
-                        <option value="dilno">DILNO'S</option>
-                        <option value="panda">PANDA</option>
-                        <option value="inne">Inne</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label>Typ smaku:</label>
-                    <select id="type-filter" class="form-control">
-                        <option value="all">Wszystkie typy</option>
-                        <option value="owocowe">Owocowe</option>
-                        <option value="miętowe">Miętowe</option>
-                        <option value="słodkie">Słodkie</option>
-                        <option value="cytrusowe">Cytrusowe</option>
-                        <option value="energy">Energy drink</option>
-                        <option value="chłodzone">Chłodzone</option>
-                        <option value="bez_słodzika">Bez słodzika</option>
-                    </select>
-                </div>
-            </div>
-            
             <ul id="flavors-list">
                 <!-- Lista smaków zostanie wstawiona przez JavaScript -->
             </ul>
@@ -110,17 +79,17 @@
             <h2>Dlaczego my?</h2>
             <div class="why-us-content">
                 <div class="benefit">
-                    <div class="benefit-icon">⚗️</div>
+                    <span style="font-size: 3rem;">⚗️</span>
                     <h3>Spersonalizowane liquidy</h3>
                     <p>Dopasowujemy skład i proporcje PG/VG specjalnie pod Twój model e-peta</p>
                 </div>
                 <div class="benefit">
-                    <div class="benefit-icon">✔️</div>
+                    <span style="font-size: 3rem;">✔️</span>
                     <h3>Doświadczenie</h3>
                     <p>5 lat tworzenia liquidów pod konkretne urządzenia</p>
                 </div>
                 <div class="benefit">
-                    <div class="benefit-icon">🛠️</div>
+                    <span style="font-size: 3rem;">🛠️</span>
                     <h3>Optymalizacja</h3>
                     <p>Uwzględniamy moc grzałki i konstrukcję Twojego e-peta</p>
                 </div>
@@ -234,10 +203,9 @@
                 <!-- Tutaj będą wyświetlane szczegóły zamówienia -->
             </div>
 
-            <!-- Rozbudowana sekcja statystyk -->
-            <div class="admin-stats-section">
+            <!-- Sekcja ze statystykami -->
+            <div class="stats-section">
                 <h3>Statystyki sklepu</h3>
-                
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value" id="total-orders">0</div>
@@ -253,34 +221,26 @@
                     </div>
                 </div>
 
-                <!-- Mini wykresy -->
-                <div class="charts-mini-container">
-                    <div class="chart-mini-wrapper">
-                        <canvas id="miniOrdersChart" width="300" height="150"></canvas>
-                    </div>
-                    <div class="chart-mini-wrapper">
-                        <canvas id="miniFlavorsChart" width="300" height="150"></canvas>
-                    </div>
-                </div>
-
                 <h4>Ostatnie zamówienia</h4>
-                <div class="recent-orders-container">
-                    <table class="recent-orders-table">
-                        <thead>
-                            <tr>
-                                <th>Numer</th>
-                                <th>Data</th>
-                                <th>Kwota</th>
-                                <th>Status</th>
-                                <th>Akcje</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recent-orders">
-                            <tr>
-                                <td colspan="5">Ładowanie danych...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <table class="recent-orders-table">
+                    <thead>
+                        <tr>
+                            <th>Numer zamówienia</th>
+                            <th>Data</th>
+                            <th>Kwota</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders">
+                        <tr>
+                            <td colspan="4">Brak danych</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="charts-container">
+                    <canvas id="ordersChart" width="400" height="200"></canvas>
+                    <canvas id="flavorsChart" width="400" height="200"></canvas>
                 </div>
             </div>
         </div>

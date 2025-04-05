@@ -7,9 +7,6 @@ body {
     color: #333;
     animation: gradientBackground 10s ease infinite;
     line-height: 1.6;
-    font-size: 16px;
-    line-height: 1.5;
-    overflow-x: hidden;
 }
 
 @keyframes gradientBackground {
@@ -94,10 +91,6 @@ h3 {
     padding: 20px;
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    width: 95%;
-    max-width: 800px;
-    margin: 10px auto;
-    padding: 15px;
 }
 
 .flavors, .pricing, .why-us {
@@ -111,8 +104,6 @@ h3 {
     background: rgba(255, 255, 255, 0.8);
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    font-size: 0.9rem;
 }
 
 /* ===== PRICING TABLE STYLES ===== */
@@ -126,7 +117,6 @@ h3 {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     font-size: 1rem;
     text-align: center;
-    font-size: 0.9rem;
 }
 
 #pricing-table th {
@@ -135,14 +125,12 @@ h3 {
     font-weight: bold;
     text-transform: uppercase;
     padding: 15px;
-    padding: 8px 5px;
 }
 
 #pricing-table td {
     padding: 15px;
     border-bottom: 1px solid #ddd;
     color: #555;
-    padding: 8px 5px;
 }
 
 #pricing-table tr:nth-child(even) {
@@ -185,11 +173,6 @@ h3 {
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     position: relative;
     overflow: hidden;
-    width: 95%;
-    max-width: 100%;
-    margin: 2% auto;
-    padding: 15px;
-    max-height: 90vh;
 }
 
 .close {
@@ -266,13 +249,6 @@ h3 {
     scrollbar-width: thin;
     scrollbar-color: #ff6f61 #f1f1f1;
     max-height: calc(50vh - 120px);
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    background: #fff;
 }
 
 #order-items {
@@ -299,14 +275,6 @@ h3 {
     justify-content: space-between;
     align-items: center;
     transition: transform 0.2s;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    margin-bottom: 8px;
-    background: #fff;
-    border-radius: 6px;
-    border-left: 4px solid #ff6f61;
 }
 
 .order-item:hover {
@@ -317,8 +285,6 @@ h3 {
     flex: 1;
     display: flex;
     align-items: center;
-    min-width: 0;
-    flex: 1;
     min-width: 0;
 }
 
@@ -417,8 +383,6 @@ h3 {
     font-size: 16px;
     transition: all 0.3s;
     text-align: center;
-    padding: 10px 15px;
-    font-size: 0.9rem;
 }
 
 .btn:hover {
@@ -444,8 +408,6 @@ h3 {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 15px;
-    font-size: 0.9rem;
 }
 
 .order-button:hover {
@@ -478,8 +440,6 @@ h3 {
     border-radius: 8px;
     transition: background 0.3s, transform 0.2s;
     cursor: pointer;
-    padding: 10px;
-    margin: 5px 0;
 }
 
 #flavors-list li:hover {
@@ -498,42 +458,22 @@ h3 {
 .flavor-filters {
     display: flex;
     gap: 15px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
+    margin-bottom: 15px;
+    padding: 10px;
     background: #f8f8f8;
-    padding: 15px;
     border-radius: 8px;
+    flex-wrap: wrap;
 }
 
 .filter-group {
     flex: 1;
-    min-width: 200px;
+    min-width: 150px;
 }
 
 .filter-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     font-weight: bold;
-    color: #555;
-}
-
-.filter-group select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-}
-
-@media (max-width: 600px) {
-    .flavor-filters {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .filter-group {
-        min-width: 100%;
-    }
 }
 
 /* ===== ADMIN PANEL STYLES ===== */
@@ -544,8 +484,6 @@ h3 {
     border-radius: 8px;
     max-width: 800px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    padding: 15px;
-    width: 95%;
 }
 
 #admin-content {
@@ -637,93 +575,6 @@ h3 {
 .status-cancelled {
     color: #f44336;
     font-weight: bold;
-}
-
-/* Admin Panel - Rozszerzone style */
-.admin-stats-section {
-    margin-top: 30px;
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 10px;
-}
-
-.charts-mini-container {
-    display: flex;
-    gap: 20px;
-    margin: 20px 0;
-    flex-wrap: wrap;
-    flex-direction: column;
-}
-
-.chart-mini-wrapper {
-    flex: 1;
-    min-width: 300px;
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    min-width: 100%;
-}
-
-.recent-orders-container {
-    overflow-x: auto;
-}
-
-.recent-orders-table {
-    width: 100%;
-    min-width: 600px;
-    border-collapse: collapse;
-}
-
-.recent-orders-table th {
-    background: #ff6f61;
-    color: white;
-    padding: 12px;
-    text-align: left;
-}
-
-.recent-orders-table td {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-}
-
-.recent-orders-table tr:hover {
-    background-color: #f5f5f5;
-}
-
-.status-select {
-    padding: 5px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-}
-
-.status-new { background-color: #e3f2fd; color: #1976d2; }
-.status-in-progress { background-color: #fff8e1; color: #ff8f00; }
-.status-completed { background-color: #e8f5e9; color: #388e3c; }
-.status-cancelled { background-color: #ffebee; color: #d32f2f; }
-
-.action-btn {
-    padding: 5px 10px;
-    margin: 0 3px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-
-.save-btn {
-    background: #4caf50;
-    color: white;
-}
-
-.cancel-btn {
-    background: #f44336;
-    color: white;
-}
-
-.edit-btn {
-    background: #2196f3;
-    color: white;
 }
 
 /* ===== SCROLL TO TOP BUTTON ===== */
@@ -833,8 +684,6 @@ h3 {
     background: rgba(255, 255, 255, 0.9);
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    margin: 20px 0;
 }
 
 .why-us-content {
@@ -842,9 +691,6 @@ h3 {
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
-    display: flex;
-    flex-direction: column; /* Zmiana na kolumnę na mobile */
-    gap: 15px;
 }
 
 .benefit {
@@ -856,10 +702,6 @@ h3 {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     text-align: center;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    flex: 1 1 100%; /* Pełna szerokość na mobile */
-    padding: 15px;
-    margin-bottom: 15px;
-    box-sizing: border-box;
 }
 
 .benefit:hover {
@@ -872,8 +714,6 @@ h3 {
     color: #ff6f61;
     margin-bottom: 10px;
     display: inline-block;
-    font-size: 2rem !important;
-    margin-bottom: 10px;
 }
 
 .benefit h3 {
@@ -1104,152 +944,5 @@ h3 {
     }
     .no-print {
         display: none !important;
-    }
-}
-
-/* Globalne poprawki responsywności */
-body {
-    font-size: 16px;
-    line-height: 1.5;
-    overflow-x: hidden;
-}
-
-.container {
-    width: 95%;
-    max-width: 800px;
-    margin: 10px auto;
-    padding: 15px;
-}
-
-/* Sekcja "Dlaczego my" - poprawki */
-.why-us {
-    padding: 15px;
-    margin: 20px 0;
-}
-
-.why-us-content {
-    display: flex;
-    flex-direction: column; /* Zmiana na kolumnę na mobile */
-    gap: 15px;
-}
-
-.benefit {
-    flex: 1 1 100%; /* Pełna szerokość na mobile */
-    padding: 15px;
-    margin-bottom: 15px;
-    box-sizing: border-box;
-}
-
-.benefit-icon {
-    font-size: 2rem !important;
-    margin-bottom: 10px;
-}
-
-/* Tabela cen - poprawki */
-#pricing-table {
-    font-size: 0.9rem;
-}
-
-#pricing-table th, 
-#pricing-table td {
-    padding: 8px 5px;
-}
-
-/* Modal zamówienia - poprawki */
-.modal-content {
-    width: 95%;
-    max-width: 100%;
-    margin: 2% auto;
-    padding: 15px;
-    max-height: 90vh;
-}
-
-/* Lista smaków - poprawki */
-#flavors-list li {
-    padding: 10px;
-    margin: 5px 0;
-}
-
-/* Stopka - poprawki */
-.footer {
-    padding: 15px;
-    font-size: 0.9rem;
-}
-
-/* Przyciski - poprawki */
-.btn, .order-button {
-    padding: 10px 15px;
-    font-size: 0.9rem;
-}
-
-/* Panel admina - poprawki */
-.admin-panel {
-    padding: 15px;
-    width: 95%;
-}
-
-.charts-mini-container {
-    flex-direction: column;
-}
-
-.chart-mini-wrapper {
-    min-width: 100%;
-}
-
-/* Media queries dla różnych rozmiarów ekranu */
-@media (min-width: 576px) {
-    .why-us-content {
-        flex-direction: row;
-        flex-wrap: wrap;
-    }
-    
-    .benefit {
-        flex: 1 1 calc(50% - 15px);
-    }
-}
-
-@media (min-width: 768px) {
-    .why-us-content {
-        flex-wrap: nowrap;
-    }
-    
-    .benefit {
-        flex: 1 1 calc(33.33% - 15px);
-    }
-    
-    .modal-content {
-        width: 90%;
-        max-width: 600px;
-    }
-}
-
-@media (min-width: 992px) {
-    .container {
-        padding: 20px;
-    }
-    
-    .benefit {
-        padding: 20px;
-    }
-}
-
-/* Specjalne style dla bardzo małych ekranów */
-@media (max-width: 360px) {
-    body {
-        font-size: 14px;
-    }
-    
-    h1 {
-        font-size: 1.5rem;
-    }
-    
-    h2 {
-        font-size: 1.3rem;
-    }
-    
-    .order-button {
-        bottom: 10px;
-        right: 10px;
-        padding: 8px 12px;
     }
 }

@@ -28,32 +28,9 @@ class OrderSystem {
                 });
             }
 
-            // Inicjalizacja wykresów z opóźnieniem
-            setTimeout(() => {
-                try {
-                    this.initMiniCharts();
-                } catch (initError) {
-                    console.error('Błąd inicjalizacji wykresów:', initError);
-                }
-            }, 500);
-            
-            // Nasłuchuj zmian statusów w czasie rzeczywistym
-            if (this.database) {
-                this.database.ref('orders').on('value', (snapshot) => {
-                    try {
-                        this.orders = snapshot.val() || {};
-                        localStorage.setItem('orders', JSON.stringify(this.orders));
-                        this.updateStats();
-                    } catch (updateError) {
-                        console.error('Błąd aktualizacji danych:', updateError);
-                    }
-                });
-            }
-
         } catch (error) {
             console.error('Błąd inicjalizacji OrderSystem:', error);
-            // Wyświetl przyjazny komunikat o błędzie
-            showError(new Error('Wystąpił problem podczas ładowania systemu zamówień. Odśwież stronę.'));
+            throw error;
         }
     }
 
@@ -306,15 +283,13 @@ class OrderSystem {
             filterContainer.className = 'flavor-filters';
             filterContainer.innerHTML = `
                 <div class="filter-group">
-                    <label>Marka:</label>
+                    <label>Firma:</label>
                     <select id="brand-filter" class="form-control">
-                        <option value="all">Wszystkie marki</option>
-                        <option value="izi">IZI PIZI</option>
-                        <option value="wanna">WANNA BE COOL</option>
-                        <option value="funk">FUNK CLARO</option>
-                        <option value="aroma">AROMA KING</option>
-                        <option value="dilno">DILNO'S</option>
-                        <option value="panda">PANDA</option>
+                        <option value="all">Wszystkie firmy</option>
+                        <option value="funk">Funk Claro</option>
+                        <option value="aroma">Aroma King</option>
+                        <option value="wanna">Wanna Be Cool</option>
+                        <option value="inne">Inne</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -326,7 +301,6 @@ class OrderSystem {
                         <option value="słodkie">Słodkie</option>
                         <option value="cytrusowe">Cytrusowe</option>
                         <option value="energy">Energy drink</option>
-                        <option value="chłodzone">Chłodzone</option>
                     </select>
                 </div>
             `;
@@ -338,9 +312,6 @@ class OrderSystem {
             
             document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
             document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
-            
-            // Pierwsze filtrowanie
-            this.filterFlavors();
         } catch (error) {
             console.error('Błąd inicjalizacji filtrów smaków:', error);
         }
@@ -360,17 +331,13 @@ class OrderSystem {
 
             flavors.forEach((flavor, index) => {
                 try {
-                    // Sprawdź filtr marki
                     const brandMatch = 
                         brandFilter === 'all' ||
-                        (brandFilter === 'izi' && flavor.includes('(IZI PIZI)')) ||
-                        (brandFilter === 'wanna' && flavor.includes('(WANNA BE COOL)')) ||
-                        (brandFilter === 'funk' && flavor.includes('(FUNK CLARO)')) ||
-                        (brandFilter === 'aroma' && flavor.includes('(AROMA KING)')) ||
-                        (brandFilter === 'dilno' && flavor.includes('(DILNO\'S)')) ||
-                        (brandFilter === 'panda' && flavor.includes('(PANDA)'));
+                        (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
+                        (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
+                        (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
+                        (brandFilter === 'inne' && !flavor.includes('('));
 
-                    // Sprawdź filtr typu
                     let typeMatch = false;
                     if (typeFilter === 'all') {
                         typeMatch = true;
@@ -388,10 +355,6 @@ class OrderSystem {
                     console.warn(`Błąd przetwarzania smaku ${index}:`, e);
                 }
             });
-
-            if (flavorsList.children.length === 0) {
-                flavorsList.innerHTML = '<li>Brak smaków pasujących do wybranych filtrów</li>';
-            }
         } catch (error) {
             console.error('Błąd filtrowania smaków:', error);
         }
@@ -951,69 +914,42 @@ class OrderSystem {
             const totalOrders = Object.keys(this.orders).length;
             const todayOrders = this.getTodaysOrdersCount();
             
-            document.getElementById('total-orders').textContent = totalOrders;
-            document.getElementById('today-orders').textContent = todayOrders;
-            document.getElementById('total-views').textContent = this.pageViews;
-
+            // Bezpieczna aktualizacja UI
+            const safeUpdate = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                    element.style.animation = 'pulse 0.5s'; // Efekt wizualny
+                    setTimeout(() => element.style.animation = '', 500);
+                }
+            };
+            
+            safeUpdate('total-orders', totalOrders);
+            safeUpdate('today-orders', todayOrders);
+            safeUpdate('total-views', this.pageViews);
+    
             // 2. Aktualizacja ostatnich zamówień
             const recentOrders = Object.entries(this.orders)
                 .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
                 .slice(0, 5);
-                
-            const recentOrdersHTML = recentOrders.map(([orderId, order]) => `
-                <tr>
-                    <td>${orderId}</td>
-                    <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
-                    <td>${order.total}zł</td>
-                    <td class="status-${order.status.toLowerCase().replace(' ', '-')}">
-                        ${order.status}
-                    </td>
-                    <td>
-                        <select class="status-select" data-order-id="${orderId}">
-                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
-                            <option value="W trakcie" ${order.status === 'W trakcie' ? 'selected' : ''}>W trakcie</option>
-                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
-                            <option value="Anulowane" ${order.status === 'Anulowane' ? 'selected' : ''}>Anulowane</option>
-                        </select>
-                        <button class="action-btn save-btn" data-order-id="${orderId}">Zapisz</button>
-                    </td>
-                </tr>
-            `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
-            
-            document.getElementById('recent-orders').innerHTML = recentOrdersHTML;
-
-            // 3. Dodanie event listenerów do przycisków
-            document.querySelectorAll('.save-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const orderId = e.target.getAttribute('data-order-id');
-                    const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
-                    this.updateOrderStatus(orderId, select.value);
-                });
-            });
-
-            // 4. Bezpieczna aktualizacja mini wykresów
-            setTimeout(() => {
-                try {
-                    if (!this.miniOrdersChart || !this.miniFlavorsChart) {
-                        this.initMiniCharts();
-                    } else {
-                        // Tylko aktualizuj dane jeśli wykresy istnieją
-                        this.miniOrdersChart.data.labels = this.getLast7Days();
-                        this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
-                        this.miniOrdersChart.update();
-                        
-                        this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
-                        this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
-                        this.miniFlavorsChart.update();
-                    }
-                } catch (chartError) {
-                    console.error('Błąd aktualizacji mini wykresów:', chartError);
-                    // Próba ponownej inicjalizacji
-                    this.initMiniCharts();
-                }
-            }, 100);
+    
+            const recentOrdersContainer = document.getElementById('recent-orders');
+            if (recentOrdersContainer) {
+                recentOrdersContainer.innerHTML = recentOrders.map(([orderId, order]) => `
+                    <tr>
+                        <td>${orderId}</td>
+                        <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
+                        <td>${order.total}zł</td>
+                        <td class="status-${order.status.toLowerCase()}">${order.status}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="4">Brak danych</td></tr>';
+            }
+    
+            // 3. Aktualizacja wykresów
+            this.updateCharts();
+    
         } catch (error) {
-            console.error('Błąd aktualizacji statystyk:', error);
+            console.error('Błąd podczas aktualizacji statystyk:', error);
         }
     }
 
@@ -1160,215 +1096,62 @@ class OrderSystem {
         }
     }
 
-    getTodaysOrdersCount() {
-        const today = new Date().toLocaleDateString();
-        return Object.values(this.orders).filter(order => {
-            return new Date(order.date).toLocaleDateString() === today;
-        }).length;
-    }
-
-    // Poprawiona metoda initMiniCharts
-    initMiniCharts() {
-        // Najpierw zniszcz istniejące wykresy jeśli są
-        if (this.miniOrdersChart instanceof Chart) {
-            this.miniOrdersChart.destroy();
-            this.miniOrdersChart = null;
-        }
-        
-        if (this.miniFlavorsChart instanceof Chart) {
-            this.miniFlavorsChart.destroy();
-            this.miniFlavorsChart = null;
-        }
-
-        // Pobierz elementy canvas ponownie
-        const miniOrdersCanvas = document.getElementById('miniOrdersChart');
-        const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
-        
-        // Sprawdź czy elementy istnieją i czy są wolne
-        if (!miniOrdersCanvas || !miniFlavorsCanvas) return;
-        
-        // Oznacz canvas jako używany
-        miniOrdersCanvas.__chart = true;
-        miniFlavorsCanvas.__chart = true;
-
-        try {
-            // Wykres zamówień
-            this.miniOrdersChart = new Chart(miniOrdersCanvas.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: this.getLast7Days(),
-                    datasets: [{
-                        label: 'Zamówienia z ostatnich 7 dni',
-                        data: this.getOrdersLast7Days(),
-                        backgroundColor: 'rgba(255, 111, 97, 0.7)',
-                        borderColor: '#ff6f61',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true }
-                    },
-                    animation: {
-                        onComplete: () => {
-                            miniOrdersCanvas.__chart = this.miniOrdersChart;
-                        }
-                    }
-                }
-            });
-
-            // Wykres smaków
-            this.miniFlavorsChart = new Chart(miniFlavorsCanvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: this.getTopFlavors(5).map(f => f.name),
-                    datasets: [{
-                        data: this.getTopFlavors(5).map(f => f.count),
-                        backgroundColor: [
-                            '#ff6f61',
-                            '#ff9a9e',
-                            '#fad0c4',
-                            '#ffcc00',
-                            '#45a049'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right' }
-                    },
-                    animation: {
-                        onComplete: () => {
-                            miniFlavorsCanvas.__chart = this.miniFlavorsChart;
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Błąd tworzenia mini wykresów:', error);
-            // W przypadku błędu oznacz canvas jako wolny
-            miniOrdersCanvas.__chart = null;
-            miniFlavorsCanvas.__chart = null;
-        }
-    }
-
-    // Nowa metoda do aktualizacji statusu
-    async updateOrderStatus(orderId, newStatus) {
-        try {
-            // Aktualizacja w Firebase
-            await this.database.ref(`orders/${orderId}/status`).set(newStatus);
-            await this.database.ref(`orders/${orderId}/updatedAt`).set(firebase.database.ServerValue.TIMESTAMP);
-            
-            // Aktualizacja lokalna
-            if (this.orders[orderId]) {
-                this.orders[orderId].status = newStatus;
-                this.orders[orderId].updatedAt = Date.now();
-                localStorage.setItem('orders', JSON.stringify(this.orders));
-            }
-            
-            // Odświeżenie widoku
-            this.updateStats();
-            alert('Status zamówienia został zaktualizowany!');
-        } catch (error) {
-            console.error('Błąd aktualizacji statusu:', error);
-            alert('Wystąpił błąd podczas aktualizacji statusu');
-        }
-    }
-
-    // Zaktualizowana metoda updateStats
     updateStats() {
         try {
             // 1. Aktualizacja statystyk tekstowych
             const totalOrders = Object.keys(this.orders).length;
             const todayOrders = this.getTodaysOrdersCount();
             
-            document.getElementById('total-orders').textContent = totalOrders;
-            document.getElementById('today-orders').textContent = todayOrders;
-            document.getElementById('total-views').textContent = this.pageViews;
-
-            // 2. Aktualizacja ostatnich zamówień
-            const recentOrders = Object.entries(this.orders)
-                .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
-                .slice(0, 5);
-                
-            const recentOrdersHTML = recentOrders.map(([orderId, order]) => `
-                <tr>
-                    <td>${orderId}</td>
-                    <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
-                    <td>${order.total}zł</td>
-                    <td class="status-${order.status.toLowerCase().replace(' ', '-')}">
-                        ${order.status}
-                    </td>
-                    <td>
-                        <select class="status-select" data-order-id="${orderId}">
-                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
-                            <option value="W trakcie" ${order.status === 'W trakcie' ? 'selected' : ''}>W trakcie</option>
-                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
-                            <option value="Anulowane" ${order.status === 'Anulowane' ? 'selected' : ''}>Anulowane</option>
-                        </select>
-                        <button class="action-btn save-btn" data-order-id="${orderId}">Zapisz</button>
-                    </td>
-                </tr>
-            `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
+            // Bezpieczna aktualizacja UI
+            const safeUpdate = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            };
             
-            document.getElementById('recent-orders').innerHTML = recentOrdersHTML;
-
-            // 3. Dodanie event listenerów do przycisków
-            document.querySelectorAll('.save-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const orderId = e.target.getAttribute('data-order-id');
-                    const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
-                    this.updateOrderStatus(orderId, select.value);
-                });
-            });
-
-            // 4. Bezpieczna aktualizacja mini wykresów
-            setTimeout(() => {
+            safeUpdate('total-orders', totalOrders);
+            safeUpdate('today-orders', todayOrders);
+            safeUpdate('total-views', this.pageViews);
+    
+            // 2. Aktualizacja wykresów tylko jeśli istnieją
+            if (this.ordersChart && this.flavorsChart) {
                 try {
-                    if (!this.miniOrdersChart || !this.miniFlavorsChart) {
-                        this.initMiniCharts();
-                    } else {
-                        // Tylko aktualizuj dane jeśli wykresy istnieją
-                        this.miniOrdersChart.data.labels = this.getLast7Days();
-                        this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
-                        this.miniOrdersChart.update();
-                        
-                        this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
-                        this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
-                        this.miniFlavorsChart.update();
-                    }
+                    // Przygotowanie danych
+                    const last7Days = this.getLast7Days().map(String);
+                    const ordersData = this.getOrdersLast7Days().map(Number);
+                    const topFlavors = this.getTopFlavors(5);
+                    
+                    // Aktualizacja danych wykresu zamówień
+                    this.ordersChart.data.labels = last7Days;
+                    this.ordersChart.data.datasets[0].data = ordersData;
+                    
+                    // Aktualizacja danych wykresu smaków
+                    this.flavorsChart.data.labels = topFlavors.map(f => String(f.name));
+                    this.flavorsChart.data.datasets[0].data = topFlavors.map(f => Number(f.count));
+                    
+                    // Aktualizacja wykresów z animacją
+                    this.ordersChart.update();
+                    this.flavorsChart.update();
+                    
                 } catch (chartError) {
-                    console.error('Błąd aktualizacji mini wykresów:', chartError);
+                    console.error('Błąd aktualizacji wykresów:', chartError);
                     // Próba ponownej inicjalizacji
-                    this.initMiniCharts();
+                    this.initCharts();
                 }
-            }, 100);
+            } else {
+                // Jeśli wykresy nie istnieją, zainicjuj je
+                this.initCharts();
+            }
+            
         } catch (error) {
-            console.error('Błąd aktualizacji statystyk:', error);
+            console.error('Błąd podczas aktualizacji statystyk:', error);
         }
     }
 
-    // Funkcja pomocnicza do bezpiecznego niszczenia wykresów
-    destroyChartSafely(chartInstance) {
-        try {
-            if (chartInstance && typeof chartInstance.destroy === 'function') {
-                const canvas = chartInstance.canvas;
-                if (canvas) {
-                    canvas.__chart = null;
-                }
-                chartInstance.destroy();
-            }
-        } catch (e) {
-            console.warn('Błąd podczas niszczenia wykresu:', e);
-        }
-        return null;
+    getTodaysOrdersCount() {
+        const today = new Date().toLocaleDateString();
+        return Object.values(this.orders).filter(order => {
+            return new Date(order.date).toLocaleDateString() === today;
+        }).length;
     }
 }
 
