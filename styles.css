@@ -112,13 +112,14 @@ h3 {
     border-collapse: collapse;
     margin-top: 10px;
     background: #fff;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    font-size: 1rem;
 }
 
 #pricing-table th, #pricing-table td {
-    padding: 12px;
+    padding: 15px;
     text-align: center;
     border-bottom: 1px solid #ddd;
 }
@@ -127,14 +128,18 @@ h3 {
     background: linear-gradient(135deg, #ff9a9e, #fad0c4);
     color: #fff;
     font-weight: bold;
+    text-transform: uppercase;
 }
 
 #pricing-table tr:hover {
-    background: #f8f8f8;
+    background: #f9f9f9;
+    transform: scale(1.01);
+    transition: transform 0.2s ease;
 }
 
 #pricing-table td {
     color: #555;
+    font-weight: 500;
 }
 
 /* ===== ORDER MODAL STYLES ===== */
@@ -595,6 +600,60 @@ h3 {
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.8rem;
+}
+
+/* ===== WHY US SECTION ===== */
+.why-us {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.why-us-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.benefit {
+    flex: 1 1 calc(33.333% - 20px);
+    max-width: calc(33.333% - 20px);
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.benefit:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.benefit span {
+    font-size: 2rem;
+    color: #ff6f61;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+.benefit h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.benefit p {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.5;
 }
 
 /* ===== RESPONSIVE STYLES ===== */
