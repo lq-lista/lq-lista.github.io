@@ -136,6 +136,15 @@ const AppData = (() => {
     };
 })();
 
+// Wywołanie funkcji renderAdminCharts po załadowaniu danych aplikacji
+if (typeof renderAdminCharts === 'function') {
+    document.addEventListener('DOMContentLoaded', () => {
+        renderAdminCharts();
+    });
+} else {
+    console.warn('Funkcja renderAdminCharts nie jest dostępna. Upewnij się, że app.js jest poprawnie załadowany.');
+}
+
 // Eksport dla Node.js (jeśli potrzebny)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = AppData;
