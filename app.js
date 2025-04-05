@@ -1,9 +1,17 @@
 /**
- * Główna inicjalizacja aplikacji - wersja 2.1.1
+ * Główna inicjalizacja aplikacji - wersja 2.1.2
  * Integracja z Firebase i OrderSystem
- * Poprawki: obsługa błędów, optymalizacja, bezpieczeństwo
+ * Poprawki: 
+ * - naprawiony błąd z wielokrotnym użyciem canvas
+ * - lepsza obsługa błędów
+ * - optymalizacja wydajności
+ * - poprawione bezpieczeństwo
  */
 document.addEventListener('DOMContentLoaded', async () => {
+    // Flagi stanu aplikacji
+    let appInitialized = false;
+    let chartsRendered = false;
+
     // Funkcja wyświetlająca błąd (ulepszona)
     const showError = (error) => {
         console.error('Błąd inicjalizacji:', error);
@@ -62,8 +70,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setTimeout(() => bar.remove(), 300);
             }, 3000);
         }
-        
-        return bar;
     };
 
     try {
@@ -83,123 +89,121 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Wersja aplikacji:', AppData.version);
         };
 
-
-    // 2. Inicjalizacja interfejsu użytkownika (ostateczna wersja)
-    const initUI = () => {
-    try {
-        // Funkcja bezpiecznego renderowania HTML (ostateczna wersja)
-        const sanitizeHTML = (input) => {
-            // Obsłuż wszystkie przypadki brzegowe
-            if (input === null || input === undefined || input === false) return '';
-            if (typeof input === 'boolean') return input ? 'true' : 'false';
-            if (typeof input === 'number') return String(input);
-            if (typeof input !== 'string') {
-                try {
-                    input = String(input);
-                } catch (e) {
-                    console.warn('Nie można przekonwertować wartości na string:', input);
-                    return '';
-                }
-            }
-            return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        };
-
-        // 1. Lista smaków
-        const flavorsList = document.getElementById('flavors-list');
-        if (flavorsList) {
+        // 2. Inicjalizacja interfejsu użytkownika (ostateczna wersja)
+        const initUI = () => {
             try {
-                if (!Array.isArray(AppData.flavors)) {
-                    console.warn('AppData.flavors nie jest tablicą:', AppData.flavors);
-                    flavorsList.innerHTML = '<li>Brak danych o smakach</li>';
-                    return;
-                }
-
-                flavorsList.innerHTML = AppData.flavors
-                    .map((flavor, index) => {
+                // Funkcja bezpiecznego renderowania HTML (ostateczna wersja)
+                const sanitizeHTML = (input) => {
+                    if (input === null || input === undefined || input === false) return '';
+                    if (typeof input === 'boolean') return input ? 'true' : 'false';
+                    if (typeof input === 'number') return String(input);
+                    if (typeof input !== 'string') {
                         try {
-                            const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
-                            return `<li><span class="flavor-number">${index + 1}.</span> ${displayName}</li>`;
+                            input = String(input);
                         } catch (e) {
-                            console.warn('Błąd przetwarzania smaku:', flavor, e);
-                            return `<li><span class="flavor-number">${index + 1}.</span> Nieznany smak</li>`;
+                            console.warn('Nie można przekonwertować wartości na string:', input);
+                            return '';
                         }
-                    })
-                    .join('') || '<li>Brak dostępnych smaków</li>';
-            } catch (flavorError) {
-                console.error('Błąd ładowania listy smaków:', flavorError);
-                flavorsList.innerHTML = '<li class="error">Nie można załadować listy smaków</li>';
-            }
-        }
-
-        // 2. Tabela cen (bardziej defensywna wersja)
-        const pricingTable = document.getElementById('pricing-table');
-        if (pricingTable) {
-            try {
-                if (!AppData.pricingData) {
-                    throw new Error('Brak danych pricingData');
-                }
-
-                const headers = Array.isArray(AppData.pricingData.headers) 
-                    ? AppData.pricingData.headers 
-                    : [];
-                const rows = Array.isArray(AppData.pricingData.rows) 
-                    ? AppData.pricingData.rows 
-                    : [];
-                const descriptions = AppData.pricingData.descriptions || {};
-
-                const renderTableRow = (cells, isHeader = false) => {
-                    if (!Array.isArray(cells)) return '';
-                    return cells.map((cell, cellIndex) => {
-                        try {
-                            if (isHeader) {
-                                return `<th>${sanitizeHTML(cell)}</th>`;
-                            } else {
-                                const headerKey = headers[cellIndex]?.toLowerCase().replace('/', '').replace('mg', '');
-                                const tooltip = descriptions[headerKey] ? `data-tooltip="${sanitizeHTML(descriptions[headerKey])}"` : '';
-                                return `<td ${tooltip}>${sanitizeHTML(cell)}${cellIndex > 0 ? 'zł' : ''}</td>`;
-                            }
-                        } catch (e) {
-                            console.warn('Błąd renderowania komórki:', cell);
-                            return isHeader ? '<th>?</th>' : '<td>?</td>';
-                        }
-                    }).join('');
+                    }
+                    return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 };
 
-                pricingTable.innerHTML = `
-                    <thead>
-                        <tr>${renderTableRow(headers, true)}</tr>
-                    </thead>
-                    <tbody>
-                        ${rows.map(row => `<tr>${renderTableRow(row)}</tr>`).join('')}
-                    </tbody>
-                `;
-            } catch (pricingError) {
-                console.error('Błąd ładowania tabeli cen:', pricingError);
-                pricingTable.innerHTML = `
-                    <tr>
-                        <td colspan="10" class="error">
-                            Nie można załadować cennika
-                        </td>
-                    </tr>
-                `;
-            }
-        }
+                // 1. Lista smaków
+                const flavorsList = document.getElementById('flavors-list');
+                if (flavorsList) {
+                    try {
+                        if (!Array.isArray(AppData.flavors)) {
+                            console.warn('AppData.flavors nie jest tablicą:', AppData.flavors);
+                            flavorsList.innerHTML = '<li>Brak danych o smakach</li>';
+                            return;
+                        }
 
-        // 3. Aktualizacja roku
-        document.querySelectorAll('[data-current-year]').forEach(el => {
-            try {
-                el.textContent = new Date().getFullYear();
-            } catch (yearError) {
-                console.error('Błąd aktualizacji roku:', yearError);
-                el.textContent = new Date().getFullYear().toString(); // Dodatkowe zabezpieczenie
-            }
-        });
+                        flavorsList.innerHTML = AppData.flavors
+                            .map((flavor, index) => {
+                                try {
+                                    const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
+                                    return `<li><span class="flavor-number">${index + 1}.</span> ${displayName}</li>`;
+                                } catch (e) {
+                                    console.warn('Błąd przetwarzania smaku:', flavor, e);
+                                    return `<li><span class="flavor-number">${index + 1}.</span> Nieznany smak</li>`;
+                                }
+                            })
+                            .join('') || '<li>Brak dostępnych smaków</li>';
+                    } catch (flavorError) {
+                        console.error('Błąd ładowania listy smaków:', flavorError);
+                        flavorsList.innerHTML = '<li class="error">Nie można załadować listy smaków</li>';
+                    }
+                }
 
-    } catch (uiError) {
-        console.error('Krytyczny błąd inicjalizacji UI:', uiError);
-        throw new Error(`Interfejs użytkownika: ${uiError.message}`);
-    }
-};
+                // 2. Tabela cen (bardziej defensywna wersja)
+                const pricingTable = document.getElementById('pricing-table');
+                if (pricingTable) {
+                    try {
+                        if (!AppData.pricingData) {
+                            throw new Error('Brak danych pricingData');
+                        }
+
+                        const headers = Array.isArray(AppData.pricingData.headers) 
+                            ? AppData.pricingData.headers 
+                            : [];
+                        const rows = Array.isArray(AppData.pricingData.rows) 
+                            ? AppData.pricingData.rows 
+                            : [];
+                        const descriptions = AppData.pricingData.descriptions || {};
+
+                        const renderTableRow = (cells, isHeader = false) => {
+                            if (!Array.isArray(cells)) return '';
+                            return cells.map((cell, cellIndex) => {
+                                try {
+                                    if (isHeader) {
+                                        return `<th>${sanitizeHTML(cell)}</th>`;
+                                    } else {
+                                        const headerKey = headers[cellIndex]?.toLowerCase().replace('/', '').replace('mg', '');
+                                        const tooltip = descriptions[headerKey] ? `data-tooltip="${sanitizeHTML(descriptions[headerKey])}"` : '';
+                                        return `<td ${tooltip}>${sanitizeHTML(cell)}${cellIndex > 0 ? 'zł' : ''}</td>`;
+                                    }
+                                } catch (e) {
+                                    console.warn('Błąd renderowania komórki:', cell);
+                                    return isHeader ? '<th>?</th>' : '<td>?</td>';
+                                }
+                            }).join('');
+                        };
+
+                        pricingTable.innerHTML = `
+                            <thead>
+                                <tr>${renderTableRow(headers, true)}</tr>
+                            </thead>
+                            <tbody>
+                                ${rows.map(row => `<tr>${renderTableRow(row)}</tr>`).join('')}
+                            </tbody>
+                        `;
+                    } catch (pricingError) {
+                        console.error('Błąd ładowania tabeli cen:', pricingError);
+                        pricingTable.innerHTML = `
+                            <tr>
+                                <td colspan="10" class="error">
+                                    Nie można załadować cennika
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+
+                // 3. Aktualizacja roku
+                document.querySelectorAll('[data-current-year]').forEach(el => {
+                    try {
+                        el.textContent = new Date().getFullYear();
+                    } catch (yearError) {
+                        console.error('Błąd aktualizacji roku:', yearError);
+                        el.textContent = new Date().getFullYear().toString();
+                    }
+                });
+
+            } catch (uiError) {
+                console.error('Krytyczny błąd inicjalizacji UI:', uiError);
+                throw new Error(`Interfejs użytkownika: ${uiError.message}`);
+            }
+        };
 
         // 3. Inicjalizacja systemu zamówień (ulepszona)
         const initOrderSystem = () => {
@@ -236,16 +240,134 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         };
 
+        // 4. Renderowanie wykresów administracyjnych
+        const renderAdminCharts = () => {
+            if (chartsRendered) return;
+            
+            const adminPanel = document.getElementById('admin-panel');
+            if (!adminPanel) return;
+
+            // Sprawdź czy kontener istnieje, jeśli nie - utwórz go
+            let chartsContainer = document.querySelector('.charts-container');
+            if (!chartsContainer) {
+                chartsContainer = document.createElement('div');
+                chartsContainer.className = 'charts-container';
+                chartsContainer.innerHTML = `
+                    <div class="chart-wrapper">
+                        <canvas id="ordersChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="flavorsChart" width="400" height="200"></canvas>
+                    </div>
+                `;
+                adminPanel.appendChild(chartsContainer);
+            }
+
+            // Niszczenie istniejących wykresów, jeśli istnieją
+            if (window.ordersChartInstance) {
+                window.ordersChartInstance.destroy();
+                window.ordersChartInstance = null;
+            }
+            if (window.flavorsChartInstance) {
+                window.flavorsChartInstance.destroy();
+                window.flavorsChartInstance = null;
+            }
+
+            // Pobierz elementy canvas
+            const ordersCanvas = document.getElementById('ordersChart');
+            const flavorsCanvas = document.getElementById('flavorsChart');
+
+            // Dane do wykresów
+            const ordersData = {
+                labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
+                datasets: [{
+                    label: 'Zamówienia w ostatnich 7 dniach',
+                    data: [12, 19, 3, 5, 2, 3, 7],
+                    backgroundColor: 'rgba(255, 111, 97, 0.2)',
+                    borderColor: '#ff6f61',
+                    borderWidth: 2,
+                    tension: 0.4
+                }]
+            };
+
+            const flavorsData = {
+                labels: ['Truskawka', 'Mięta', 'Cytryna', 'Cola', 'Arbuz'],
+                datasets: [{
+                    label: 'Najpopularniejsze smaki',
+                    data: [15, 10, 8, 5, 3],
+                    backgroundColor: [
+                        '#ff6f61',
+                        '#ff9a9e',
+                        '#fad0c4',
+                        '#ffcc00',
+                        '#45a049'
+                    ],
+                    hoverOffset: 4
+                }]
+            };
+
+            // Inicjalizacja wykresów
+            try {
+                window.ordersChartInstance = new Chart(ordersCanvas, {
+                    type: 'line',
+                    data: ordersData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Błąd tworzenia wykresu zamówień:', error);
+            }
+
+            try {
+                window.flavorsChartInstance = new Chart(flavorsCanvas, {
+                    type: 'doughnut',
+                    data: flavorsData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Błąd tworzenia wykresu smaków:', error);
+            }
+
+            chartsRendered = true;
+        };
+
         // Główna inicjalizacja
-        checkDependencies();
-        initUI();
-        const orderSystem = initOrderSystem();
-        
-        console.log('Aplikacja została poprawnie zainicjalizowana', {
-            version: AppData.version,
-            flavorsCount: AppData.flavors.length,
-            firebase: typeof firebase !== 'undefined'
-        });
+        if (!appInitialized) {
+            checkDependencies();
+            initUI();
+            const orderSystem = initOrderSystem();
+            
+            console.log('Aplikacja została poprawnie zainicjalizowana', {
+                version: AppData.version,
+                flavorsCount: AppData.flavors.length,
+                firebase: typeof firebase !== 'undefined'
+            });
+
+            // Renderuj wykresy jeśli panel admina istnieje
+            if (document.getElementById('admin-panel')) {
+                renderAdminCharts();
+            }
+
+            appInitialized = true;
+        }
 
     } catch (mainError) {
         showError(mainError);
@@ -282,111 +404,3 @@ window.addEventListener('online', () => {
 window.addEventListener('offline', () => {
     sessionStorage.setItem('autoRefreshOnOnline', 'true');
 });
-
-let ordersChartInstance = null;
-let flavorsChartInstance = null;
-
-const renderAdminCharts = () => {
-    const adminPanel = document.getElementById('admin-panel');
-    if (!adminPanel) return;
-
-    // Dodaj kontener na wykresy, jeśli nie istnieje
-    let chartsContainer = document.querySelector('.charts-container');
-    if (!chartsContainer) {
-        chartsContainer = document.createElement('div');
-        chartsContainer.className = 'charts-container';
-        chartsContainer.innerHTML = `
-            <canvas id="ordersChart" width="400" height="200"></canvas>
-            <canvas id="flavorsChart" width="400" height="200"></canvas>
-        `;
-        adminPanel.appendChild(chartsContainer);
-    }
-
-    // Niszczenie istniejących wykresów, jeśli istnieją
-    if (ordersChartInstance) {
-        ordersChartInstance.destroy();
-        ordersChartInstance = null;
-    }
-    if (flavorsChartInstance) {
-        flavorsChartInstance.destroy();
-        flavorsChartInstance = null;
-    }
-
-    // Dane do wykresów
-    const ordersData = {
-        labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
-        datasets: [{
-            label: 'Zamówienia w ostatnich 7 dniach',
-            data: [12, 19, 3, 5, 2, 3, 7], // Przykładowe dane
-            backgroundColor: 'rgba(255, 111, 97, 0.2)',
-            borderColor: '#ff6f61',
-            borderWidth: 2,
-            tension: 0.4
-        }]
-    };
-
-    const flavorsData = {
-        labels: ['Truskawka', 'Mięta', 'Cytryna', 'Cola', 'Arbuz'],
-        datasets: [{
-            label: 'Najpopularniejsze smaki',
-            data: [15, 10, 8, 5, 3], // Przykładowe dane
-            backgroundColor: [
-                '#ff6f61',
-                '#ff9a9e',
-                '#fad0c4',
-                '#ffcc00',
-                '#45a049'
-            ],
-            hoverOffset: 4
-        }]
-    };
-
-    // Inicjalizacja wykresów
-    const ordersCtx = document.getElementById('ordersChart').getContext('2d');
-    const flavorsCtx = document.getElementById('flavorsChart').getContext('2d');
-
-    try {
-        ordersChartInstance = new Chart(ordersCtx, {
-            type: 'line',
-            data: ordersData,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Błąd tworzenia wykresu zamówień:', error);
-    }
-
-    try {
-        flavorsChartInstance = new Chart(flavorsCtx, {
-            type: 'doughnut',
-            data: flavorsData,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'right'
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Błąd tworzenia wykresu smaków:', error);
-    }
-};
-
-// Zapobiegaj wielokrotnemu wywoływaniu renderAdminCharts
-if (!window.__chartsInitialized) {
-    window.__chartsInitialized = true;
-    document.addEventListener('DOMContentLoaded', renderAdminCharts);
-}
