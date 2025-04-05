@@ -1,6 +1,6 @@
 /**
  * Pełna baza smaków liquidów z kategoriami i cennikiem
- * @version 2.0.0
+ * @version 2.0.1
  * @type {Object}
  */
 const AppData = (() => {
@@ -27,52 +27,58 @@ const AppData = (() => {
         "Gruszka, melon, granat, ice",
         "Ananas, grejpfrut",
         
-        // Energy drink
-        "Kiwi (Energy Drink)",
+        // IZI PIZI
+        "Mango Papaya (IZI PIZI)",
+        "Energy Drink Kiwi (IZI PIZI)",
         
         // Wanna Be Cool
-        "Cactus (Wanna Be Cool)",
+        "Cactus (WANNA BE COOL)",
+        "Strawberry Cream (WANNA BE COOL)",
         
         // Funk Claro
-        "Strawberry Cream (Funk Claro)",
-        "Kiwi Guava Marakuja (Funk Claro)",
-        "Kwaśne Jabłko (Funk Claro)",
-        "Mrożone Winogrono (Funk Claro)",
-        "Chilled Face (Funk Claro)",
-        "Blue Slushie (Funk Claro)",
-        "Berry (Funk Claro)",
-        "Mint Watermelon (Funk Claro)",
+        "Kiwi Guava Marakuja (FUNK CLARO)",
+        "Kwaśne Jabłko (FUNK CLARO)",
+        "Mrożone Winogrono (FUNK CLARO)",
+        "Chilled Face (FUNK CLARO)",
+        "Blue Slushie (FUNK CLARO)",
+        "Berry (FUNK CLARO)",
+        "Mint Watermelon (FUNK CLARO)",
         
         // Aroma King
-        "Blue Razz Cherry (Aroma King)",
-        "Geometric (Aroma King)",
-        "Dragon Berry (Aroma King)",
-        "Blueberry Slushie (Aroma King)",
-        "Dilons (Aroma King)",
-        "Wild Orange (Aroma King)",
-        "Summer Time (Aroma King)",
-        "Citrus Punch (Aroma King)",
-        "Panda (Aroma King)",
-        "Gruszka (Aroma King)"
+        "Blue Razz Cherry (AROMA KING)",
+        "Geometric (AROMA KING)",
+        "Dragon Berry (AROMA KING)",
+        "Blueberry Slushie (AROMA KING)",
+        
+        // Dilno's
+        "Wild Orange (DILNO'S)",
+        "Summer Time (DILNO'S)",
+        "Citrus Punch (DILNO'S)",
+        
+        // Panda
+        "Gruszka (PANDA)"
     ];
 
     // Kategorie smaków
     const flavorCategories = {
         // Główne profile smakowe
-        "owocowe": [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+        "owocowe": [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
         "miętowe": [8, 24],
-        "słodkie": [0, 1, 2, 6, 9, 15, 17, 22, 23, 25, 26, 27, 28, 29, 30, 31, 33, 34],
-        "cytrusowe": [4, 7, 14, 19, 30, 32],
-        "energy": [15],
+        "słodkie": [0, 1, 2, 6, 9, 15, 16, 17, 18, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33],
+        "cytrusowe": [4, 7, 14, 19, 30, 31, 32],
+        "energy": [16],
         
         // Producenci
-        "funk": [17, 18, 19, 20, 21, 22, 23, 24],
-        "aroma": [25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
-        "wanna": [16],
+        "izi": [15, 16],
+        "funk": [18, 19, 20, 21, 22, 23, 24, 25],
+        "aroma": [26, 27, 28, 29],
+        "wanna": [17],
+        "dilno": [30, 31, 32],
+        "panda": [33],
         
         // Specjalne
-        "chłodzone": [0, 1, 2, 3, 4, 5, 7, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 25, 28],
-        "bez_słodzika": [3, 5, 6, 8, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
+        "chłodzone": [0, 1, 2, 3, 4, 5, 7, 9, 10, 11, 12, 13, 20, 21, 22, 23, 24, 25, 29],
+        "bez_słodzika": [3, 5, 6, 8, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
     };
 
     // Cennik
@@ -131,8 +137,8 @@ const AppData = (() => {
         flavors,
         flavorCategories,
         pricingData,
-        version: '2.0.0',
-        lastUpdated: '2023-11-20'
+        version: '2.0.1',
+        lastUpdated: '2023-11-21'
     };
 })();
 
@@ -141,4 +147,4 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = AppData;
 }
 
-window.AppData = AppData
+window.AppData = AppData;

@@ -1,0 +1,43 @@
+<div id="admin-panel" class="admin-panel" style="display:none;">
+    <h2>Panel administratora</h2>
+    <div class="form-group">
+        <label for="admin-password">Hasło admina:</label>
+        <input type="password" id="admin-password" class="form-control" placeholder="Wpisz hasło">
+        <button id="login-admin" class="btn">Zaloguj</button>
+    </div>
+    
+    <div id="admin-content" style="display:none;">
+        <div class="form-group">
+            <label for="order-search">Numer zamówienia:</label>
+            <input type="text" id="order-search" class="form-control" placeholder="Wpisz numer zamówienia">
+            <button id="search-order" class="btn">Szukaj</button>
+        </div>
+        
+        <div id="order-details">
+            <!-- Tutaj będą wyświetlane szczegóły zamówienia -->
+        </div>
+
+        <div class="stats-section">
+            <h3>Statystyki sklepu</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-orders">0</div>
+                    <div class="stat-label">Łącznie zamówień</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="today-orders">0</div>
+                    <div class="stat-label">Zamówienia dziś</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-views">0</div>
+                    <div class="stat-label">Odwiedziny</div>
+                </div>
+            </div>
+            
+            <div class="charts-container">
+                <canvas id="ordersChart" width="400" height="200"></canvas>
+                <canvas id="flavorsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>

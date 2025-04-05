@@ -1,6 +1,6 @@
 /**
- * Główna inicjalizacja aplikacji - wersja 2.1.1
- * Integracja z Firebase i OrderSystem
+ * Główna inicjalizacja aplikacji - wersja 2.2.0
+ * Integracja z Firebase, OrderSystem i nowym systemem filtrów
  * Poprawki: obsługa błędów, optymalizacja, bezpieczeństwo
  */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const showError = (error) => {
         console.error('Błąd inicjalizacji:', error);
         
-        // Sprawdź czy już istnieje komunikat o błędzie
         if (document.querySelector('.global-error')) return;
         
         const errorContainer = document.createElement('div');
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
         document.body.prepend(errorContainer);
         
-        // Dodaj event listenery po wstawieniu do DOM
         errorContainer.querySelector('.refresh-btn').addEventListener('click', () => {
             window.location.reload();
         });
@@ -37,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Funkcja tworząca komunikat o stanie offline/online
     const createNetworkStatusBar = (isOnline) => {
-        // Usuń istniejący pasek jeśli jest
         const existingBar = document.querySelector('.network-status-bar');
         if (existingBar) existingBar.remove();
         
@@ -49,13 +46,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
         document.body.prepend(bar);
         
-        // Dodaj obsługę zamknięcia
         bar.querySelector('.close-status-btn').addEventListener('click', () => {
             bar.style.opacity = '0';
             setTimeout(() => bar.remove(), 300);
         });
         
-        // Automatyczne ukrywanie
         if (isOnline) {
             setTimeout(() => {
                 bar.style.opacity = '0';
@@ -83,117 +78,217 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('Wersja aplikacji:', AppData.version);
         };
 
-
-    // 2. Inicjalizacja interfejsu użytkownika (ostateczna wersja)
-    const initUI = () => {
-    try {
-        // Funkcja bezpiecznego renderowania HTML (ostateczna wersja)
-        const sanitizeHTML = (input) => {
-            // Obsłuż wszystkie przypadki brzegowe
-            if (input === null || input === undefined || input === false) return '';
-            if (typeof input === 'boolean') return input ? 'true' : 'false';
-            if (typeof input === 'number') return String(input);
-            if (typeof input !== 'string') {
-                try {
-                    input = String(input);
-                } catch (e) {
-                    console.warn('Nie można przekonwertować wartości na string:', input);
-                    return '';
-                }
-            }
-            return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        };
-
-        // 1. Lista smaków
-        const flavorsList = document.getElementById('flavors-list');
-        if (flavorsList) {
+        // 2. Inicjalizacja interfejsu użytkownika (ostateczna wersja)
+        const initUI = () => {
             try {
-                if (!Array.isArray(AppData.flavors)) {
-                    console.warn('AppData.flavors nie jest tablicą:', AppData.flavors);
-                    flavorsList.innerHTML = '<li>Brak danych o smakach</li>';
-                    return;
-                }
-
-                flavorsList.innerHTML = AppData.flavors
-                    .map((flavor, index) => {
+                const sanitizeHTML = (input) => {
+                    if (input === null || input === undefined || input === false) return '';
+                    if (typeof input === 'boolean') return input ? 'true' : 'false';
+                    if (typeof input === 'number') return String(input);
+                    if (typeof input !== 'string') {
                         try {
-                            const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
-                            return `<li><span class="flavor-number">${index + 1}.</span> ${displayName}</li>`;
+                            input = String(input);
                         } catch (e) {
-                            console.warn('Błąd przetwarzania smaku:', flavor, e);
-                            return `<li><span class="flavor-number">${index + 1}.</span> Nieznany smak</li>`;
+                            console.warn('Nie można przekonwertować wartości na string:', input);
+                            return '';
                         }
-                    })
-                    .join('') || '<li>Brak dostępnych smaków</li>';
-            } catch (flavorError) {
-                console.error('Błąd ładowania listy smaków:', flavorError);
-                flavorsList.innerHTML = '<li class="error">Nie można załadować listy smaków</li>';
-            }
-        }
-
-        // 2. Tabela cen (bardziej defensywna wersja)
-        const pricingTable = document.getElementById('pricing-table');
-        if (pricingTable) {
-            try {
-                if (!AppData.pricingData) {
-                    throw new Error('Brak danych pricingData');
-                }
-
-                // Bezpieczne pobranie headers i rows z domyślnymi wartościami
-                const headers = Array.isArray(AppData.pricingData.headers) 
-                    ? AppData.pricingData.headers 
-                    : [];
-                const rows = Array.isArray(AppData.pricingData.rows) 
-                    ? AppData.pricingData.rows 
-                    : [];
-
-                const renderTableRow = (cells) => {
-                    if (!Array.isArray(cells)) return '';
-                    return cells.map(cell => {
-                        try {
-                            return `<td>${sanitizeHTML(cell)}</td>`;
-                        } catch (e) {
-                            console.warn('Błąd renderowania komórki:', cell);
-                            return '<td>?</td>';
-                        }
-                    }).join('');
+                    }
+                    return input.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 };
 
-                pricingTable.innerHTML = `
-                    <thead>
-                        <tr>${renderTableRow(headers)}</tr>
-                    </thead>
-                    <tbody>
-                        ${rows.map(row => `<tr>${renderTableRow(row)}</tr>`).join('')}
-                    </tbody>
-                `;
-            } catch (pricingError) {
-                console.error('Błąd ładowania tabeli cen:', pricingError);
-                pricingTable.innerHTML = `
-                    <tr>
-                        <td colspan="10" class="error">
-                            Nie można załadować cennika
-                        </td>
-                    </tr>
-                `;
-            }
-        }
+                // 1. Lista smaków z filtrowaniem
+                const flavorsList = document.getElementById('flavors-list');
+                if (flavorsList) {
+                    try {
+                        if (!Array.isArray(AppData.flavors)) {
+                            console.warn('AppData.flavors nie jest tablicą:', AppData.flavors);
+                            flavorsList.innerHTML = '<li>Brak danych o smakach</li>';
+                            return;
+                        }
 
-        // 3. Aktualizacja roku
-        document.querySelectorAll('[data-current-year]').forEach(el => {
-            try {
-                el.textContent = new Date().getFullYear();
-            } catch (yearError) {
-                console.error('Błąd aktualizacji roku:', yearError);
-                el.textContent = new Date().getFullYear().toString(); // Dodatkowe zabezpieczenie
-            }
-        });
+                        const renderFlavorsList = (flavorsToShow) => {
+                            flavorsList.innerHTML = flavorsToShow
+                                .map((flavor, index) => {
+                                    try {
+                                        const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
+                                        return `<li><span class="flavor-number">${index + 1}.</span> ${displayName}</li>`;
+                                    } catch (e) {
+                                        console.warn('Błąd przetwarzania smaku:', flavor, e);
+                                        return `<li><span class="flavor-number">${index + 1}.</span> Nieznany smak</li>`;
+                                    }
+                                })
+                                .join('') || '<li>Brak dostępnych smaków</li>';
+                        };
 
-    } catch (uiError) {
-        console.error('Krytyczny błąd inicjalizacji UI:', uiError);
-        throw new Error(`Interfejs użytkownika: ${uiError.message}`);
-    }
-};
+                        // Inicjalizacja filtrowania
+                        const initFilters = () => {
+                            const filterButtons = document.querySelectorAll('.filter-btn');
+                            
+                            const filterFlavors = (category) => {
+                                let flavorsToShow = [];
+                                
+                                if (category === 'all') {
+                                    flavorsToShow = AppData.flavors;
+                                } else {
+                                    const indexes = AppData.flavorCategories[category] || [];
+                                    flavorsToShow = indexes.map(index => AppData.flavors[index]);
+                                }
+                                
+                                renderFlavorsList(flavorsToShow);
+                            };
+                            
+                            filterButtons.forEach(btn => {
+                                btn.addEventListener('click', function() {
+                                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                                    this.classList.add('active');
+                                    filterFlavors(this.dataset.category);
+                                });
+                            });
+                            
+                            // Początkowy stan - wszystkie smaki
+                            filterFlavors('all');
+                        };
+                        
+                        initFilters();
+                    } catch (flavorError) {
+                        console.error('Błąd ładowania listy smaków:', flavorError);
+                        flavorsList.innerHTML = '<li class="error">Nie można załadować listy smaków</li>';
+                    }
+                }
+
+                // 2. Tabela cen (bardziej defensywna wersja)
+                const pricingTable = document.getElementById('pricing-table');
+                if (pricingTable) {
+                    try {
+                        if (!AppData.pricingData) {
+                            throw new Error('Brak danych pricingData');
+                        }
+
+                        const headers = Array.isArray(AppData.pricingData.headers) 
+                            ? AppData.pricingData.headers 
+                            : [];
+                        const rows = Array.isArray(AppData.pricingData.rows) 
+                            ? AppData.pricingData.rows 
+                            : [];
+                        const descriptions = AppData.pricingData.descriptions || {};
+
+                        const renderTableRow = (cells, isHeader = false) => {
+                            if (!Array.isArray(cells)) return '';
+                            return cells.map((cell, cellIndex) => {
+                                try {
+                                    if (isHeader) {
+                                        return `<th>${sanitizeHTML(cell)}</th>`;
+                                    } else {
+                                        const headerKey = headers[cellIndex]?.toLowerCase().replace('/', '').replace('mg', '');
+                                        const tooltip = descriptions[headerKey] ? `data-tooltip="${sanitizeHTML(descriptions[headerKey])}"` : '';
+                                        return `<td ${tooltip}>${sanitizeHTML(cell)}${cellIndex > 0 ? 'zł' : ''}</td>`;
+                                    }
+                                } catch (e) {
+                                    console.warn('Błąd renderowania komórki:', cell);
+                                    return isHeader ? '<th>?</th>' : '<td>?</td>';
+                                }
+                            }).join('');
+                        };
+
+                        pricingTable.innerHTML = `
+                            <thead>
+                                <tr>${renderTableRow(headers, true)}</tr>
+                            </thead>
+                            <tbody>
+                                ${rows.map(row => `<tr>${renderTableRow(row)}</tr>`).join('')}
+                            </tbody>
+                        `;
+                    } catch (pricingError) {
+                        console.error('Błąd ładowania tabeli cen:', pricingError);
+                        pricingTable.innerHTML = `
+                            <tr>
+                                <td colspan="10" class="error">
+                                    Nie można załadować cennika
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+
+                // 3. Aktualizacja roku
+                document.querySelectorAll('[data-current-year]').forEach(el => {
+                    try {
+                        el.textContent = new Date().getFullYear();
+                    } catch (yearError) {
+                        console.error('Błąd aktualizacji roku:', yearError);
+                        el.textContent = new Date().getFullYear().toString();
+                    }
+                });
+
+                // 4. Inicjalizacja modali
+                const initModals = () => {
+                    // Modal zamówienia
+                    const orderModal = document.getElementById('order-modal');
+                    const orderBtn = document.getElementById('start-order');
+                    const closeBtn = document.querySelector('.close');
+                    
+                    if (orderModal && orderBtn && closeBtn) {
+                        orderBtn.addEventListener('click', () => {
+                            orderModal.style.display = 'block';
+                        });
+                        
+                        closeBtn.addEventListener('click', () => {
+                            orderModal.style.display = 'none';
+                        });
+                        
+                        window.addEventListener('click', (event) => {
+                            if (event.target === orderModal) {
+                                orderModal.style.display = 'none';
+                            }
+                        });
+                    }
+                    
+                    // Modal admina
+                    const adminLink = document.getElementById('admin-link');
+                    const adminPanel = document.getElementById('admin-panel');
+                    
+                    if (adminLink && adminPanel) {
+                        adminLink.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            adminPanel.style.display = 'block';
+                        });
+                    }
+                };
+                
+                initModals();
+
+                // 5. Obsługa kopiowania numeru zamówienia
+                document.addEventListener('click', function(e) {
+                    if (e.target.closest('.copy-order-btn')) {
+                        const btn = e.target.closest('.copy-order-btn');
+                        const orderNumber = document.getElementById('order-number')?.textContent;
+                        
+                        if (!orderNumber) return;
+                        
+                        navigator.clipboard.writeText(orderNumber).then(() => {
+                            const btnText = btn.querySelector('.btn-text');
+                            const btnIcon = btn.querySelector('.btn-icon');
+                            
+                            btnText.textContent = 'Skopiowano!';
+                            btnIcon.textContent = '✔️';
+                            btn.classList.add('copied');
+                            
+                            setTimeout(() => {
+                                btnText.textContent = 'Kopiuj';
+                                btnIcon.textContent = '📋';
+                                btn.classList.remove('copied');
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('Błąd kopiowania: ', err);
+                        });
+                    }
+                });
+
+            } catch (uiError) {
+                console.error('Krytyczny błąd inicjalizacji UI:', uiError);
+                throw new Error(`Interfejs użytkownika: ${uiError.message}`);
+            }
+        };
 
         // 3. Inicjalizacja systemu zamówień (ulepszona)
         const initOrderSystem = () => {

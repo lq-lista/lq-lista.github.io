@@ -1,0 +1,78 @@
+<div id="order-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">×</span>
+        <div class="order-scroll-container">
+            <h2>Tworzenie zamówienia</h2>
+            
+            <div id="order-form">
+                <div class="form-group">
+                    <label>Smak:</label>
+                    <select id="flavor-select" class="form-control"></select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Pojemność:</label>
+                    <select id="size-select" class="form-control">
+                        <option value="">Wybierz pojemność</option>
+                        <option value="10ml">10ml</option>
+                        <option value="30ml">30ml</option>
+                        <option value="60ml">60ml</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Moc nikotyny:</label>
+                    <select id="strength-select" class="form-control">
+                        <option value="">Wybierz moc</option>
+                        <option value="24">24mg</option>
+                        <option value="18">18mg</option>
+                        <option value="12">12mg</option>
+                        <option value="6">6mg</option>
+                        <option value="3">3mg</option>
+                        <option value="0">0mg</option>
+                    </select>
+                </div>
+                
+                <button id="add-to-order" class="btn">Dodaj do zamówienia</button>
+            </div>
+            
+            <div id="order-summary">
+                <h3>Twoje zamówienie:</h3>
+                <div class="order-items-container">
+                    <ul id="order-items">
+                        <!-- Tutaj będą dodawane elementy zamówienia -->
+                    </ul>
+                </div>
+                
+                <div id="order-total">Razem: 0zł</div>
+                
+                <div class="form-group notes-group">
+                    <label for="order-notes">Uwagi do zamówienia:</label>
+                    <textarea id="order-notes" class="form-control" rows="3" 
+                              placeholder="Podaj model swojego e-peta i preferencje..."></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <div id="submit-order-container">
+            <button id="submit-order" class="btn">Złóż zamówienie</button>
+        </div>
+        
+        <div id="order-confirmation" style="display:none;">
+            <h3>Zamówienie złożone! 🎉</h3>
+            <div class="copy-btn-container">
+                <span>Twój numer:</span>
+                <span id="order-number" class="order-number"></span>
+                <button class="copy-order-btn">
+                    <span class="btn-text">Kopiuj</span>
+                    <span class="btn-icon">📋</span>
+                </button>
+            </div>
+            <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
+        </div>
+    </div>
+</div>
+
+<button id="start-order" class="order-button" aria-label="Otwórz formularz zamówienia">
+    🛒 Stwórz zamówienie
+</button>

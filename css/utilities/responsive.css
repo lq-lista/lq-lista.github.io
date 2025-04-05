@@ -1,0 +1,92 @@
+/* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 768px) {
+    h1 {
+      font-size: 2rem;
+    }
+    
+    .modal-content {
+      width: 90%;
+      max-width: 400px;
+      margin: 5% auto;
+      padding: 15px;
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+    
+    .order-button {
+      padding: 12px 20px;
+      font-size: 14px;
+      bottom: 15px;
+      right: 15px;
+    }
+    
+    #order-summary {
+      max-height: 45vh;
+    }
+    
+    .order-items-container {
+      max-height: calc(45vh - 120px);
+    }
+    
+    .order-item {
+      flex-wrap: wrap;
+    }
+    
+    .order-item-info {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+    
+    .order-item-price {
+      margin-left: 0;
+      text-align: left;
+    }
+    
+    .flavor-filters {
+      flex-direction: column;
+    }
+    
+    .filter-group {
+      width: 100%;
+    }
+    
+    .item-quantity {
+      font-size: 0.9rem;
+      padding: 3px 10px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 1.8rem;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+    }
+    
+    .container {
+      padding: 15px;
+      margin: 10px auto;
+    }
+    
+    .form-control, .btn {
+      padding: 8px 12px;
+    }
+    
+    #order-summary {
+      max-height: 40vh;
+    }
+    
+    .order-items-container {
+      max-height: calc(40vh - 120px);
+    }
+    
+    .stat-card {
+      padding: 10px;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+    }
+  }

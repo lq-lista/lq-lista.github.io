@@ -1,0 +1,54 @@
+/* ===== PRICING SECTION ===== */
+#pricing-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #fff;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+  }
+  
+  #pricing-table th {
+    background: linear-gradient(135deg, var(--primary-color), #ffcc00);
+    color: white;
+    font-weight: bold;
+    padding: 15px;
+    text-align: center;
+  }
+  
+  #pricing-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    color: #555;
+  }
+  
+  #pricing-table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  #pricing-table tr:hover {
+    background: #f8f8f8;
+  }
+  
+  .price-tooltip {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted #666;
+  }
+  
+  .price-tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 100;
+  }

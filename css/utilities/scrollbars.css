@@ -1,0 +1,33 @@
+/* ===== CUSTOM SCROLLBARS ===== */
+.order-items-container::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  .order-items-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+    margin: 5px 0;
+  }
+  
+  .order-items-container::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 10px;
+    border: 2px solid #f1f1f1;
+  }
+  
+  .order-items-container::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
+  }
+  
+  .modal-content::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .modal-content::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+  }
+  
+  .modal-content::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+  }
