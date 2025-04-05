@@ -283,18 +283,24 @@ window.addEventListener('offline', () => {
     sessionStorage.setItem('autoRefreshOnOnline', 'true');
 });
 
+let ordersChartInstance = null;
+let flavorsChartInstance = null;
+
 const renderAdminCharts = () => {
     const adminPanel = document.getElementById('admin-panel');
     if (!adminPanel) return;
 
-    // Dodaj kontener na wykresy
-    const chartsContainer = document.createElement('div');
-    chartsContainer.className = 'charts-container';
-    chartsContainer.innerHTML = `
-        <canvas id="ordersChart" width="400" height="200"></canvas>
-        <canvas id="flavorsChart" width="400" height="200"></canvas>
-    `;
-    adminPanel.appendChild(chartsContainer);
+    // Dodaj kontener na wykresy, jeśli nie istnieje
+    let chartsContainer = document.querySelector('.charts-container');
+    if (!chartsContainer) {
+        chartsContainer = document.createElement('div');
+        chartsContainer.className = 'charts-container';
+        chartsContainer.innerHTML = `
+            <canvas id="ordersChart" width="400" height="200"></canvas>
+            <canvas id="flavorsChart" width="400" height="200"></canvas>
+        `;
+        adminPanel.appendChild(chartsContainer);
+    }
 
     // Dane do wykresów
     const ordersData = {
@@ -325,11 +331,19 @@ const renderAdminCharts = () => {
         }]
     };
 
+    // Niszczenie istniejących wykresów, jeśli istnieją
+    if (ordersChartInstance) {
+        ordersChartInstance.destroy();
+    }
+    if (flavorsChartInstance) {
+        flavorsChartInstance.destroy();
+    }
+
     // Inicjalizacja wykresów
     const ordersCtx = document.getElementById('ordersChart').getContext('2d');
     const flavorsCtx = document.getElementById('flavorsChart').getContext('2d');
 
-    new Chart(ordersCtx, {
+    ordersChartInstance = new Chart(ordersCtx, {
         type: 'line',
         data: ordersData,
         options: {
@@ -347,7 +361,7 @@ const renderAdminCharts = () => {
         }
     });
 
-    new Chart(flavorsCtx, {
+    flavorsChartInstance = new Chart(flavorsCtx, {
         type: 'doughnut',
         data: flavorsData,
         options: {
