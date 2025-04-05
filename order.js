@@ -306,13 +306,15 @@ class OrderSystem {
             filterContainer.className = 'flavor-filters';
             filterContainer.innerHTML = `
                 <div class="filter-group">
-                    <label>Firma:</label>
+                    <label>Marka:</label>
                     <select id="brand-filter" class="form-control">
-                        <option value="all">Wszystkie firmy</option>
-                        <option value="funk">Funk Claro</option>
-                        <option value="aroma">Aroma King</option>
-                        <option value="wanna">Wanna Be Cool</option>
-                        <option value="inne">Inne</option>
+                        <option value="all">Wszystkie marki</option>
+                        <option value="izi">IZI PIZI</option>
+                        <option value="wanna">WANNA BE COOL</option>
+                        <option value="funk">FUNK CLARO</option>
+                        <option value="aroma">AROMA KING</option>
+                        <option value="dilno">DILNO'S</option>
+                        <option value="panda">PANDA</option>
                     </select>
                 </div>
                 <div class="filter-group">
@@ -324,6 +326,7 @@ class OrderSystem {
                         <option value="słodkie">Słodkie</option>
                         <option value="cytrusowe">Cytrusowe</option>
                         <option value="energy">Energy drink</option>
+                        <option value="chłodzone">Chłodzone</option>
                     </select>
                 </div>
             `;
@@ -335,6 +338,9 @@ class OrderSystem {
             
             document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
             document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
+            
+            // Pierwsze filtrowanie
+            this.filterFlavors();
         } catch (error) {
             console.error('Błąd inicjalizacji filtrów smaków:', error);
         }
@@ -354,13 +360,17 @@ class OrderSystem {
 
             flavors.forEach((flavor, index) => {
                 try {
+                    // Sprawdź filtr marki
                     const brandMatch = 
                         brandFilter === 'all' ||
-                        (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
-                        (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
-                        (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
-                        (brandFilter === 'inne' && !flavor.includes('('));
+                        (brandFilter === 'izi' && flavor.includes('(IZI PIZI)')) ||
+                        (brandFilter === 'wanna' && flavor.includes('(WANNA BE COOL)')) ||
+                        (brandFilter === 'funk' && flavor.includes('(FUNK CLARO)')) ||
+                        (brandFilter === 'aroma' && flavor.includes('(AROMA KING)')) ||
+                        (brandFilter === 'dilno' && flavor.includes('(DILNO\'S)')) ||
+                        (brandFilter === 'panda' && flavor.includes('(PANDA)'));
 
+                    // Sprawdź filtr typu
                     let typeMatch = false;
                     if (typeFilter === 'all') {
                         typeMatch = true;
@@ -378,6 +388,10 @@ class OrderSystem {
                     console.warn(`Błąd przetwarzania smaku ${index}:`, e);
                 }
             });
+
+            if (flavorsList.children.length === 0) {
+                flavorsList.innerHTML = '<li>Brak smaków pasujących do wybranych filtrów</li>';
+            }
         } catch (error) {
             console.error('Błąd filtrowania smaków:', error);
         }
