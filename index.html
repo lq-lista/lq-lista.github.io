@@ -203,9 +203,10 @@
                 <!-- Tutaj będą wyświetlane szczegóły zamówienia -->
             </div>
 
-            <!-- Sekcja ze statystykami -->
-            <div class="stats-section">
+            <!-- Rozbudowana sekcja statystyk -->
+            <div class="admin-stats-section">
                 <h3>Statystyki sklepu</h3>
+                
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value" id="total-orders">0</div>
@@ -221,26 +222,34 @@
                     </div>
                 </div>
 
-                <h4>Ostatnie zamówienia</h4>
-                <table class="recent-orders-table">
-                    <thead>
-                        <tr>
-                            <th>Numer zamówienia</th>
-                            <th>Data</th>
-                            <th>Kwota</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-orders">
-                        <tr>
-                            <td colspan="4">Brak danych</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <!-- Mini wykresy -->
+                <div class="charts-mini-container">
+                    <div class="chart-mini-wrapper">
+                        <canvas id="miniOrdersChart" width="300" height="150"></canvas>
+                    </div>
+                    <div class="chart-mini-wrapper">
+                        <canvas id="miniFlavorsChart" width="300" height="150"></canvas>
+                    </div>
+                </div>
 
-                <div class="charts-container">
-                    <canvas id="ordersChart" width="400" height="200"></canvas>
-                    <canvas id="flavorsChart" width="400" height="200"></canvas>
+                <h4>Ostatnie zamówienia</h4>
+                <div class="recent-orders-container">
+                    <table class="recent-orders-table">
+                        <thead>
+                            <tr>
+                                <th>Numer</th>
+                                <th>Data</th>
+                                <th>Kwota</th>
+                                <th>Status</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-orders">
+                            <tr>
+                                <td colspan="5">Ładowanie danych...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

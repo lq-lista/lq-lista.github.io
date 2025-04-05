@@ -28,6 +28,17 @@ class OrderSystem {
                 });
             }
 
+            this.initMiniCharts();
+            
+            // Nasłuchuj zmian statusów w czasie rzeczywistym
+            if (this.database) {
+                this.database.ref('orders').on('value', (snapshot) => {
+                    this.orders = snapshot.val() || {};
+                    localStorage.setItem('orders', JSON.stringify(this.orders));
+                    this.updateStats();
+                });
+            }
+
         } catch (error) {
             console.error('Błąd inicjalizacji OrderSystem:', error);
             throw error;
@@ -1152,6 +1163,149 @@ class OrderSystem {
         return Object.values(this.orders).filter(order => {
             return new Date(order.date).toLocaleDateString() === today;
         }).length;
+    }
+
+    // Dodaj nową metodę do inicjalizacji mini wykresów
+    initMiniCharts() {
+        // Wykres zamówień
+        const miniOrdersCtx = document.getElementById('miniOrdersChart').getContext('2d');
+        this.miniOrdersChart = new Chart(miniOrdersCtx, {
+            type: 'bar',
+            data: {
+                labels: this.getLast7Days(),
+                datasets: [{
+                    label: 'Zamówienia z ostatnich 7 dni',
+                    data: this.getOrdersLast7Days(),
+                    backgroundColor: 'rgba(255, 111, 97, 0.7)',
+                    borderColor: '#ff6f61',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Wykres smaków
+        const miniFlavorsCtx = document.getElementById('miniFlavorsChart').getContext('2d');
+        this.miniFlavorsChart = new Chart(miniFlavorsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: this.getTopFlavors(5).map(f => f.name),
+                datasets: [{
+                    data: this.getTopFlavors(5).map(f => f.count),
+                    backgroundColor: [
+                        '#ff6f61',
+                        '#ff9a9e',
+                        '#fad0c4',
+                        '#ffcc00',
+                        '#45a049'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+    }
+
+    // Nowa metoda do aktualizacji statusu
+    async updateOrderStatus(orderId, newStatus) {
+        try {
+            // Aktualizacja w Firebase
+            await this.database.ref(`orders/${orderId}/status`).set(newStatus);
+            await this.database.ref(`orders/${orderId}/updatedAt`).set(firebase.database.ServerValue.TIMESTAMP);
+            
+            // Aktualizacja lokalna
+            if (this.orders[orderId]) {
+                this.orders[orderId].status = newStatus;
+                this.orders[orderId].updatedAt = Date.now();
+                localStorage.setItem('orders', JSON.stringify(this.orders));
+            }
+            
+            // Odświeżenie widoku
+            this.updateStats();
+            alert('Status zamówienia został zaktualizowany!');
+        } catch (error) {
+            console.error('Błąd aktualizacji statusu:', error);
+            alert('Wystąpił błąd podczas aktualizacji statusu');
+        }
+    }
+
+    // Zaktualizowana metoda updateStats
+    updateStats() {
+        try {
+            // 1. Aktualizacja statystyk tekstowych
+            const totalOrders = Object.keys(this.orders).length;
+            const todayOrders = this.getTodaysOrdersCount();
+            
+            document.getElementById('total-orders').textContent = totalOrders;
+            document.getElementById('today-orders').textContent = todayOrders;
+            document.getElementById('total-views').textContent = this.pageViews;
+
+            // 2. Aktualizacja ostatnich zamówień
+            const recentOrders = Object.entries(this.orders)
+                .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
+                .slice(0, 5);
+                
+            const recentOrdersHTML = recentOrders.map(([orderId, order]) => `
+                <tr>
+                    <td>${orderId}</td>
+                    <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
+                    <td>${order.total}zł</td>
+                    <td class="status-${order.status.toLowerCase().replace(' ', '-')}">
+                        ${order.status}
+                    </td>
+                    <td>
+                        <select class="status-select" data-order-id="${orderId}">
+                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
+                            <option value="W trakcie" ${order.status === 'W trakcie' ? 'selected' : ''}>W trakcie</option>
+                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
+                            <option value="Anulowane" ${order.status === 'Anulowane' ? 'selected' : ''}>Anulowane</option>
+                        </select>
+                        <button class="action-btn save-btn" data-order-id="${orderId}">Zapisz</button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
+            
+            document.getElementById('recent-orders').innerHTML = recentOrdersHTML;
+
+            // 3. Dodanie event listenerów do przycisków
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const orderId = e.target.getAttribute('data-order-id');
+                    const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
+                    this.updateOrderStatus(orderId, select.value);
+                });
+            });
+
+            // 4. Aktualizacja mini wykresów
+            if (this.miniOrdersChart && this.miniFlavorsChart) {
+                this.miniOrdersChart.data.labels = this.getLast7Days();
+                this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
+                this.miniOrdersChart.update();
+                
+                this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
+                this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
+                this.miniFlavorsChart.update();
+            } else {
+                this.initMiniCharts();
+            }
+
+        } catch (error) {
+            console.error('Błąd aktualizacji statystyk:', error);
+        }
     }
 }
 
