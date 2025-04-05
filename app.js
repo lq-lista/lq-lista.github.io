@@ -276,3 +276,84 @@ window.addEventListener('online', () => {
 window.addEventListener('offline', () => {
     sessionStorage.setItem('autoRefreshOnOnline', 'true');
 });
+
+const renderAdminCharts = () => {
+    const adminPanel = document.getElementById('admin-panel');
+    if (!adminPanel) return;
+
+    // Dodaj kontener na wykresy
+    const chartsContainer = document.createElement('div');
+    chartsContainer.className = 'charts-container';
+    chartsContainer.innerHTML = `
+        <canvas id="ordersChart" width="400" height="200"></canvas>
+        <canvas id="flavorsChart" width="400" height="200"></canvas>
+    `;
+    adminPanel.appendChild(chartsContainer);
+
+    // Dane do wykresów
+    const ordersData = {
+        labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
+        datasets: [{
+            label: 'Zamówienia w ostatnich 7 dniach',
+            data: [12, 19, 3, 5, 2, 3, 7], // Przykładowe dane
+            backgroundColor: 'rgba(255, 111, 97, 0.2)',
+            borderColor: '#ff6f61',
+            borderWidth: 2,
+            tension: 0.4
+        }]
+    };
+
+    const flavorsData = {
+        labels: ['Truskawka', 'Mięta', 'Cytryna', 'Cola', 'Arbuz'],
+        datasets: [{
+            label: 'Najpopularniejsze smaki',
+            data: [15, 10, 8, 5, 3], // Przykładowe dane
+            backgroundColor: [
+                '#ff6f61',
+                '#ff9a9e',
+                '#fad0c4',
+                '#ffcc00',
+                '#45a049'
+            ],
+            hoverOffset: 4
+        }]
+    };
+
+    // Inicjalizacja wykresów
+    const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+    const flavorsCtx = document.getElementById('flavorsChart').getContext('2d');
+
+    new Chart(ordersCtx, {
+        type: 'line',
+        data: ordersData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    new Chart(flavorsCtx, {
+        type: 'doughnut',
+        data: flavorsData,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+};
+
+// Wywołanie funkcji po załadowaniu panelu admina
+renderAdminCharts();
