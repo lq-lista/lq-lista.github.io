@@ -18,6 +18,16 @@ class OrderSystem {
             this.initStatistics();
             this.testFirebaseConnection();
 
+            // Dodano nasłuchiwanie zmian w Firebase
+            if (this.database) {
+                this.database.ref('orders').on('value', (snapshot) => {
+                    this.orders = snapshot.val() || {};
+                    localStorage.setItem('orders', JSON.stringify(this.orders));
+                    this.updateStats();
+                    this.updateCharts();
+                });
+            }
+
         } catch (error) {
             console.error('Błąd inicjalizacji OrderSystem:', error);
             throw error;
@@ -125,7 +135,8 @@ class OrderSystem {
             if (updated) {
                 localStorage.setItem('orders', JSON.stringify(this.orders));
                 console.log("Zaktualizowano lokalne zamówienia z Firebase");
-                this.updateStats();
+                this.updateStats(); // Automatyczna aktualizacja statystyk
+                this.updateCharts(); // Automatyczna aktualizacja wykresów
             }
             
         } catch (error) {
@@ -594,7 +605,8 @@ class OrderSystem {
             const password = document.getElementById('admin-password').value;
             if (password === this.adminPassword) {
                 document.getElementById('admin-content').style.display = 'block';
-                this.updateStats();
+                this.updateStats(); // Dodano automatyczne ładowanie statystyk
+                this.initCharts(); // Dodano automatyczne inicjalizowanie wykresów
             } else {
                 alert('Nieprawidłowe hasło!');
             }
@@ -898,29 +910,44 @@ class OrderSystem {
 
     updateStats() {
         try {
+            // 1. Aktualizacja statystyk tekstowych
             const totalOrders = Object.keys(this.orders).length;
             const todayOrders = this.getTodaysOrdersCount();
-            const recentOrders = Object.entries(this.orders).slice(-5).reverse();
-
+            
+            // Bezpieczna aktualizacja UI
             const safeUpdate = (id, value) => {
                 const element = document.getElementById(id);
-                if (element) element.textContent = value;
+                if (element) {
+                    element.textContent = value;
+                    element.style.animation = 'pulse 0.5s'; // Efekt wizualny
+                    setTimeout(() => element.style.animation = '', 500);
+                }
             };
-
+            
             safeUpdate('total-orders', totalOrders);
             safeUpdate('today-orders', todayOrders);
-
+            safeUpdate('total-views', this.pageViews);
+    
+            // 2. Aktualizacja ostatnich zamówień
+            const recentOrders = Object.entries(this.orders)
+                .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
+                .slice(0, 5);
+    
             const recentOrdersContainer = document.getElementById('recent-orders');
             if (recentOrdersContainer) {
                 recentOrdersContainer.innerHTML = recentOrders.map(([orderId, order]) => `
                     <tr>
                         <td>${orderId}</td>
-                        <td>${new Date(order.date).toLocaleString()}</td>
+                        <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
                         <td>${order.total}zł</td>
-                        <td>${order.status}</td>
+                        <td class="status-${order.status.toLowerCase()}">${order.status}</td>
                     </tr>
-                `).join('');
+                `).join('') || '<tr><td colspan="4">Brak danych</td></tr>';
             }
+    
+            // 3. Aktualizacja wykresów
+            this.updateCharts();
+    
         } catch (error) {
             console.error('Błąd podczas aktualizacji statystyk:', error);
         }

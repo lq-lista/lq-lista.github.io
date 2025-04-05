@@ -511,6 +511,72 @@ h3 {
     margin-right: 10px;
 }
 
+/* Statystyki admina */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #ff6f61;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.recent-orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.recent-orders-table th {
+    background: #ff6f61;
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
+
+.recent-orders-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.status-new {
+    color: #2196F3;
+    font-weight: bold;
+}
+
+.status-completed {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.status-cancelled {
+    color: #f44336;
+    font-weight: bold;
+}
+
 /* ===== SCROLL TO TOP BUTTON ===== */
 .scroll-top-btn {
     position: fixed;
