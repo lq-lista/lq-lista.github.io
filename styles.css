@@ -110,18 +110,13 @@ h3 {
 #pricing-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-top: 20px;
     background: #fff;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     font-size: 1rem;
-}
-
-#pricing-table th, #pricing-table td {
-    padding: 15px;
     text-align: center;
-    border-bottom: 1px solid #ddd;
 }
 
 #pricing-table th {
@@ -129,17 +124,23 @@ h3 {
     color: #fff;
     font-weight: bold;
     text-transform: uppercase;
-}
-
-#pricing-table tr:hover {
-    background: #f9f9f9;
-    transform: scale(1.01);
-    transition: transform 0.2s ease;
+    padding: 15px;
 }
 
 #pricing-table td {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
     color: #555;
-    font-weight: 500;
+}
+
+#pricing-table tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+#pricing-table tr:hover {
+    background: #f1f1f1;
+    transform: scale(1.01);
+    transition: transform 0.2s ease;
 }
 
 /* ===== ORDER MODAL STYLES ===== */
