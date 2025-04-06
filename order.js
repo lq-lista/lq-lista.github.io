@@ -344,10 +344,16 @@ class OrderSystem {
                 try {
                     const brandMatch = 
                         brandFilter === 'all' ||
-                        (brandFilter === 'funk' && flavor.includes('(Funk Claro)')) ||
-                        (brandFilter === 'aroma' && flavor.includes('(Aroma King)')) ||
-                        (brandFilter === 'wanna' && flavor.includes('(Wanna Be Cool)')) ||
-                        (brandFilter === 'inne' && !flavor.includes('('));
+                        (brandFilter === 'a&l' && flavor.includes('(A&L)')) ||
+                        (brandFilter === 'tribal' && flavor.includes('(Tribal Force)')) ||
+                        (brandFilter === 'vapir' && flavor.includes('(Vapir Vape)')) ||
+                        (brandFilter === 'fighter' && flavor.includes('(Fighter Fuel)')) ||
+                        (brandFilter === 'izi' && flavor.includes('(IZI PIZI)')) ||
+                        (brandFilter === 'wanna' && flavor.includes('(WANNA BE COOL)')) ||
+                        (brandFilter === 'funk' && flavor.includes('(FUNK CLARO)')) ||
+                        (brandFilter === 'aroma' && flavor.includes('(AROMA KING)')) ||
+                        (brandFilter === 'dilno' && flavor.includes('(DILNO\'S)')) ||
+                        (brandFilter === 'panda' && flavor.includes('(PANDA)'));
 
                     let typeMatch = false;
                     if (typeFilter === 'all') {
