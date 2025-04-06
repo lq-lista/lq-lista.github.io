@@ -2,7 +2,7 @@ class OrderSystem {
     constructor() {
         try {
             if (typeof AppData === 'undefined') {
-                throw new Error('Dane aplikacji (AppData) nie zostały załadowane!');
+                throw new Error('Dane aplikacji (AppData) nie zostały załadowane! Upewnij się, że data.js jest ładowany przed order.js');
             }
 
             this.currentOrder = [];

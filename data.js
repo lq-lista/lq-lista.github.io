@@ -76,7 +76,7 @@ const AppData = (() => {
         "funk": [26,27,28,29,30,31,32],
         "aroma": [33,34,35,36],
         "dilno": [37,38,39],
-        "panda": [40]  // Poprawiony indeks
+        "panda": [40]  // Było 41, zmieniamy na 40
     };
 
     // Cennik
