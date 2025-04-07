@@ -202,57 +202,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Renderowanie wykresów admina
     const renderAdminCharts = () => {
         if (appState.chartsRendered || !document.getElementById('admin-panel')) return;
-
+    
         try {
+            // Sprawdź czy kontener istnieje, jeśli nie - utwórz go
             let chartsContainer = document.querySelector('.charts-container');
             if (!chartsContainer) {
                 chartsContainer = document.createElement('div');
                 chartsContainer.className = 'charts-container';
                 chartsContainer.innerHTML = `
                     <div class="chart-wrapper">
-                        <canvas id="ordersChart" width="400" height="200"></canvas>
+                        <canvas id="ordersChart" width="400" height="300"></canvas>
                     </div>
                     <div class="chart-wrapper">
-                        <canvas id="flavorsChart" width="400" height="200"></canvas>
+                        <canvas id="flavorsChart" width="400" height="300"></canvas>
                     </div>
                 `;
                 document.getElementById('admin-panel').appendChild(chartsContainer);
             }
-
-            // Dane wykresów (mogą być pobierane z OrderSystem)
-            const ordersData = {
-                labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
-                datasets: [{
-                    label: 'Zamówienia w ostatnich 7 dniach',
-                    data: [12, 19, 3, 5, 2, 3, 7],
-                    backgroundColor: 'rgba(255, 111, 97, 0.2)',
-                    borderColor: '#ff6f61',
-                    borderWidth: 2,
-                    tension: 0.4
-                }]
-            };
-
-            const flavorsData = {
-                labels: ['Truskawka', 'Mięta', 'Cytryna', 'Cola', 'Arbuz'],
-                datasets: [{
-                    label: 'Najpopularniejsze smaki',
-                    data: [15, 10, 8, 5, 3],
-                    backgroundColor: [
-                        '#ff6f61',
-                        '#ff9a9e',
-                        '#fad0c4',
-                        '#ffcc00',
-                        '#45a049'
-                    ],
-                    hoverOffset: 4
-                }]
-            };
-
+    
             // Inicjalizacja wykresów z zabezpieczeniem przed duplikacją
             const initChart = (canvasId, config) => {
                 const canvas = document.getElementById(canvasId);
                 if (!canvas || canvas.__chart) return null;
-
+    
                 try {
                     canvas.__chart = true;
                     return new Chart(canvas.getContext('2d'), config);
@@ -262,8 +234,38 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return null;
                 }
             };
-
-            window.ordersChartInstance = initChart('ordersChart', {
+    
+            // Dane wykresów (mogą być pobierane z OrderSystem)
+            const ordersData = {
+                labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
+                datasets: [{
+                    label: 'Zamówienia (ostatnie 7 dni)',
+                    data: [12, 19, 3, 5, 2, 3, 7],
+                    backgroundColor: 'rgba(255, 111, 97, 0.2)',
+                    borderColor: '#ff6f61',
+                    borderWidth: 2,
+                    tension: 0.4
+                }]
+            };
+    
+            const flavorsData = {
+                labels: ['Truskawka', 'Mięta', 'Cytryna', 'Cola', 'Arbuz'],
+                datasets: [{
+                    label: 'Popularność smaków',
+                    data: [15, 10, 8, 5, 3],
+                    backgroundColor: [
+                        '#ff6f61',
+                        '#ff9a9e',
+                        '#fad0c4',
+                        '#ffcc00',
+                        '#45a049'
+                    ],
+                    hoverOffset: 10
+                }]
+            };
+    
+            // Utwórz wykresy
+            window.ordersChart = initChart('ordersChart', {
                 type: 'line',
                 data: ordersData,
                 options: {
@@ -272,18 +274,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     scales: { y: { beginAtZero: true } }
                 }
             });
-
-            window.flavorsChartInstance = initChart('flavorsChart', {
+    
+            window.flavorsChart = initChart('flavorsChart', {
                 type: 'doughnut',
                 data: flavorsData,
                 options: {
                     responsive: true,
-                    plugins: { legend: { position: 'right' } }
+                    plugins: { legend: { position: 'right' } },
+                    cutout: '60%'
                 }
             });
-
+    
             appState.chartsRendered = true;
-
+    
         } catch (error) {
             console.error('Błąd renderowania wykresów admina:', error);
         }
