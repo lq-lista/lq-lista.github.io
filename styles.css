@@ -759,58 +759,89 @@ h3 {
     font-size: 0.8rem;
 }
 
-/* ===== WHY US SECTION ===== */
+/* Sekcja Dlaczego my? */
 .why-us {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: space-between;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.9);
+    padding: 2rem 1rem;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(245,245,245,0.95));
     border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-.why-us-content {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-}
-
-.benefit {
-    flex: 1 1 calc(33.333% - 20px);
-    max-width: calc(33.333% - 20px);
-    background: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+.why-us h2 {
     text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.benefit:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-.benefit span {
-    font-size: 2rem;
     color: #ff6f61;
-    margin-bottom: 10px;
-    display: inline-block;
+    margin-bottom: 2rem;
+    font-size: 2rem;
 }
 
-.benefit h3 {
-    font-size: 1.5rem;
+.benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.benefit-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.benefit-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.benefit-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #ff6f61;
+}
+
+.benefit-card h3 {
     color: #333;
-    margin-bottom: 10px;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
 }
 
-.benefit p {
-    font-size: 1rem;
+.benefit-card p {
     color: #666;
-    line-height: 1.5;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* Responsywność na mniejsze ekrany */
+@media (max-width: 768px) {
+    .benefits-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .benefit-card {
+        padding: 1.5rem;
+    }
+    
+    .why-us h2 {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .benefit-icon {
+        font-size: 2.5rem;
+    }
+    
+    .benefit-card h3 {
+        font-size: 1.2rem;
+    }
+    
+    .why-us {
+        padding: 1.5rem 0.5rem;
+    }
 }
 
 /* ===== RESPONSIVE STYLES ===== */
