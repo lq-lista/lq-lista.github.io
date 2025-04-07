@@ -204,11 +204,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (appState.chartsRendered || !document.getElementById('admin-panel')) return;
     
         try {
-            // Usuń tylko kontener głównego wykresu (ordersChart)
-            const oldChartContainer = document.querySelector('.chart-container');
-            if (oldChartContainer) oldChartContainer.remove();
+            // Usuń tylko kontener głównego wykresu ordersChart
+            const mainChartContainer = document.querySelector('.chart-container');
+            if (mainChartContainer) mainChartContainer.remove();
     
-            // Zostawiamy inicjalizację mini wykresów i innych elementów
+            // Zostawiamy flagę initialized
             appState.chartsRendered = true;
     
         } catch (error) {

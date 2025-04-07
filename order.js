@@ -1394,8 +1394,12 @@ class OrderSystem {
                 });
             });
     
-            // 4. Aktualizacja TYLKO mini wykresu smaków (usuwamy część dotyczącą miniOrdersChart)
-            if (this.miniFlavorsChart) {
+            // 4. Aktualizacja mini wykresów (zostawiamy oba)
+            if (this.miniOrdersChart && this.miniFlavorsChart) {
+                this.miniOrdersChart.data.labels = this.getLast7Days();
+                this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
+                this.miniOrdersChart.update();
+                
                 this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
                 this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
                 this.miniFlavorsChart.update();
