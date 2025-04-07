@@ -204,79 +204,106 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (appState.chartsRendered || !document.getElementById('admin-panel')) return;
     
         try {
-            // Kontener tylko dla jednego wykresu
-            let chartContainer = document.querySelector('.chart-container');
-            if (!chartContainer) {
-                chartContainer = document.createElement('div');
-                chartContainer.className = 'chart-container';
-                chartContainer.innerHTML = `
-                    <div class="chart-wrapper">
-                        <canvas id="ordersChart" width="600" height="300"></canvas>
-                    </div>
-                `;
-                document.getElementById('admin-panel').appendChild(chartContainer);
-            }
+            // Usuń wszystkie istniejące kontenery wykresów
+            const oldContainers = document.querySelectorAll('.chart-container, .charts-container');
+            oldContainers.forEach(container => container.remove());
     
-            // Inicjalizacja tylko wykresu zamówień
-            const initChart = (canvasId, config) => {
-                const canvas = document.getElementById(canvasId);
+            // Stwórz nowy kontener tylko dla jednego wykresu
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-container';
+            chartContainer.innerHTML = `
+                <div class="chart-wrapper">
+                    <canvas id="ordersChart" width="600" height="300"></canvas>
+                </div>
+            `;
+            document.getElementById('admin-panel').appendChild(chartContainer);
+    
+            // Funkcja inicjalizacji wykresu z zabezpieczeniami
+            const initChart = () => {
+                const canvas = document.getElementById('ordersChart');
                 if (!canvas || canvas.__chart) return null;
     
                 try {
+                    // Dane wykresu
+                    const chartData = {
+                        labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
+                        datasets: [{
+                            label: 'Zamówienia w ostatnich 7 dniach',
+                            data: [12, 19, 3, 5, 2, 3, 7],
+                            backgroundColor: 'rgba(255, 111, 97, 0.2)',
+                            borderColor: '#ff6f61',
+                            borderWidth: 3, // grubsza linia
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    };
+    
+                    // Konfiguracja wykresu
+                    const chartConfig = {
+                        type: 'line',
+                        data: chartData,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    enabled: true,
+                                    mode: 'index'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 2,
+                                        font: {
+                                            size: 12
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(0,0,0,0.05)'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
+    
                     canvas.__chart = true;
-                    return new Chart(canvas.getContext('2d'), config);
+                    return new Chart(canvas.getContext('2d'), chartConfig);
+                    
                 } catch (error) {
-                    console.error(`Błąd tworzenia wykresu ${canvasId}:`, error);
-                    canvas.__chart = false;
+                    console.error('Błąd inicjalizacji wykresu:', error);
+                    if (canvas) canvas.__chart = false;
                     return null;
                 }
             };
     
-            // Dane tylko dla wykresu zamówień
-            const ordersData = {
-                labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
-                datasets: [{
-                    label: 'Zamówienia w ostatnich 7 dniach',
-                    data: [12, 19, 3, 5, 2, 3, 7],
-                    backgroundColor: 'rgba(255, 111, 97, 0.2)',
-                    borderColor: '#ff6f61',
-                    borderWidth: 2,
-                    tension: 0.4
-                }]
-            };
-    
-            // Utwórz tylko jeden wykres
-            window.ordersChart = initChart('ordersChart', {
-                type: 'line',
-                data: ordersData,
-                options: {
-                    responsive: true,
-                    plugins: { 
-                        legend: { 
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 14
-                                }
-                            }
-                        } 
-                    },
-                    scales: { 
-                        y: { 
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 2
-                            }
-                        }
-                    }
-                }
-            });
-    
+            // Inicjalizuj wykres
+            window.ordersChart = initChart();
             appState.chartsRendered = true;
     
         } catch (error) {
-            console.error('Błąd renderowania wykresu:', error);
+            console.error('Błąd renderowania panelu admina:', error);
         }
     };
 
