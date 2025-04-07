@@ -1357,7 +1357,7 @@ class OrderSystem {
             document.getElementById('total-orders').textContent = totalOrders;
             document.getElementById('today-orders').textContent = todayOrders;
             document.getElementById('total-views').textContent = this.pageViews;
-
+    
             // 2. Aktualizacja ostatnich zamówień
             const recentOrders = Object.entries(this.orders)
                 .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
@@ -1384,7 +1384,7 @@ class OrderSystem {
             `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
             
             document.getElementById('recent-orders').innerHTML = recentOrdersHTML;
-
+    
             // 3. Dodanie event listenerów do przycisków
             document.querySelectorAll('.save-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -1393,20 +1393,16 @@ class OrderSystem {
                     this.updateOrderStatus(orderId, select.value);
                 });
             });
-
-            // 4. Aktualizacja mini wykresów
-            if (this.miniOrdersChart && this.miniFlavorsChart) {
-                this.miniOrdersChart.data.labels = this.getLast7Days();
-                this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
-                this.miniOrdersChart.update();
-                
+    
+            // 4. Aktualizacja TYLKO mini wykresu smaków (usuwamy część dotyczącą miniOrdersChart)
+            if (this.miniFlavorsChart) {
                 this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
                 this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
                 this.miniFlavorsChart.update();
             } else {
                 this.initMiniCharts();
             }
-
+    
         } catch (error) {
             console.error('Błąd aktualizacji statystyk:', error);
         }
