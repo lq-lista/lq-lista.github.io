@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const isFirebaseAvailable = typeof firebase !== 'undefined' && 
-                                      typeof firebase.database === 'function';
+            typeof firebase.database === 'function';
 
             console.log(`Firebase ${isFirebaseAvailable ? 'dostępny' : 'niedostępny'}: ${firebase?.SDK_VERSION || 'brak'}`);
 
