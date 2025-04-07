@@ -317,41 +317,62 @@ class OrderSystem {
 
     initFlavorFilter() {
         try {
-            if (document.getElementById('brand-filter')) return;
-        
-            const filterContainer = document.createElement('div');
-            filterContainer.className = 'flavor-filters';
-            filterContainer.innerHTML = `
-                <div class="filter-group">
-                    <label>Firma:</label>
-                    <select id="brand-filter" class="form-control">
-                        <option value="all">Wszystkie firmy</option>
-                        <option value="funk">Funk Claro</option>
-                        <option value="aroma">Aroma King</option>
-                        <option value="wanna">Wanna Be Cool</option>
-                        <option value="inne">Inne</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Typ smaku:</label>
-                    <select id="type-filter" class="form-control">
-                        <option value="all">Wszystkie typy</option>
-                        <option value="owocowe">Owocowe</option>
-                        <option value="miętowe">Miętowe</option>
-                        <option value="słodkie">Słodkie</option>
-                        <option value="cytrusowe">Cytrusowe</option>
-                        <option value="energy">Energy drink</option>
-                    </select>
-                </div>
-            `;
-        
-            const flavorsSection = document.querySelector('.flavors');
-            if (flavorsSection) {
-                flavorsSection.insertBefore(filterContainer, document.getElementById('flavors-list'));
+            // Sprawdź czy filtry już istnieją
+            if (document.getElementById('brand-filter') && document.getElementById('type-filter')) {
+                return;
             }
+    
+            // Dodaj event listeners do istniejących filtrów
+            const brandFilter = document.getElementById('brand-filter');
+            const typeFilter = document.getElementById('type-filter');
             
-            document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
-            document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
+            if (brandFilter) brandFilter.addEventListener('change', () => this.filterFlavors());
+            if (typeFilter) typeFilter.addEventListener('change', () => this.filterFlavors());
+    
+            // Jeśli filtry nie istnieją, utwórz je (dla kompatybilności wstecznej)
+            if (!brandFilter || !typeFilter) {
+                const filterContainer = document.createElement('div');
+                filterContainer.className = 'filter-container';
+                filterContainer.innerHTML = `
+                    <div class="filter-group">
+                        <label for="brand-filter">Firma:</label>
+                        <select id="brand-filter" class="form-control">
+                            <option value="all">Wszystkie firmy</option>
+                            <option value="a&l">A&L</option>
+                            <option value="tribal">Tribal Force</option>
+                            <option value="vapir">Vapir Vape</option>
+                            <option value="fighter">Fighter Fuel</option>
+                            <option value="izi">IZI PIZI</option>
+                            <option value="wanna">WANNA BE COOL</option>
+                            <option value="funk">FUNK CLARO</option>
+                            <option value="aroma">AROMA KING</option>
+                            <option value="dilno">DILNO'S</option>
+                            <option value="panda">PANDA</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="type-filter">Typ smaku:</label>
+                        <select id="type-filter" class="form-control">
+                            <option value="all">Wszystkie typy</option>
+                            <option value="owocowe">Owocowe</option>
+                            <option value="miętowe">Miętowe</option>
+                            <option value="słodkie">Słodkie</option>
+                            <option value="cytrusowe">Cytrusowe</option>
+                            <option value="energy">Energy drink</option>
+                            <option value="chłodzone">Chłodzone</option>
+                        </select>
+                    </div>
+                `;
+    
+                const flavorsSection = document.querySelector('.flavors');
+                if (flavorsSection) {
+                    flavorsSection.insertBefore(filterContainer, document.getElementById('flavors-list'));
+                }
+    
+                // Dodaj event listeners do nowych filtrów
+                document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
+                document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
+            }
         } catch (error) {
             console.error('Błąd inicjalizacji filtrów smaków:', error);
         }
@@ -361,16 +382,23 @@ class OrderSystem {
         try {
             const flavorsList = document.getElementById('flavors-list');
             if (!flavorsList) return;
-
+    
             const brandFilter = document.getElementById('brand-filter').value;
             const typeFilter = document.getElementById('type-filter').value;
             const flavors = AppData?.flavors || [];
             const flavorCategories = AppData?.flavorCategories || {};
-
+    
             flavorsList.innerHTML = '';
-
+    
+            // Sprawdź czy są jakieś smaki do wyświetlenia
+            if (flavors.length === 0) {
+                flavorsList.innerHTML = '<li class="error">Brak dostępnych smaków</li>';
+                return;
+            }
+    
             flavors.forEach((flavor, index) => {
                 try {
+                    // Sprawdź filtr firmy
                     const brandMatch = 
                         brandFilter === 'all' ||
                         (brandFilter === 'a&l' && flavor.includes('(A&L)')) ||
@@ -383,15 +411,15 @@ class OrderSystem {
                         (brandFilter === 'aroma' && flavor.includes('(AROMA KING)')) ||
                         (brandFilter === 'dilno' && flavor.includes('(DILNO\'S)')) ||
                         (brandFilter === 'panda' && flavor.includes('(PANDA)'));
-
-                    let typeMatch = false;
-                    if (typeFilter === 'all') {
-                        typeMatch = true;
-                    } else {
+    
+                    // Sprawdź filtr typu
+                    let typeMatch = typeFilter === 'all';
+                    if (!typeMatch) {
                         const typeIndexes = flavorCategories[typeFilter] || [];
                         typeMatch = typeIndexes.includes(index);
                     }
-
+    
+                    // Jeśli pasuje do obu filtrów, dodaj do listy
                     if (brandMatch && typeMatch) {
                         const li = document.createElement('li');
                         li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
@@ -401,8 +429,18 @@ class OrderSystem {
                     console.warn(`Błąd przetwarzania smaku ${index}:`, e);
                 }
             });
+    
+            // Jeśli nic nie pasuje do filtrów
+            if (flavorsList.children.length === 0) {
+                flavorsList.innerHTML = '<li class="no-results">Brak smaków pasujących do wybranych filtrów</li>';
+            }
+    
         } catch (error) {
             console.error('Błąd filtrowania smaków:', error);
+            const flavorsList = document.getElementById('flavors-list');
+            if (flavorsList) {
+                flavorsList.innerHTML = '<li class="error">Błąd podczas filtrowania smaków</li>';
+            }
         }
     }
     
