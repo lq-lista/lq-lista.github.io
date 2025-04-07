@@ -808,48 +808,105 @@ class OrderSystem {
             return null;
         };
     
-        // Najpierw zniszcz istniejące wykresy
-        this.ordersChart = destroyChart(this.ordersChart, 'zamówień');
-        this.flavorsChart = destroyChart(this.flavorsChart, 'smaków');
+        // Najpierw zniszcz istniejące mini wykresy
+        this.miniOrdersChart = destroyChart(this.miniOrdersChart, 'mini zamówień');
+        this.miniFlavorsChart = destroyChart(this.miniFlavorsChart, 'mini smaków');
     
         try {
-            // Pobierz elementy canvas
-            const ordersCanvas = document.getElementById('ordersChart');
-            const flavorsCanvas = document.getElementById('flavorsChart');
+            // Pobierz elementy canvas dla mini wykresów
+            const miniOrdersCanvas = document.getElementById('miniOrdersChart');
+            const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
             
-            if (!ordersCanvas || !flavorsCanvas) {
-                console.warn('Nie znaleziono elementów canvas dla wykresów');
+            if (!miniOrdersCanvas || !miniFlavorsCanvas) {
+                console.warn('Nie znaleziono elementów canvas dla mini wykresów');
                 return;
             }
     
             // Sprawdź czy canvasy są gotowe do użycia
-            if (ordersCanvas.__chart || flavorsCanvas.__chart) {
+            if (miniOrdersCanvas.__chart || miniFlavorsCanvas.__chart) {
                 console.warn('Canvas jest już używany - ponawiam próbę za 300ms');
                 setTimeout(() => this.initCharts(), 300);
                 return;
             }
     
             // Przygotuj dane
-            const chartData = this.prepareChartData();
-            if (!chartData) {
-                console.warn('Brak danych do wygenerowania wykresów');
-                return;
-            }
+            const last7Days = this.getLast7Days();
+            const ordersData = this.getOrdersLast7Days();
+            const topFlavors = this.getTopFlavors(5);
     
             // Oznacz canvasy jako używane
-            ordersCanvas.__chart = true;
-            flavorsCanvas.__chart = true;
+            miniOrdersCanvas.__chart = true;
+            miniFlavorsCanvas.__chart = true;
     
-            // Utwórz nowe wykresy
-            this.ordersChart = this.createOrdersChart(ordersCanvas, chartData);
-            this.flavorsChart = this.createFlavorsChart(flavorsCanvas, chartData);
+            // Utwórz nowe mini wykresy
+            this.miniOrdersChart = new Chart(miniOrdersCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Zamówienia z ostatnich 7 dni',
+                        data: ordersData,
+                        backgroundColor: 'rgba(255, 111, 97, 0.7)',
+                        borderColor: '#ff6f61',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+    
+            this.miniFlavorsChart = new Chart(miniFlavorsCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: topFlavors.map(f => f.name),
+                    datasets: [{
+                        data: topFlavors.map(f => f.count),
+                        backgroundColor: [
+                            '#ff6f61',
+                            '#ff9a9e',
+                            '#fad0c4',
+                            '#ffcc00',
+                            '#45a049'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
     
             // Ustaw obsługę zakończenia animacji
-            this.setChartAnimationHandlers();
+            this.miniOrdersChart.options.animation = {
+                onComplete: () => {
+                    if (miniOrdersCanvas) miniOrdersCanvas.__chart = this.miniOrdersChart;
+                }
+            };
+            
+            this.miniFlavorsChart.options.animation = {
+                onComplete: () => {
+                    if (miniFlavorsCanvas) miniFlavorsCanvas.__chart = this.miniFlavorsChart;
+                }
+            };
     
         } catch (error) {
-            console.error('Krytyczny błąd inicjalizacji wykresów:', error);
-            this.cleanupFailedCharts();
+            console.error('Krytyczny błąd inicjalizacji mini wykresów:', error);
+            // W przypadku błędu oznacz canvasy jako nieużywane
+            const miniOrdersCanvas = document.getElementById('miniOrdersChart');
+            const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
+            if (miniOrdersCanvas) miniOrdersCanvas.__chart = false;
+            if (miniFlavorsCanvas) miniFlavorsCanvas.__chart = false;
         }
     }
     
@@ -1190,48 +1247,63 @@ class OrderSystem {
             const totalOrders = Object.keys(this.orders).length;
             const todayOrders = this.getTodaysOrdersCount();
             
-            // Bezpieczna aktualizacja UI
-            const safeUpdate = (id, value) => {
-                const element = document.getElementById(id);
-                if (element) element.textContent = value;
-            };
-            
-            safeUpdate('total-orders', totalOrders);
-            safeUpdate('today-orders', todayOrders);
-            safeUpdate('total-views', this.pageViews);
+            document.getElementById('total-orders').textContent = totalOrders;
+            document.getElementById('today-orders').textContent = todayOrders;
+            document.getElementById('total-views').textContent = this.pageViews;
     
-            // 2. Aktualizacja wykresów tylko jeśli istnieją
-            if (this.ordersChart && this.flavorsChart) {
-                try {
-                    // Przygotowanie danych
-                    const last7Days = this.getLast7Days().map(String);
-                    const ordersData = this.getOrdersLast7Days().map(Number);
-                    const topFlavors = this.getTopFlavors(5);
-                    
-                    // Aktualizacja danych wykresu zamówień
-                    this.ordersChart.data.labels = last7Days;
-                    this.ordersChart.data.datasets[0].data = ordersData;
-                    
-                    // Aktualizacja danych wykresu smaków
-                    this.flavorsChart.data.labels = topFlavors.map(f => String(f.name));
-                    this.flavorsChart.data.datasets[0].data = topFlavors.map(f => Number(f.count));
-                    
-                    // Aktualizacja wykresów z animacją
-                    this.ordersChart.update();
-                    this.flavorsChart.update();
-                    
-                } catch (chartError) {
-                    console.error('Błąd aktualizacji wykresów:', chartError);
-                    // Próba ponownej inicjalizacji
-                    this.initCharts();
+            // 2. Aktualizacja ostatnich zamówień
+            const recentOrders = Object.entries(this.orders)
+                .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
+                .slice(0, 5);
+                
+            document.getElementById('recent-orders').innerHTML = recentOrders.map(([orderId, order]) => `
+                <tr>
+                    <td>${orderId}</td>
+                    <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
+                    <td>${order.total}zł</td>
+                    <td class="status-${order.status.toLowerCase()}">${order.status}</td>
+                    <td>
+                        <select class="status-select" data-order-id="${orderId}">
+                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
+                            <option value="W trakcie" ${order.status === 'W trakcie' ? 'selected' : ''}>W trakcie</option>
+                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
+                            <option value="Anulowane" ${order.status === 'Anulowane' ? 'selected' : ''}>Anulowane</option>
+                        </select>
+                        <button class="action-btn save-btn" data-order-id="${orderId}">Zapisz</button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
+    
+            // 3. Dodanie event listenerów
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const orderId = e.target.getAttribute('data-order-id');
+                    const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
+                    this.updateOrderStatus(orderId, select.value);
+                });
+            });
+    
+            // 4. Opóźniona aktualizacja wykresów (zabezpieczenie przed wyścigiem)
+            setTimeout(() => {
+                if (!this.miniOrdersChart || !this.miniFlavorsChart) {
+                    this.initMiniCharts();
+                } else {
+                    try {
+                        this.miniOrdersChart.data.labels = this.getLast7Days();
+                        this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
+                        this.miniOrdersChart.update();
+                        
+                        this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
+                        this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
+                        this.miniFlavorsChart.update();
+                    } catch (error) {
+                        console.error('Błąd aktualizacji mini wykresów:', error);
+                        this.initMiniCharts(); // Próba ponownej inicjalizacji
+                    }
                 }
-            } else {
-                // Jeśli wykresy nie istnieją, zainicjuj je
-                this.initCharts();
-            }
-            
+            }, 100);
         } catch (error) {
-            console.error('Błąd podczas aktualizacji statystyk:', error);
+            console.error('Błąd aktualizacji statystyk:', error);
         }
     }
 
@@ -1256,12 +1328,14 @@ class OrderSystem {
         // Najpierw zniszcz istniejące wykresy jeśli są
         if (this.miniOrdersChart instanceof Chart) {
             this.miniOrdersChart.destroy();
+            this.miniOrdersChart = null;
         }
         if (this.miniFlavorsChart instanceof Chart) {
             this.miniFlavorsChart.destroy();
+            this.miniFlavorsChart = null;
         }
     
-        // Sprawdź czy elementy canvas istnieją
+        // Sprawdź czy elementy canvas istnieją i nie są już używane
         const miniOrdersCanvas = document.getElementById('miniOrdersChart');
         const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
         
@@ -1270,8 +1344,18 @@ class OrderSystem {
             return;
         }
     
-        // Inicjalizacja wykresów
+        // Dodatkowe sprawdzenie czy canvas nie jest już używany
+        if (miniOrdersCanvas.__chart || miniFlavorsCanvas.__chart) {
+            console.warn('Canvas jest już używany - odczekaj przed ponowną inicjalizacją');
+            return;
+        }
+    
         try {
+            // Oznacz canvasy jako używane
+            miniOrdersCanvas.__chart = true;
+            miniFlavorsCanvas.__chart = true;
+    
+            // Inicjalizacja wykresów
             this.miniOrdersChart = new Chart(miniOrdersCanvas.getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -1321,6 +1405,9 @@ class OrderSystem {
             });
         } catch (error) {
             console.error('Błąd inicjalizacji mini wykresów:', error);
+            // W przypadku błędu oznacz canvasy jako nieużywane
+            if (miniOrdersCanvas) miniOrdersCanvas.__chart = false;
+            if (miniFlavorsCanvas) miniFlavorsCanvas.__chart = false;
         }
     }
 
