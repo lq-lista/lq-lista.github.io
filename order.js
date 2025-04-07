@@ -4,55 +4,67 @@ class OrderSystem {
             if (typeof AppData === 'undefined') {
                 throw new Error('Dane aplikacji (AppData) nie zostały załadowane! Upewnij się, że data.js jest ładowany przed order.js');
             }
-
-        this.currentOrder = [];
-        this.orders = {};
-        this.adminPassword = "admin123";
-        this.pageViews = 0;
-        this.ordersChart = null;
-        this.flavorsChart = null;
-        this.miniOrdersChart = null;
-        this.miniFlavorsChart = null;
-        this.firebaseAvailable = false;
-        
-        // 1. Najpierw inicjalizacja Firebase
-        this.initializeFirebase();
-        
-        // 2. Inicjalizacja danych lokalnych
-        this.initializeLocalData();
-        
-        // 3. Inicjalizacja UI
-        this.initUIComponents();
-        
-        // 4. Inicjalizacja statystyk (bez wykresów na razie)
-        this.initBasicStatistics();
-        
-        // 5. Jeśli Firebase jest dostępny, testuj połączenie
-        if (this.firebaseAvailable) {
-            this.testFirebaseConnection().catch(e => console.warn('Błąd testu połączenia:', e));
-        }
-
-            // Dodano nasłuchiwanie zmian w Firebase
-            if (this.database) {
-                this.database.ref('orders').on('value', (snapshot) => {
-                    this.orders = snapshot.val() || {};
-                    localStorage.setItem('orders', JSON.stringify(this.orders));
-                    this.updateStats();
-                    this.updateCharts();
-                });
-            }
-
-            this.initMiniCharts();
+    
+            // Inicjalizacja właściwości
+            this.currentOrder = [];
+            this.orders = {};
+            this.adminPassword = "admin123";
+            this.pageViews = 0;
+            this.ordersChart = null;
+            this.flavorsChart = null;
+            this.miniOrdersChart = null;
+            this.miniFlavorsChart = null;
+            this.firebaseAvailable = false;
+            this.isSyncing = false; // Flaga do kontroli synchronizacji
             
-            // Nasłuchuj zmian statusów w czasie rzeczywistym
+            // 1. Inicjalizacja Firebase
+            this.initializeFirebase();
+            
+            // 2. Inicjalizacja danych lokalnych
+            this.initializeLocalData();
+            
+            // 3. Inicjalizacja UI
+            this.initUIComponents();
+            
+            // 4. Inicjalizacja statystyk (bez wykresów na razie)
+            this.initBasicStatistics();
+            
+            // 5. Nasłuchiwanie zmian w Firebase (tylko raz)
             if (this.database) {
                 this.database.ref('orders').on('value', (snapshot) => {
-                    this.orders = snapshot.val() || {};
-                    localStorage.setItem('orders', JSON.stringify(this.orders));
-                    this.updateStats();
+                    try {
+                        const firebaseOrders = snapshot.val() || {};
+                        
+                        // Aktualizuj tylko jeśli są zmiany
+                        if (JSON.stringify(this.orders) !== JSON.stringify(firebaseOrders)) {
+                            this.orders = firebaseOrders;
+                            localStorage.setItem('orders', JSON.stringify(this.orders));
+                            this.updateStats();
+                        }
+                    } catch (error) {
+                        console.error('Błąd podczas aktualizacji zamówień:', error);
+                    }
                 });
             }
-
+    
+            // 6. Opóźniona synchronizacja i test połączenia
+            if (this.firebaseAvailable) {
+                setTimeout(() => {
+                    if (!this.isSyncing) {
+                        this.isSyncing = true;
+                        this.testFirebaseConnection()
+                            .then(() => {
+                                console.log('Połączenie z Firebase sprawdzone, rozpoczynam synchronizację...');
+                                return this.syncLocalOrdersToFirebase();
+                            })
+                            .catch(e => {
+                                console.warn('Błąd podczas synchronizacji:', e);
+                                this.isSyncing = false;
+                            });
+                    }
+                }, 2000);
+            }
+    
         } catch (error) {
             console.error('Błąd inicjalizacji OrderSystem:', error);
             throw error;
@@ -783,163 +795,205 @@ class OrderSystem {
     }
 
     initCharts() {
+        // Funkcja pomocnicza do niszczenia wykresów
+        const destroyChart = (chartInstance, chartName) => {
+            if (chartInstance instanceof Chart) {
+                try {
+                    chartInstance.destroy();
+                    console.log(`Pomyślnie zniszczono wykres ${chartName}`);
+                } catch (e) {
+                    console.warn(`Błąd niszczenia wykresu ${chartName}:`, e);
+                }
+            }
+            return null;
+        };
+    
+        // Najpierw zniszcz istniejące wykresy
+        this.ordersChart = destroyChart(this.ordersChart, 'zamówień');
+        this.flavorsChart = destroyChart(this.flavorsChart, 'smaków');
+    
         try {
-            // Najpierw zniszcz istniejące wykresy jeśli są
-            if (this.ordersChart instanceof Chart) {
-                try {
-                    this.ordersChart.destroy();
-                } catch (e) {
-                    console.warn('Błąd niszczenia wykresu zamówień:', e);
-                }
-                this.ordersChart = null;
-            }
-            
-            if (this.flavorsChart instanceof Chart) {
-                try {
-                    this.flavorsChart.destroy();
-                } catch (e) {
-                    console.warn('Błąd niszczenia wykresu smaków:', e);
-                }
-                this.flavorsChart = null;
-            }
-    
             // Pobierz elementy canvas
-            const ordersCtx = document.getElementById('ordersChart')?.getContext('2d');
-            const flavorsCtx = document.getElementById('flavorsChart')?.getContext('2d');
-    
-            if (!ordersCtx || !flavorsCtx) {
+            const ordersCanvas = document.getElementById('ordersChart');
+            const flavorsCanvas = document.getElementById('flavorsChart');
+            
+            if (!ordersCanvas || !flavorsCanvas) {
                 console.warn('Nie znaleziono elementów canvas dla wykresów');
                 return;
             }
     
-            // Sprawdź czy canvas jest wolny
-            if (ordersCtx.canvas.__chart || flavorsCtx.canvas.__chart) {
-                console.warn('Canvas jest już używany - ponawiam próbę za 100ms');
-                setTimeout(() => this.initCharts(), 100);
+            // Sprawdź czy canvasy są gotowe do użycia
+            if (ordersCanvas.__chart || flavorsCanvas.__chart) {
+                console.warn('Canvas jest już używany - ponawiam próbę za 300ms');
+                setTimeout(() => this.initCharts(), 300);
                 return;
             }
     
             // Przygotuj dane
+            const chartData = this.prepareChartData();
+            if (!chartData) {
+                console.warn('Brak danych do wygenerowania wykresów');
+                return;
+            }
+    
+            // Oznacz canvasy jako używane
+            ordersCanvas.__chart = true;
+            flavorsCanvas.__chart = true;
+    
+            // Utwórz nowe wykresy
+            this.ordersChart = this.createOrdersChart(ordersCanvas, chartData);
+            this.flavorsChart = this.createFlavorsChart(flavorsCanvas, chartData);
+    
+            // Ustaw obsługę zakończenia animacji
+            this.setChartAnimationHandlers();
+    
+        } catch (error) {
+            console.error('Krytyczny błąd inicjalizacji wykresów:', error);
+            this.cleanupFailedCharts();
+        }
+    }
+    
+    // Nowe metody pomocnicze:
+    
+    prepareChartData() {
+        try {
             const last7Days = this.getLast7Days().map(String);
             const ordersData = this.getOrdersLast7Days().map(Number);
             const topFlavors = this.getTopFlavors(5);
     
-            // Oznacz canvas jako używany
-            ordersCtx.canvas.__chart = true;
-            flavorsCtx.canvas.__chart = true;
+            if (!last7Days.length || !ordersData.length || !topFlavors.length) {
+                return null;
+            }
     
-            // Wykres zamówień
-            this.ordersChart = new Chart(ordersCtx, {
-                type: 'line',
-                data: {
-                    labels: last7Days,
-                    datasets: [{
-                        label: 'Zamówienia z ostatnich 7 dni',
-                        data: ordersData,
-                        borderColor: '#ff6f61',
-                        backgroundColor: 'rgba(255, 111, 97, 0.1)',
-                        tension: 0.3,
-                        fill: true,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 12
-                                }
-                            }
-                        },
-                        tooltip: {
-                            enabled: true,
-                            mode: 'index',
-                            intersect: false
+            return {
+                labels: last7Days,
+                ordersData: ordersData,
+                topFlavors: topFlavors
+            };
+        } catch (error) {
+            console.error('Błąd przygotowywania danych wykresów:', error);
+            return null;
+        }
+    }
+    
+    createOrdersChart(canvas, data) {
+        const ctx = canvas.getContext('2d');
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Zamówienia z ostatnich 7 dni',
+                    data: data.ordersData,
+                    borderColor: '#ff6f61',
+                    backgroundColor: 'rgba(255, 111, 97, 0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 12 }
                         }
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
+                    tooltip: {
+                        enabled: true,
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    }
+    
+    createFlavorsChart(canvas, data) {
+        const ctx = canvas.getContext('2d');
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: data.topFlavors.map(f => f.name),
+                datasets: [{
+                    data: data.topFlavors.map(f => f.count),
+                    backgroundColor: [
+                        '#ff6f61',
+                        '#ff9a9e',
+                        '#fad0c4',
+                        '#ffcc00',
+                        '#45a049'
+                    ],
+                    borderWidth: 1,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            font: { size: 12 },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
                             }
                         }
                     }
-                }
-            });
-    
-            // Wykres smaków
-            this.flavorsChart = new Chart(flavorsCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: topFlavors.map(f => f.name),
-                    datasets: [{
-                        data: topFlavors.map(f => f.count),
-                        backgroundColor: [
-                            '#ff6f61',
-                            '#ff9a9e',
-                            '#fad0c4',
-                            '#ffcc00',
-                            '#45a049'
-                        ],
-                        borderWidth: 1,
-                        hoverOffset: 10
-                    }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                font: {
-                                    size: 12
-                                },
-                                padding: 20
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    },
-                    cutout: '60%'
-                }
-            });
+                cutout: '60%'
+            }
+        });
+    }
     
-            // Po zakończeniu animacji oznacz jako gotowe
+    setChartAnimationHandlers() {
+        if (this.ordersChart) {
             this.ordersChart.options.animation = {
                 onComplete: () => {
-                    ordersCtx.canvas.__chart = this.ordersChart;
+                    const canvas = document.getElementById('ordersChart');
+                    if (canvas) canvas.__chart = this.ordersChart;
                 }
             };
-            
+        }
+        
+        if (this.flavorsChart) {
             this.flavorsChart.options.animation = {
                 onComplete: () => {
-                    flavorsCtx.canvas.__chart = this.flavorsChart;
+                    const canvas = document.getElementById('flavorsChart');
+                    if (canvas) canvas.__chart = this.flavorsChart;
                 }
             };
-    
-        } catch (error) {
-            console.error('Błąd inicjalizacji wykresów:', error);
-            // W przypadku błędu oznacz canvas jako wolny
-            const ordersCtx = document.getElementById('ordersChart')?.getContext('2d');
-            const flavorsCtx = document.getElementById('flavorsChart')?.getContext('2d');
-            if (ordersCtx?.canvas) ordersCtx.canvas.__chart = null;
-            if (flavorsCtx?.canvas) flavorsCtx.canvas.__chart = null;
         }
+    }
+    
+    cleanupFailedCharts() {
+        const ordersCanvas = document.getElementById('ordersChart');
+        const flavorsCanvas = document.getElementById('flavorsChart');
+        
+        if (ordersCanvas) ordersCanvas.__chart = null;
+        if (flavorsCanvas) flavorsCanvas.__chart = null;
+        
+        this.ordersChart = null;
+        this.flavorsChart = null;
     }
 
     updateStats() {
