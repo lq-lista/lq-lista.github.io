@@ -5,18 +5,32 @@ class OrderSystem {
                 throw new Error('Dane aplikacji (AppData) nie zostały załadowane! Upewnij się, że data.js jest ładowany przed order.js');
             }
 
-            this.currentOrder = [];
-            this.orders = {};
-            this.adminPassword = "admin123";
-            this.pageViews = 0;
-            this.ordersChart = null;
-            this.flavorsChart = null;
-            
-            this.initializeFirebase();
-            this.initializeLocalData();
-            this.initUIComponents();
-            this.initStatistics();
-            this.testFirebaseConnection();
+        this.currentOrder = [];
+        this.orders = {};
+        this.adminPassword = "admin123";
+        this.pageViews = 0;
+        this.ordersChart = null;
+        this.flavorsChart = null;
+        this.miniOrdersChart = null;
+        this.miniFlavorsChart = null;
+        this.firebaseAvailable = false;
+        
+        // 1. Najpierw inicjalizacja Firebase
+        this.initializeFirebase();
+        
+        // 2. Inicjalizacja danych lokalnych
+        this.initializeLocalData();
+        
+        // 3. Inicjalizacja UI
+        this.initUIComponents();
+        
+        // 4. Inicjalizacja statystyk (bez wykresów na razie)
+        this.initBasicStatistics();
+        
+        // 5. Jeśli Firebase jest dostępny, testuj połączenie
+        if (this.firebaseAvailable) {
+            this.testFirebaseConnection().catch(e => console.warn('Błąd testu połączenia:', e));
+        }
 
             // Dodano nasłuchiwanie zmian w Firebase
             if (this.database) {
@@ -47,31 +61,34 @@ class OrderSystem {
 
     initializeFirebase() {
         try {
+            // Sprawdź czy Firebase jest dostępny
+            if (typeof firebase === 'undefined' || typeof firebase.initializeApp !== 'function') {
+                console.warn('Firebase nie został załadowany');
+                this.firebaseAvailable = false;
+                return;
+            }
+    
             const firebaseConfig = {
                 apiKey: "AIzaSyAfYyYUOcdjfpupkWMTUZfup6xmRRZJ68w",
                 authDomain: "lq-lista.firebaseapp.com",
                 databaseURL: "https://lq-lista-default-rtdb.europe-west1.firebasedatabase.app",
                 projectId: "lq-lista",
-                storageBucket: "lq-lista.firebasestorage.app",
+                storageBucket: "lq-lista.appspot.com",
                 messagingSenderId: "642905853097",
                 appId: "1:642905853097:web:ca850099dcdc002f9b2db8"
             };
-
-            if (typeof firebase === 'undefined') {
-                console.warn('Firebase nie został załadowany');
-                return;
-            }
-
+    
+            // Inicjalizuj Firebase tylko jeśli nie został jeszcze zainicjalizowany
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
             }
             
             this.database = firebase.database();
-            this.testConnection();
-
+            this.firebaseAvailable = true;
+            
         } catch (error) {
             console.error('Błąd inicjalizacji Firebase:', error);
-            throw error;
+            this.firebaseAvailable = false;
         }
     }
 
@@ -1171,59 +1188,86 @@ class OrderSystem {
         }).length;
     }
 
+    initBasicStatistics() {
+        try {
+            this.pageViews = parseInt(localStorage.getItem('pageViews')) || 0;
+            this.trackPageView();
+        } catch (error) {
+            console.error('Błąd inicjalizacji statystyk:', error);
+        }
+    }
+
     // Dodaj nową metodę do inicjalizacji mini wykresów
     initMiniCharts() {
-        // Wykres zamówień
-        const miniOrdersCtx = document.getElementById('miniOrdersChart').getContext('2d');
-        this.miniOrdersChart = new Chart(miniOrdersCtx, {
-            type: 'bar',
-            data: {
-                labels: this.getLast7Days(),
-                datasets: [{
-                    label: 'Zamówienia z ostatnich 7 dni',
-                    data: this.getOrdersLast7Days(),
-                    backgroundColor: 'rgba(255, 111, 97, 0.7)',
-                    borderColor: '#ff6f61',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+        // Najpierw zniszcz istniejące wykresy jeśli są
+        if (this.miniOrdersChart instanceof Chart) {
+            this.miniOrdersChart.destroy();
+        }
+        if (this.miniFlavorsChart instanceof Chart) {
+            this.miniFlavorsChart.destroy();
+        }
+    
+        // Sprawdź czy elementy canvas istnieją
+        const miniOrdersCanvas = document.getElementById('miniOrdersChart');
+        const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
+        
+        if (!miniOrdersCanvas || !miniFlavorsCanvas) {
+            console.warn('Elementy canvas dla mini wykresów nie istnieją');
+            return;
+        }
+    
+        // Inicjalizacja wykresów
+        try {
+            this.miniOrdersChart = new Chart(miniOrdersCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: this.getLast7Days(),
+                    datasets: [{
+                        label: 'Zamówienia z ostatnich 7 dni',
+                        data: this.getOrdersLast7Days(),
+                        backgroundColor: 'rgba(255, 111, 97, 0.7)',
+                        borderColor: '#ff6f61',
+                        borderWidth: 1
+                    }]
                 },
-                scales: {
-                    y: { beginAtZero: true }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
                 }
-            }
-        });
-
-        // Wykres smaków
-        const miniFlavorsCtx = document.getElementById('miniFlavorsChart').getContext('2d');
-        this.miniFlavorsChart = new Chart(miniFlavorsCtx, {
-            type: 'doughnut',
-            data: {
-                labels: this.getTopFlavors(5).map(f => f.name),
-                datasets: [{
-                    data: this.getTopFlavors(5).map(f => f.count),
-                    backgroundColor: [
-                        '#ff6f61',
-                        '#ff9a9e',
-                        '#fad0c4',
-                        '#ffcc00',
-                        '#45a049'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right' }
+            });
+    
+            this.miniFlavorsChart = new Chart(miniFlavorsCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: this.getTopFlavors(5).map(f => f.name),
+                    datasets: [{
+                        data: this.getTopFlavors(5).map(f => f.count),
+                        backgroundColor: [
+                            '#ff6f61',
+                            '#ff9a9e',
+                            '#fad0c4',
+                            '#ffcc00',
+                            '#45a049'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
                 }
-            }
-        });
+            });
+        } catch (error) {
+            console.error('Błąd inicjalizacji mini wykresów:', error);
+        }
     }
 
     // Nowa metoda do aktualizacji statusu
