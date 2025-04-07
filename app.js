@@ -109,19 +109,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             // Renderowanie listy smaków
-            const renderFlavorsList = () => {
+            const renderFlavorsList = (filteredIndexes = null) => {
                 const flavorsList = document.getElementById('flavors-list');
                 if (!flavorsList) return;
-
+    
                 if (!Array.isArray(AppData.flavors)) {
                     flavorsList.innerHTML = '<li class="error">Błędne dane smaków</li>';
                     return;
                 }
-
-                flavorsList.innerHTML = AppData.flavors
+    
+                const flavorsToShow = filteredIndexes ? 
+                    filteredIndexes.map(index => AppData.flavors[index]) : 
+                    AppData.flavors;
+    
+                flavorsList.innerHTML = flavorsToShow
                     .map((flavor, index) => {
                         const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
-                        return `<li><span class="flavor-number">${index + 1}.</span> ${displayName}</li>`;
+                        const originalIndex = filteredIndexes ? filteredIndexes[index] : index;
+                        return `<li><span class="flavor-number">${originalIndex + 1}.</span> ${displayName}</li>`;
                     })
                     .join('') || '<li>Brak dostępnych smaków</li>';
             };
@@ -160,9 +165,50 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             };
 
-            renderFlavorsList();
-            renderPricingTable();
-            updateYear();
+            // Inicjalizacja filtrów
+        const initFilters = () => {
+            const brandFilter = document.getElementById('brand-filter');
+            const typeFilter = document.getElementById('type-filter');
+
+            if (!brandFilter || !typeFilter) return;
+
+            const applyFilters = () => {
+                const brandValue = brandFilter.value;
+                const typeValue = typeFilter.value;
+
+                // Znajdź indeksy pasujące do filtrów
+                let filteredIndexes = null;
+
+                if (brandValue !== 'all' || typeValue !== 'all') {
+                    filteredIndexes = [];
+                    const brandIndexes = brandValue !== 'all' ? AppData.flavorCategories[brandValue] || [] : null;
+                    const typeIndexes = typeValue !== 'all' ? AppData.flavorCategories[typeValue] || [] : null;
+
+                    // Sprawdź każdy smak
+                    AppData.flavors.forEach((_, index) => {
+                        const brandMatch = brandValue === 'all' || (brandIndexes && brandIndexes.includes(index));
+                        const typeMatch = typeValue === 'all' || (typeIndexes && typeIndexes.includes(index));
+                        
+                        if (brandMatch && typeMatch) {
+                            filteredIndexes.push(index);
+                        }
+                    });
+                }
+
+                renderFlavorsList(filteredIndexes);
+            };
+
+            brandFilter.addEventListener('change', applyFilters);
+            typeFilter.addEventListener('change', applyFilters);
+
+            // Pierwsze zastosowanie filtrów
+            applyFilters();
+        };
+
+        renderFlavorsList();
+        renderPricingTable();
+        updateYear();
+        initFilters();
 
         } catch (error) {
             throw new Error(`Błąd inicjalizacji UI: ${error.message}`);
