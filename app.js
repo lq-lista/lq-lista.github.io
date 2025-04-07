@@ -160,11 +160,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             };
 
-            if (typeof OrderSystem !== 'undefined' && OrderSystem.prototype.initFlavorFilter) {
-                const orderSystem = new OrderSystem();
-                orderSystem.initFlavorFilter();
-            }
-
             renderFlavorsList();
             renderPricingTable();
             updateYear();

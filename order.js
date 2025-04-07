@@ -317,51 +317,23 @@ class OrderSystem {
 
     initFlavorFilter() {
         try {
-            // Sprawdź czy filtry już istnieją
-            if (document.getElementById('brand-filter') && document.getElementById('type-filter')) {
-                return;
-            }
-    
-            // Pobierz sekcję smaków
-            const flavorsSection = document.querySelector('.flavors');
-            if (!flavorsSection) return;
-    
-            // Sprawdź czy lista smaków istnieje
-            const flavorsList = document.getElementById('flavors-list');
-            if (!flavorsList) return;
-    
-            // Utwórz kontener filtrów jeśli nie istnieje
-            let filterContainer = document.querySelector('.flavor-filters');
-            if (!filterContainer) {
-                filterContainer = document.createElement('div');
-                filterContainer.className = 'flavor-filters';
-                flavorsSection.insertBefore(filterContainer, flavorsList);
-            }
-    
-            // Filtry firm
-            const brandFilterHTML = `
+            if (document.getElementById('brand-filter')) return;
+        
+            const filterContainer = document.createElement('div');
+            filterContainer.className = 'flavor-filters';
+            filterContainer.innerHTML = `
                 <div class="filter-group">
-                    <label for="brand-filter">Firma:</label>
+                    <label>Firma:</label>
                     <select id="brand-filter" class="form-control">
                         <option value="all">Wszystkie firmy</option>
-                        <option value="a&l">A&L</option>
-                        <option value="tribal">Tribal Force</option>
-                        <option value="vapir">Vapir Vape</option>
-                        <option value="fighter">Fighter Fuel</option>
-                        <option value="izi">IZI PIZI</option>
-                        <option value="wanna">WANNA BE COOL</option>
-                        <option value="funk">FUNK CLARO</option>
-                        <option value="aroma">AROMA KING</option>
-                        <option value="dilno">DILNO'S</option>
-                        <option value="panda">PANDA</option>
+                        <option value="funk">Funk Claro</option>
+                        <option value="aroma">Aroma King</option>
+                        <option value="wanna">Wanna Be Cool</option>
+                        <option value="inne">Inne</option>
                     </select>
                 </div>
-            `;
-    
-            // Filtry typów smaków
-            const typeFilterHTML = `
                 <div class="filter-group">
-                    <label for="type-filter">Typ smaku:</label>
+                    <label>Typ smaku:</label>
                     <select id="type-filter" class="form-control">
                         <option value="all">Wszystkie typy</option>
                         <option value="owocowe">Owocowe</option>
@@ -369,21 +341,17 @@ class OrderSystem {
                         <option value="słodkie">Słodkie</option>
                         <option value="cytrusowe">Cytrusowe</option>
                         <option value="energy">Energy drink</option>
-                        <option value="chłodzone">Chłodzone</option>
                     </select>
                 </div>
             `;
-    
-            // Dodaj filtry do kontenera
-            filterContainer.innerHTML = brandFilterHTML + typeFilterHTML;
-    
-            // Dodaj event listeners
+        
+            const flavorsSection = document.querySelector('.flavors');
+            if (flavorsSection) {
+                flavorsSection.insertBefore(filterContainer, document.getElementById('flavors-list'));
+            }
+            
             document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
             document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
-    
-            // Pierwsze filtrowanie
-            this.filterFlavors();
-    
         } catch (error) {
             console.error('Błąd inicjalizacji filtrów smaków:', error);
         }
@@ -393,25 +361,16 @@ class OrderSystem {
         try {
             const flavorsList = document.getElementById('flavors-list');
             if (!flavorsList) return;
-    
+
             const brandFilter = document.getElementById('brand-filter').value;
             const typeFilter = document.getElementById('type-filter').value;
             const flavors = AppData?.flavors || [];
             const flavorCategories = AppData?.flavorCategories || {};
-    
-            // Tymczasowo wyczyść listę
+
             flavorsList.innerHTML = '';
-    
-            // Sprawdź czy mamy dane do filtrowania
-            if (!flavors.length || !Object.keys(flavorCategories).length) {
-                flavorsList.innerHTML = '<li class="error">Błąd ładowania smaków</li>';
-                return;
-            }
-    
-            // Filtruj smaki
+
             flavors.forEach((flavor, index) => {
                 try {
-                    // Sprawdź filtr firmy
                     const brandMatch = 
                         brandFilter === 'all' ||
                         (brandFilter === 'a&l' && flavor.includes('(A&L)')) ||
@@ -424,8 +383,7 @@ class OrderSystem {
                         (brandFilter === 'aroma' && flavor.includes('(AROMA KING)')) ||
                         (brandFilter === 'dilno' && flavor.includes('(DILNO\'S)')) ||
                         (brandFilter === 'panda' && flavor.includes('(PANDA)'));
-    
-                    // Sprawdź filtr typu
+
                     let typeMatch = false;
                     if (typeFilter === 'all') {
                         typeMatch = true;
@@ -433,32 +391,18 @@ class OrderSystem {
                         const typeIndexes = flavorCategories[typeFilter] || [];
                         typeMatch = typeIndexes.includes(index);
                     }
-    
-                    // Jeśli oba filtry pasują, dodaj do listy
+
                     if (brandMatch && typeMatch) {
                         const li = document.createElement('li');
-                        li.innerHTML = `
-                            <span class="flavor-number">${index + 1}.</span> 
-                            ${this.formatFlavorName(flavor)}
-                        `;
+                        li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
                         flavorsList.appendChild(li);
                     }
                 } catch (e) {
                     console.warn(`Błąd przetwarzania smaku ${index}:`, e);
                 }
             });
-    
-            // Jeśli brak wyników
-            if (flavorsList.children.length === 0) {
-                flavorsList.innerHTML = '<li>Brak smaków spełniających kryteria</li>';
-            }
-    
         } catch (error) {
             console.error('Błąd filtrowania smaków:', error);
-            const flavorsList = document.getElementById('flavors-list');
-            if (flavorsList) {
-                flavorsList.innerHTML = '<li class="error">Błąd filtrowania smaków</li>';
-            }
         }
     }
     
@@ -474,6 +418,7 @@ class OrderSystem {
             return String(flavor);
         }
     }
+    
     populateFlavors() {
         try {
             const select = document.getElementById('flavor-select');
