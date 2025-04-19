@@ -11,7 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Style dla przycisku kopiowania */
+        /* Style dla przycisku kopiowania i nowych elementów */
         .copy-btn-container {
             display: flex;
             align-items: center;
@@ -43,15 +43,57 @@
             background: #2E7D32;
             animation: pulse 0.5s;
         }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
         .order-number {
             font-size: 1.2rem;
             font-weight: bold;
             color: #ff6f61;
+        }
+        
+        /* Nowe style dla formularza */
+        .error-input {
+            border: 2px solid #ff4f42 !important;
+            animation: shake 0.5s;
+        }
+        
+        .error-message {
+            color: #d32f2f;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        #add-to-order.success {
+            background: #4CAF50;
+            animation: pulse 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .order-item.removing {
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .empty-cart {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+        
+        #order-total.updated {
+            animation: pulse 0.5s;
         }
     </style>
 </head>
@@ -63,33 +105,35 @@
     <main class="container">
         <section class="flavors">
             <h2>Nasze Smaki</h2>
-            <div class="filter-group">
-                <label>Firma:</label>
-                <select id="brand-filter" class="form-control">
-                    <option value="all">Wszystkie firmy</option>
-                    <option value="a&l">A&L</option>
-                    <option value="tribal">Tribal Force</option>
-                    <option value="vapir">Vapir Vape</option>
-                    <option value="fighter">Fighter Fuel</option>
-                    <option value="izi">IZI PIZI</option>
-                    <option value="wanna">WANNA BE COOL</option>
-                    <option value="funk">FUNK CLARO</option>
-                    <option value="aroma">AROMA KING</option>
-                    <option value="dilno">DILNO'S</option>
-                    <option value="panda">PANDA</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Typ smaku:</label>
-                <select id="type-filter" class="form-control">
-                    <option value="all">Wszystkie typy</option>
-                    <option value="owocowe">Owocowe</option>
-                    <option value="miętowe">Miętowe</option>
-                    <option value="słodkie">Słodkie</option>
-                    <option value="cytrusowe">Cytrusowe</option>
-                    <option value="energy">Energy drink</option>
-                    <option value="chłodzone">Chłodzone</option>
-                </select>
+            <div class="filter-container">
+                <div class="filter-group">
+                    <label for="brand-filter">Firma:</label>
+                    <select id="brand-filter" class="form-control">
+                        <option value="all">Wszystkie firmy</option>
+                        <option value="a&l">A&L</option>
+                        <option value="tribal">Tribal Force</option>
+                        <option value="vapir">Vapir Vape</option>
+                        <option value="fighter">Fighter Fuel</option>
+                        <option value="izi">IZI PIZI</option>
+                        <option value="wanna">WANNA BE COOL</option>
+                        <option value="funk">FUNK CLARO</option>
+                        <option value="aroma">AROMA KING</option>
+                        <option value="dilno">DILNO'S</option>
+                        <option value="panda">PANDA</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="type-filter">Typ smaku:</label>
+                    <select id="type-filter" class="form-control">
+                        <option value="all">Wszystkie typy</option>
+                        <option value="owocowe">Owocowe</option>
+                        <option value="miętowe">Miętowe</option>
+                        <option value="słodkie">Słodkie</option>
+                        <option value="cytrusowe">Cytrusowe</option>
+                        <option value="energy">Energy drink</option>
+                        <option value="chłodzone">Chłodzone</option>
+                    </select>
+                </div>
             </div>
             <ul id="flavors-list">
                 <!-- Lista smaków zostanie wstawiona przez JavaScript -->
@@ -135,19 +179,22 @@
     <!-- Modal zamówienia -->
     <div id="order-modal" class="modal">
         <div class="modal-content">
-            <span class="close">×</span>
+            <span class="close" aria-label="Zamknij">×</span>
             <div class="order-scroll-container">
                 <h2>Tworzenie zamówienia</h2>
                 
                 <div id="order-form">
                     <div class="form-group">
-                        <label>Smak:</label>
-                        <select id="flavor-select" class="form-control"></select>
+                        <label for="flavor-select">Smak:</label>
+                        <select id="flavor-select" class="form-control" required>
+                            <option value="">Wybierz smak</option>
+                            <!-- Opcje będą dodane przez JS -->
+                        </select>
                     </div>
                     
                     <div class="form-group">
-                        <label>Pojemność:</label>
-                        <select id="size-select" class="form-control">
+                        <label for="size-select">Pojemność:</label>
+                        <select id="size-select" class="form-control" required>
                             <option value="">Wybierz pojemność</option>
                             <option value="10ml">10ml</option>
                             <option value="30ml">30ml</option>
@@ -156,8 +203,8 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Moc nikotyny:</label>
-                        <select id="strength-select" class="form-control">
+                        <label for="strength-select">Moc nikotyny:</label>
+                        <select id="strength-select" class="form-control" required>
                             <option value="">Wybierz moc</option>
                             <option value="24">24mg</option>
                             <option value="18">18mg</option>
@@ -168,14 +215,16 @@
                         </select>
                     </div>
                     
-                    <button id="add-to-order" class="btn">Dodaj do zamówienia</button>
+                    <button id="add-to-order" class="btn">
+                        <span class="btn-text">Dodaj do zamówienia</span>
+                    </button>
                 </div>
                 
                 <div id="order-summary">
                     <h3>Twoje zamówienie:</h3>
                     <div class="order-items-container">
                         <ul id="order-items">
-                            <!-- Tutaj będą dodawane elementy zamówienia -->
+                            <li class="empty-cart">Twój koszyk jest pusty</li>
                         </ul>
                     </div>
                     
@@ -189,8 +238,8 @@
                 </div>
             </div>
             
-            <div id="submit-order-container">
-                <button id="submit-order" class="btn">Złóż zamówienie</button>
+            <div id="submit-order-container" class="hidden">
+                <button id="submit-order" class="btn" disabled>Złóż zamówienie</button>
             </div>
             
             <div id="order-confirmation" style="display:none;">
@@ -198,7 +247,7 @@
                 <div class="copy-btn-container">
                     <span>Twój numer:</span>
                     <span id="order-number" class="order-number"></span>
-                    <button class="copy-order-btn">
+                    <button class="copy-order-btn" aria-label="Kopiuj numer zamówienia">
                         <span class="btn-text">Kopiuj</span>
                         <span class="btn-icon">📋</span>
                     </button>
@@ -233,7 +282,7 @@
                 <!-- Tutaj będą wyświetlane szczegóły zamówienia -->
             </div>
     
-            <!-- Rozbudowana sekcja statystyk -->
+            <!-- Sekcja statystyk -->
             <div class="admin-stats-section">
                 <h3>Statystyki sklepu</h3>
                 
@@ -252,15 +301,14 @@
                     </div>
                 </div>
     
-                <!-- ZOSTAWIAMY MINI WYKRESY -->
-            <div class="charts-mini-container">
-                <div class="chart-mini-wrapper">
-                    <canvas id="miniOrdersChart" width="300" height="150"></canvas>
+                <div class="charts-mini-container">
+                    <div class="chart-mini-wrapper">
+                        <canvas id="miniOrdersChart" width="300" height="150"></canvas>
+                    </div>
+                    <div class="chart-mini-wrapper">
+                        <canvas id="miniFlavorsChart" width="300" height="150"></canvas>
+                    </div>
                 </div>
-                <div class="chart-mini-wrapper">
-                    <canvas id="miniFlavorsChart" width="300" height="150"></canvas>
-                </div>
-            </div>
     
                 <h4>Ostatnie zamówienia</h4>
                 <div class="recent-orders-container">
@@ -296,12 +344,10 @@
         
         // Obsługa przycisku kopiowania
         document.addEventListener('DOMContentLoaded', function() {
-            // Funkcja kopiująca do schowka
             function copyToClipboard(text) {
                 return navigator.clipboard.writeText(text);
             }
             
-            // Obsługa kliknięcia przycisku kopiowania
             document.addEventListener('click', function(e) {
                 if (e.target.closest('.copy-order-btn')) {
                     const btn = e.target.closest('.copy-order-btn');
@@ -311,12 +357,10 @@
                         const btnText = btn.querySelector('.btn-text');
                         const btnIcon = btn.querySelector('.btn-icon');
                         
-                        // Zmiana wyglądu przycisku
                         btnText.textContent = 'Skopiowano!';
                         btnIcon.textContent = '✔️';
                         btn.classList.add('copied');
                         
-                        // Powrót do pierwotnego stanu po 2 sekundach
                         setTimeout(() => {
                             btnText.textContent = 'Kopiuj';
                             btnIcon.textContent = '📋';
@@ -328,7 +372,6 @@
                 }
             });
             
-            // Sprawdzenie czy Chart.js jest załadowany
             if (!window.Chart) {
                 console.warn('Chart.js nie został załadowany!');
             }

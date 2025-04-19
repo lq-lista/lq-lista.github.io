@@ -522,36 +522,92 @@ class OrderSystem {
     
     addToOrder() {
         try {
-            const flavorIndex = document.getElementById('flavor-select').value;
-            const size = document.getElementById('size-select').value;
-            const strength = document.getElementById('strength-select').value;
+            const flavorSelect = document.getElementById('flavor-select');
+            const sizeSelect = document.getElementById('size-select');
+            const strengthSelect = document.getElementById('strength-select');
             
-            if (!flavorIndex || !size || !strength) {
-                alert('Proszę wybrać smak, pojemność i moc nikotyny!');
+            // Walidacja
+            if (!flavorSelect.value) {
+                this.showValidationError(flavorSelect, 'Proszę wybrać smak');
                 return;
             }
             
-            const flavors = AppData?.flavors || [];
-            if (!flavors[flavorIndex]) {
-                throw new Error(`Nie znaleziono smaku o indeksie ${flavorIndex}`);
+            if (!sizeSelect.value) {
+                this.showValidationError(sizeSelect, 'Proszę wybrać pojemność');
+                return;
             }
             
-            const price = this.calculatePrice(size, strength);
-            const flavorName = flavors[flavorIndex];
+            if (!strengthSelect.value) {
+                this.showValidationError(strengthSelect, 'Proszę wybrać moc nikotyny');
+                return;
+            }
+            
+            // Resetowanie błędów
+            this.resetValidationErrors([flavorSelect, sizeSelect, strengthSelect]);
+            
+            // Reszta istniejącej logiki
+            const flavors = AppData?.flavors || [];
+            if (!flavors[flavorSelect.value]) {
+                throw new Error(`Nie znaleziono smaku o indeksie ${flavorSelect.value}`);
+            }
+            
+            const price = this.calculatePrice(sizeSelect.value, strengthSelect.value);
+            const flavorName = flavors[flavorSelect.value];
             
             this.currentOrder.push({
                 flavor: flavorName,
-                size,
-                strength: strength + 'mg',
+                size: sizeSelect.value,
+                strength: strengthSelect.value + 'mg',
                 price,
-                flavorNumber: parseInt(flavorIndex) + 1
+                flavorNumber: parseInt(flavorSelect.value) + 1
             });
             
             this.updateOrderSummary();
+
+            // ★★★★★ TUTAJ WKŁADAMY NOWY KOD ★★★★★
+        const addButton = document.getElementById('add-to-order');
+        addButton.textContent = '✓ Dodano!';
+        addButton.classList.add('success');
+        setTimeout(() => {
+            addButton.textContent = 'Dodaj do zamówienia';
+            addButton.classList.remove('success');
+        }, 2000);
+        // ★★★★★ KONIEC NOWEGO KODU ★★★★★
+            
         } catch (error) {
             console.error('Błąd dodawania do zamówienia:', error);
-            alert('Wystąpił błąd podczas dodawania produktu. Spróbuj ponownie.');
+            this.showUserAlert('Wystąpił błąd podczas dodawania produktu. Spróbuj ponownie.', 'error');
         }
+    }
+    
+    // Nowe metody pomocnicze
+    showValidationError(element, message) {
+        const errorElement = element.nextElementSibling;
+        if (!errorElement || !errorElement.classList.contains('error-message')) {
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'error-message';
+            errorMsg.textContent = message;
+            element.parentNode.insertBefore(errorMsg, element.nextSibling);
+        }
+        element.classList.add('error-input');
+    }
+    
+    resetValidationErrors(elements) {
+        elements.forEach(el => {
+            el.classList.remove('error-input');
+            const errorMsg = el.nextElementSibling;
+            if (errorMsg && errorMsg.classList.contains('error-message')) {
+                errorMsg.remove();
+            }
+        });
+    }
+    
+    showUserAlert(message, type = 'info') {
+        const alert = document.createElement('div');
+        alert.className = `user-alert ${type}`;
+        alert.textContent = message;
+        document.body.appendChild(alert);
+        setTimeout(() => alert.remove(), 3000);
     }
     
     calculatePrice(size, strength) {
@@ -578,64 +634,110 @@ class OrderSystem {
         try {
             const itemsList = document.getElementById('order-items');
             const orderTotal = document.getElementById('order-total');
+            const submitButton = document.getElementById('submit-order');
             
-            if (!itemsList || !orderTotal) return;
+            if (!itemsList || !orderTotal || !submitButton) return;
             
+            // Resetowanie listy
             itemsList.innerHTML = '';
             let total = 0;
             
-            const groupedItems = {};
-            this.currentOrder.forEach(item => {
-                const key = `${item.flavorNumber}-${item.size}-${item.strength}`;
-                if (!groupedItems[key]) {
-                    groupedItems[key] = {
-                        ...item,
-                        quantity: 1,
-                        totalPrice: item.price
-                    };
-                } else {
-                    groupedItems[key].quantity++;
-                    groupedItems[key].totalPrice += item.price;
+            // Grupowanie przedmiotów z poprawioną obsługą błędów
+            const groupedItems = this.currentOrder.reduce((acc, item) => {
+                try {
+                    if (!item || !item.flavorNumber || !item.size || !item.strength) {
+                        console.warn('Nieprawidłowy przedmiot w zamówieniu:', item);
+                        return acc;
+                    }
+                    
+                    const key = `${item.flavorNumber}-${item.size}-${item.strength}`;
+                    if (!acc[key]) {
+                        acc[key] = {
+                            ...item,
+                            quantity: 0,
+                            totalPrice: 0
+                        };
+                    }
+                    acc[key].quantity++;
+                    acc[key].totalPrice += item.price || 0;
+                    return acc;
+                } catch (e) {
+                    console.error('Błąd podczas grupowania przedmiotu:', e);
+                    return acc;
                 }
-            });
+            }, {});
             
-            // Sprawdzamy czy to urządzenie mobilne
+            // Sprawdzanie typu urządzenia
             const isMobile = window.matchMedia("(max-width: 768px)").matches;
             const quantitySymbol = isMobile ? '×' : 'x';
             
-            Object.values(groupedItems).forEach((item) => {
+            // Sortowanie przedmiotów przed wyświetleniem
+            const sortedItems = Object.values(groupedItems).sort((a, b) => 
+                a.flavorNumber - b.flavorNumber || a.size.localeCompare(b.size)
+            );
+            
+            // Renderowanie przedmiotów
+            if (sortedItems.length === 0) {
+                itemsList.innerHTML = '<li class="empty-cart">Twój koszyk jest pusty</li>';
+                submitButton.disabled = true;
+                orderTotal.textContent = 'Razem: 0zł';
+                return;
+            }
+            
+            sortedItems.forEach((item) => {
                 const li = document.createElement('li');
                 li.className = 'order-item';
+                
+                // Bezpieczne formatowanie nazwy smaku
+                const flavorName = this.formatFlavorName(item.flavor || '')
+                    .split('(')[0]
+                    .trim();
                 
                 li.innerHTML = `
                     <div class="order-item-info">
                         <div class="flavor-name">
                             <span class="flavor-number">${item.flavorNumber}.</span>
-                            ${this.formatFlavorName(item.flavor).split('(')[0].trim()}
+                            ${flavorName}
                         </div>
                         <div class="item-details">
                             (${item.size}, ${item.strength})
                             <span class="item-quantity">${item.quantity}${quantitySymbol}</span>
                         </div>
                     </div>
-                    <div class="order-item-price">${item.totalPrice}zł</div>
-                    <button class="remove-item">X</button>
+                    <div class="order-item-price">${item.totalPrice.toFixed(2)}zł</div>
+                    <button class="remove-item" aria-label="Usuń produkt">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
                 `;
                 
+                // Obsługa usuwania z animacją
                 li.querySelector('.remove-item').addEventListener('click', () => {
-                    this.currentOrder = this.currentOrder.filter(i => 
-                        `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${item.strength}`
-                    );
-                    this.updateOrderSummary();
+                    li.classList.add('removing');
+                    setTimeout(() => {
+                        this.currentOrder = this.currentOrder.filter(i => 
+                            `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${i.strength}`
+                        );
+                        this.updateOrderSummary();
+                    }, 300);
                 });
                 
                 itemsList.appendChild(li);
                 total += item.totalPrice;
             });
             
-            orderTotal.textContent = `Razem: ${total}zł`;
+            // Aktualizacja podsumowania
+            orderTotal.textContent = `Razem: ${total.toFixed(2)}zł`;
+            submitButton.disabled = false;
+            
+            // Animacja zmian
+            orderTotal.classList.add('updated');
+            setTimeout(() => orderTotal.classList.remove('updated'), 500);
+            
         } catch (error) {
             console.error('Błąd aktualizacji podsumowania zamówienia:', error);
+            this.showUserAlert('Wystąpił błąd podczas aktualizacji koszyka', 'error');
         }
     }
     
