@@ -1172,6 +1172,42 @@ h3 {
     animation: pulse 0.5s;
 }
 
+.order-item {
+    position: relative; /* Dodaj tę linię */
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #fff;
+    border-radius: 6px;
+    border-left: 4px solid #ff6f61;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.remove-item {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ff4f42; /* Dodaj kolor ikony */
+    margin-left: 10px;
+}
+
+.remove-item:hover {
+    transform: scale(1.2);
+    color: #d32f2f;
+}
+
+.remove-item svg {
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    display: block; /* Upewnij się, że ikona jest widoczna */
+}
+
 /* Dodaj do istniejącego CSS */
 .order-item {
     transition: all 0.3s ease;
@@ -1239,6 +1275,16 @@ h3 {
 .order-items-container {
     max-height: none;
     overflow-y: visible;
+}
+
+/* W styles.css dodaj alternatywę */
+.remove-item:after {
+    content: "×";
+    font-size: 20px;
+    line-height: 1;
+}
+.remove-item svg {
+    display: none; /* Ukryj SVG jeśli używasz fallback */
 }
 
 /* Poprawki dla responsywności */
