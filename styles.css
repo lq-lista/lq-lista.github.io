@@ -1213,6 +1213,51 @@ h3 {
     pointer-events: none;
 }
 
+/* Nowe style dla modala zamówienia */
+#order-summary-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 150px); /* Dostosuj według potrzeb */
+}
+
+.order-items-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    max-height: 50vh;
+}
+
+.order-summary-fixed {
+    padding: 15px 0;
+    background: white;
+    position: sticky;
+    bottom: 0;
+    border-top: 1px solid #eee;
+}
+
+.order-items-container {
+    max-height: none;
+    overflow-y: visible;
+}
+
+/* Poprawki dla responsywności */
+@media (max-width: 768px) {
+    #order-summary-container {
+        height: calc(100% - 120px);
+    }
+    
+    .order-items-scrollable {
+        max-height: 40vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-items-scrollable {
+        max-height: 35vh;
+    }
+}
+
 /* ===== PRINT STYLES ===== */
 @media print {
     body * {
