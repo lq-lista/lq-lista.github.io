@@ -95,6 +95,131 @@
         #order-total.updated {
             animation: pulse 0.5s;
         }
+
+        /* Sekcja Longfill */
+        .longfill-section {
+            margin: 40px 0;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(245,245,245,0.95));
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .longfill-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .longfill-carousel {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            padding: 20px;
+            width: 90%;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .longfill-carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .longfill-item {
+            scroll-snap-align: start;
+            min-width: 250px;
+            text-align: center;
+            transition: transform 0.3s;
+            cursor: pointer;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .longfill-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .longfill-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid #ff6f61;
+        }
+
+        .longfill-name {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #ff6f61;
+            font-size: 1.1rem;
+        }
+
+        .scroll-btn {
+            background: #ff6f61;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .scroll-btn:hover {
+            background: #ff4f42;
+            transform: scale(1.1);
+        }
+
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: #ff6f61;
+            transform: scale(1.2);
+        }
+
+        /* Responsywność */
+        @media (max-width: 768px) {
+            .longfill-item {
+                min-width: 180px;
+            }
+            
+            .longfill-image {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .longfill-carousel {
+                width: 85%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -103,6 +228,18 @@
     </header>
 
     <main class="container">
+        <section class="longfill-section">
+            <h2>Longfill - Premium Collection</h2>
+            <div class="longfill-container">
+                <button class="scroll-btn left-btn">‹</button>
+                <div class="longfill-carousel">
+                    <!-- Elementy będą dodawane dynamicznie przez JS -->
+                </div>
+                <button class="scroll-btn right-btn">›</button>
+            </div>
+            <div class="carousel-dots"></div>
+        </section>
+
         <section class="flavors">
             <h2>Nasze Smaki</h2>
             <div class="filter-container">
@@ -338,6 +475,7 @@
     <script src="data.js"></script>
     <script src="order.js"></script>
     <script src="app.js"></script>
+    <script src="longfill.js"></script>
     
     <script>
         // Aktualizacja roku w stopce
