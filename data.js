@@ -1,6 +1,6 @@
 /**
  * Pełna baza smaków liquidów z kategoriami i cennikiem
- * @version 3.0.2
+ * @version 3.0.1
  * @type {Object}
  */
 const AppData = (() => {
@@ -87,51 +87,6 @@ const AppData = (() => {
         }
     };
 
-    // Statusy dostępności smaków
-    const flavorAvailability = {
-        0: "available",
-        1: "available",
-        2: "available",
-        3: "available",
-        4: "available",
-        5: "available",
-        6: "available",
-        7: "available",
-        8: "available",
-        9: "available",
-        10: "available",
-        11: "available",
-        12: "available",
-        13: "available",
-        14: "available",
-        15: "available",
-        16: "available",
-        17: "available",
-        18: "available",
-        19: "available",
-        20: "available",
-        21: "available",
-        22: "available",
-        23: "available",
-        24: "available",
-        25: "available",
-        26: "available",
-        27: "available",
-        28: "available",
-        29: "available",
-        30: "available",
-        31: "available",
-        32: "available",
-        33: "available",
-        34: "available",
-        35: "available",
-        36: "available",
-        37: "available",
-        38: "available",
-        39: "available",
-        40: "available"
-    };
-
     // Walidacja danych
     const validateData = () => {
         const errors = [];
@@ -158,14 +113,6 @@ const AppData = (() => {
                 console.warn(`UWAGA: Smak nr ${index + 1} ("${flavors[index]}") nie ma przypisanej kategorii`);
             }
         });
-
-        // Sprawdź czy wszystkie smaki mają status dostępności
-        flavors.forEach((_, index) => {
-            if (flavorAvailability[index] === undefined) {
-                console.warn(`UWAGA: Smak nr ${index + 1} nie ma przypisanego statusu dostępności`);
-                flavorAvailability[index] = "available"; // Domyślny status
-            }
-        });
         
         if (errors.length > 0) {
             errors.forEach(error => console.error(error));
@@ -179,8 +126,7 @@ const AppData = (() => {
         flavors,
         flavorCategories,
         pricingData,
-        flavorAvailability, // Dodane statusy dostępności
-        version: '3.0.2', // Zaktualizowana wersja
+        version: '3.0.1',
         lastUpdated: new Date().toISOString().split('T')[0]
     };
 })();
