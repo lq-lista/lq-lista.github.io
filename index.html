@@ -11,6 +11,41 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+
+        /* Responsywny nagłówek */
+        .custom-header {
+            text-align: center;
+            margin: 0 auto;
+            padding: 10px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #f8f9fa 100%);
+        }
+        .header-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .custom-header {
+                padding: 5px 0;
+            }
+            .header-image {
+                max-width: 95%;
+                min-height: 80px;
+                max-height: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-image {
+                max-width: 100%;
+                max-height: 120px;
+            }
+        }
+
         /* Style dla przycisku kopiowania i nowych elementów */
         .copy-btn-container {
             display: flex;
@@ -221,12 +256,17 @@
             }
         }
     </style>
+
+
 </head>
 <body>
    
 <header class="custom-header">
-    <img src='https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/sole-naglowek.jpg' alt="Sole - Smaki i Cennik" class="header-image">
-</header>
+        <img src='https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/sole-naglowek.jpg' 
+             alt="Sole - Smaki i Cennik" 
+             class="header-image"
+             loading="lazy">
+    </header>
 
     <main class="container">
         <section class="longfill-section">
