@@ -1389,6 +1389,21 @@ h3 {
     transform: translateY(-2px);
 }
 
+/* CSS (dodaj do pliku style.css) */
+.custom-header {
+    text-align: center;
+    margin: 0 auto;
+}
+.header-image {
+    max-width: 100%; /* Dostosuje się do szerokości kontenera */
+    height: auto; /* Zachowa proporcje */
+}
+
+.header-image:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+}
+
 /* Responsywność */
 @media (max-width: 768px) {
     .lightbox-image-container {
