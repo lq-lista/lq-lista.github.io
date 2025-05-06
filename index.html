@@ -13,25 +13,33 @@
     <style>
 
         /* Responsywny nagłówek */
-        .custom-header {
-            text-align: center;
-            margin: 0 auto;
-            padding: 10px;
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Zapobiega poziomej scrollbarce */
         }
+        
+        /* Nagłówek pełnej szerokości */
+        .full-width-header {
+            width: 100vw; /* 100% szerokości viewport */
+            margin-left: calc(-50vw + 50%); /* Centruje względem body */
+            position: relative;
+            left: 50%;
+            right: 50%;
+            overflow: hidden;
+        }
+        
         .header-image {
-            max-width: 60%;
+            width: 100%;
             height: auto;
             display: block;
-            margin: 0 auto;
+            object-fit: cover;
         }
 
-        /* Mobile-specific styles */
+        /* Mobile - optymalizacja wysokości */
         @media (max-width: 768px) {
-            .custom-header {
-                padding: 5px;
-            }
             .header-image {
-                max-width: 40%; /* Nieco mniejszy obrazek */
+                min-height: 120px; /* Minimalna wysokość na mobile */
             }
         }
 
