@@ -1404,6 +1404,12 @@ h3 {
     transition: transform 0.3s ease;
 }
 
+@media (max-width: 768px) {
+    .header-image {
+        content: url('https://.../sole-naglowek-mobile.jpg');
+    }
+}
+
 /* Responsywność */
 @media (max-width: 768px) {
     .lightbox-image-container {
