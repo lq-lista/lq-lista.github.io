@@ -1395,7 +1395,7 @@ h3 {
     margin: 0 auto;
 }
 .header-image {
-    max-width: 100%; /* Dostosuje się do szerokości kontenera */
+    max-width: 50%; /* Dostosuje się do szerokości kontenera */
     height: auto; /* Zachowa proporcje */
 }
 
