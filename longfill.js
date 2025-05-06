@@ -51,9 +51,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const item = document.createElement('div');
         item.className = 'longfill-item';
         item.innerHTML = `
-            <img src="${baseImageUrl}${image}" alt="${name}" class="longfill-image" onerror="this.src='${baseImageUrl}placeholder.jpg'">
-            <div class="longfill-name">${number}. ${name.split('(')[0].trim()}</div>
-        `;
+            <img src="${baseImageUrl}${image}" alt="${name}" class="longfill-image" 
+            onerror="this.src='${baseImageUrl}placeholder.jpg'"
+            style="${AppData.flavorAvailability[number-1] === 'out-of-stock' ? 'opacity: 0.7; filter: grayscale(80%);' : ''}">
+            <div class="longfill-name">
+            ${number}. ${name.split('(')[0].trim()}
+            <span class="flavor-status ${AppData.flavorAvailability[number-1] || 'available'}" 
+            data-index="${number-1}">
+            <span class="flavor-status-tooltip">
+                ${getStatusText(AppData.flavorAvailability[number-1])}
+            </span>
+        </span>
+    </div>
+`
         
         item.addEventListener('click', () => {
             openLightbox(number, name, `${baseImageUrl}${image}`, description);

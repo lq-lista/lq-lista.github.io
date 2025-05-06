@@ -64,6 +64,16 @@ class OrderSystem {
                     }
                 }, 2000);
             }
+
+            // W konstruktorze OrderSystem dodaj:
+            if (this.database) {
+             // Synchronizacja statusów smaków
+                 this.database.ref('flavorAvailability').on('value', (snapshot) => {
+                    const firebaseStatuses = snapshot.val() || {};
+                      Object.assign(AppData.flavorAvailability, firebaseStatuses);
+                      this.refreshFlavorsList();
+              });
+            }
     
         } catch (error) {
             console.error('Błąd inicjalizacji OrderSystem:', error);
@@ -791,8 +801,10 @@ class OrderSystem {
             const password = document.getElementById('admin-password').value;
             if (password === this.adminPassword) {
                 document.getElementById('admin-content').style.display = 'block';
-                this.updateStats(); // Dodano automatyczne ładowanie statystyk
-                this.initCharts(); // Dodano automatyczne inicjalizowanie wykresów
+                this.isAdmin = true; // Dodajemy flagę admina
+                this.initAdminStatusControls(); // Inicjalizacja kontrolek statusu
+                this.updateStats();
+                this.initCharts();
             } else {
                 alert('Nieprawidłowe hasło!');
             }
@@ -1314,6 +1326,45 @@ class OrderSystem {
             console.error('Błąd obliczania zamówień:', error);
             return [0, 0, 0, 0, 0, 0, 0];
         }
+    }
+
+    initAdminStatusControls() {
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('save-status-btn')) {
+                const control = e.target.closest('.admin-status-control');
+                const index = control.dataset.index;
+                const select = control.querySelector('.status-select');
+                const newStatus = select.value;
+                
+                this.updateFlavorStatus(index, newStatus);
+            }
+        });
+    }
+
+    updateFlavorStatus(index, newStatus) {
+        try {
+            // Aktualizacja lokalna
+            AppData.flavorAvailability[index] = newStatus;
+            
+            // Aktualizacja w Firebase (jeśli jest dostępne)
+            if (this.firebaseAvailable) {
+                this.database.ref(`flavorAvailability/${index}`).set(newStatus);
+            }
+            
+            // Odświeżenie widoku
+            this.refreshFlavorsList();
+            
+            console.log(`Zaktualizowano status smaku ${index} na ${newStatus}`);
+        } catch (error) {
+            console.error('Błąd aktualizacji statusu smaku:', error);
+        }
+    }
+
+    refreshFlavorsList() {
+        // Ponowne renderowanie listy smaków
+        const brandFilter = document.getElementById('brand-filter')?.value || 'all';
+        const typeFilter = document.getElementById('type-filter')?.value || 'all';
+        this.filterFlavors(brandFilter, typeFilter);
     }
 
     getTopFlavors(limit = 5) {

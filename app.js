@@ -109,27 +109,64 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             // Renderowanie listy smaków
-            const renderFlavorsList = (filteredIndexes = null) => {
-                const flavorsList = document.getElementById('flavors-list');
-                if (!flavorsList) return;
-    
-                if (!Array.isArray(AppData.flavors)) {
-                    flavorsList.innerHTML = '<li class="error">Błędne dane smaków</li>';
-                    return;
-                }
-    
-                const flavorsToShow = filteredIndexes ? 
-                    filteredIndexes.map(index => AppData.flavors[index]) : 
-                    AppData.flavors;
-    
-                flavorsList.innerHTML = flavorsToShow
-                    .map((flavor, index) => {
-                        const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
-                        const originalIndex = filteredIndexes ? filteredIndexes[index] : index;
-                        return `<li><span class="flavor-number">${originalIndex + 1}.</span> ${displayName}</li>`;
-                    })
-                    .join('') || '<li>Brak dostępnych smaków</li>';
-            };
+            // W funkcji renderFlavorsList w app.js zmień:
+const renderFlavorsList = (filteredIndexes = null) => {
+    const flavorsList = document.getElementById('flavors-list');
+    if (!flavorsList) return;
+
+    if (!Array.isArray(AppData.flavors)) {
+        flavorsList.innerHTML = '<li class="error">Błędne dane smaków</li>';
+        return;
+    }
+
+    const flavorsToShow = filteredIndexes ? 
+        filteredIndexes.map(index => AppData.flavors[index]) : 
+        AppData.flavors;
+
+    flavorsList.innerHTML = flavorsToShow
+        .map((flavor, i) => {
+            const originalIndex = filteredIndexes ? filteredIndexes[i] : i;
+            const displayName = flavor ? sanitizeHTML(flavor) : 'Brak nazwy smaku';
+            const status = AppData.flavorAvailability[originalIndex] || 'available';
+            const isOutOfStock = status === 'out-of-stock';
+            
+            return `
+                <li class="${isOutOfStock ? 'out-of-stock-item' : ''}">
+                    <span class="flavor-number">${originalIndex + 1}.</span> 
+                    ${displayName}
+                    <span class="flavor-status ${status}" data-index="${originalIndex}">
+                        <span class="flavor-status-tooltip">
+                            ${getStatusText(status)}
+                        </span>
+                    </span>
+                    ${isAdmin ? renderAdminStatusControl(originalIndex, status) : ''}
+                </li>
+            `;
+        })
+        .join('') || '<li>Brak dostępnych smaków</li>';
+};
+
+function getStatusText(status) {
+    switch(status) {
+        case 'available': return 'Dostępny';
+        case 'low-stock': return 'Na wyczerpaniu';
+        case 'out-of-stock': return 'Brak w magazynie';
+        default: return 'Status nieznany';
+    }
+}
+
+function renderAdminStatusControl(index, currentStatus) {
+    return `
+        <div class="admin-status-control" data-index="${index}">
+            <select class="status-select">
+                <option value="available" ${currentStatus === 'available' ? 'selected' : ''}>Dostępny</option>
+                <option value="low-stock" ${currentStatus === 'low-stock' ? 'selected' : ''}>Na wyczerpaniu</option>
+                <option value="out-of-stock" ${currentStatus === 'out-of-stock' ? 'selected' : ''}>Brak</option>
+            </select>
+            <button class="btn save-status-btn">Zapisz</button>
+        </div>
+    `;
+}
 
             // Renderowanie tabeli cen
             const renderPricingTable = () => {
