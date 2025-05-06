@@ -27,7 +27,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const leftBtn = document.querySelector('.left-btn');
     const rightBtn = document.querySelector('.right-btn');
     // Zaktualizuj poniższy URL według swojego repozytorium GitHub
-    const baseImageUrl = 'https://raw.githubusercontent.com/lq-lista/lq-lista/main/images/';
+    const baseImageUrl = 'https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/';
+
 
     // Generowanie karuzeli
     longfillData.forEach(([number, name, image], index) => {
