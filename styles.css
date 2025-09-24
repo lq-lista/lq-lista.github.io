@@ -415,3 +415,33 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
   20%,60%{transform:translateX(-5px)}
   40%,80%{transform:translateX(5px)}
 }
+
+/* Nagłówki sekcji marek */
+.brand-section{margin-bottom:28px}
+.brand-title{
+  margin:0 0 8px 0;
+  font-size:1.4rem;
+  color:#333;
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:10px;
+  background:rgba(0,0,0,.04);
+}
+
+/* Ładniejszy przycisk Zamów teraz */
+.order-btn.pretty{
+  background: linear-gradient(135deg, #ff6f61, #ff9a6b);
+  color:#fff;
+  border:none;
+  padding:10px 18px;
+  border-radius:999px;
+  font-weight:700;
+  box-shadow:0 6px 14px rgba(255,111,97,.25);
+  cursor:pointer;
+  transition:transform .2s, filter .2s, box-shadow .2s;
+}
+.order-btn.pretty:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.05);
+  box-shadow:0 10px 20px rgba(255,111,97,.3);
+}
