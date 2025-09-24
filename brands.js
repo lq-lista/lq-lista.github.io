@@ -2,7 +2,15 @@
   // ===== USTAWIENIA OBRAZKÓW =====
   const LOCAL_BASE  = 'images/';
   const REMOTE_BASE = 'https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/';
-  const PLACEHOLDER = LOCAL_BASE + 'placeholder.jpg';
+  const PLACEHOLDER =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">
+       <rect width="100%" height="100%" fill="#f3f3f3"/>
+       <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+             fill="#999" font-family="Arial" font-size="20">Brak zdjęcia</text>
+     </svg>`
+  );
 
   // ===== POBRANIE ELEMENTÓW =====
   const $ = (id) => document.getElementById(id);
@@ -47,13 +55,19 @@
     [LOCAL_BASE+slug+'.jpg', LOCAL_BASE+slug+'.png', REMOTE_BASE+slug+'.jpg', REMOTE_BASE+slug+'.png'][step] || PLACEHOLDER
   );
   const attachImgFallback = (img, slug) => {
-    img.dataset.attempt = '0';
-    img.addEventListener('error', () => {
-      let n = (+img.dataset.attempt||0)+1;
-      img.dataset.attempt = String(n);
-      img.src = srcForAttempt(slug, n);
-    });
+  let step = 0; // 0: local jpg (już ustawione), 1: local png, 2: remote jpg, 3: remote png, 4: placeholder
+  const handler = () => {
+    step += 1;
+    if (step <= 3) {
+      img.src = srcForAttempt(slug, step);
+      return;
+    }
+    // Ostatni strzał: inline placeholder i KONIEC
+    img.removeEventListener('error', handler);
+    img.src = PLACEHOLDER;
   };
+  img.addEventListener('error', handler);
+};
 
   // ===== DANE Z AppData =====
   const raw = (window.AppData && AppData.flavors) ? AppData.flavors : [];
