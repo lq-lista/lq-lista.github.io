@@ -452,3 +452,33 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
 #brand-grid .brand-section { width: 100%; margin-bottom: 8px; }
 #brand-grid .longfill-carousel { width: 100%; }      /* zamiast 90% */
 @media (max-width: 768px){ #brand-grid { gap: 16px; } }
+
+/* --- Stack: jedna karuzela (firma) pod drugą --- */
+#brand-grid { 
+  display: block !important;      /* zamiast flex/grid */
+}
+
+#brand-grid.longfill-container {
+  display: block !important;
+  align-items: initial !important;
+  justify-content: initial !important;
+  gap: 0 !important;
+}
+
+/* sekcja firmy pełna szerokość + odstęp */
+#brand-grid .brand-section {
+  display: block;
+  width: 100%;
+  margin: 24px 0;
+}
+
+/* w środku nie potrzebujemy flexa na kontenerze, wystarczy block */
+#brand-grid .longfill-container {
+  display: block !important;
+}
+
+/* karuzela niech używa pełnej szerokości */
+#brand-grid .longfill-carousel {
+  width: 100% !important;
+  margin: 0 auto;
+}
