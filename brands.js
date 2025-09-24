@@ -1,5 +1,7 @@
+// brands.js — marki → osobne karuzele, dynamiczne marki, lightbox z opisem
+// Wymaga: window.AppData (data.js)
 (function () {
-  // ===== OBRAZKI =====
+  // ===== Ustawienia obrazków =====
   const LOCAL_BASE  = 'images/';
   const REMOTE_BASE = 'https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/';
   const PLACEHOLDER =
@@ -19,41 +21,51 @@
   const $noncold = $('filter-noncold');
   if (!$grid) return;
 
-  // ===== POMOCNICZE =====
+  // ===== Pomocnicze =====
   const stripNumber = (s) => String(s).replace(/^\s*\d+[\.)]?\s*/, '');
   const hasCold = (s) => /chłod|ice|lod|cool|mięta|menthol/i.test(s);
   const norm = (s) => (s||'').toLowerCase().replace(/[’‘]/g,"'").trim();
   const anchorId = (b) => 'brand-' + b.toLowerCase().replace(/[^a-z0-9]+/g,'-');
 
-  // ujednolicone nazwy marek (dowolna pisownia -> jedna nazwa)
+  // Kanonizacja marek (dowolna pisownia → jedna forma)
   const CANON = {
-    "a&l":"A&L","vampir vape":"Vampir Vape","fighter fuel":"Fighter Fuel",
-    "premium fcukin flava":"Premium Fcukin Flava","tribal force":"Tribal Force",
-    "klarro smooth funk":"Klarro Smooth Funk","geometric fruits":"Geometric Fruits",
-    "izi pizi":"Izi Pizi","wanna be cool":"Wanna be Cool","aroma king":"Aroma King",
-    "dillon's":"Dillon's","dillon’s":"Dillon's","chilled face":"chilled face",
-    "summer time":"Summer time","winter time":"Winter time",
-    "duo":"Duo","dark line":"Dark Line","inne":"Inne"
+    "a&l":"A&L",
+    "vampir vape":"Vampir Vape",
+    "fighter fuel":"Fighter Fuel",
+    "premium fcukin flava":"Premium Fcukin Flava",
+    "tribal force":"Tribal Force",
+    "klarro smooth funk":"Klarro Smooth Funk",
+    "geometric fruits":"Geometric Fruits",
+    "izi pizi":"Izi Pizi",
+    "wanna be cool":"Wanna be Cool",
+    "aroma king":"Aroma King",
+    "dillon's":"Dillon's","dillon’s":"Dillon's",
+    "chilled face":"chilled face",
+    "summer time":"Summer time",
+    "winter time":"Winter time",
+    "duo":"Duo",
+    "dark line":"Dark Line",
+    "inne":"Inne"
   };
 
-  // kolejność wyświetlania zakładek
-  const ORDER = [
+  // Kolejność zakładek: znane marki najpierw, reszta automatycznie A→Z
+  const PRIORITY = [
     "A&L","Vampir Vape","Fighter Fuel","Premium Fcukin Flava","Tribal Force",
-    "Izi Pizi","Wanna be Cool","Klarro Smooth Funk","Aroma King","Duo",
-    "Dark Line","Geometric Fruits","chilled face","Summer time","Winter time",
-    "Dillon's","Inne"
+    "Izi Pizi","Wanna be Cool","Klarro Smooth Funk","Aroma King",
+    "Duo","Dark Line","Geometric Fruits","chilled face","Summer time","Winter time",
+    "Dillon's"
   ];
 
-  // slug z tytułu (do nazwy pliku i klucza opisu)
+  // Slug do nazw plików i kluczy opisów (bez marki)
   const toSlug = (title) => {
     const map = {'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'a','Ć':'c','Ę':'e','Ł':'l','Ń':'n','Ó':'o','Ś':'s','Ź':'z','Ż':'z'};
     const ascii = title.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, ch => map[ch] || ch);
     return ascii.toLowerCase().replace(/&/g,'and').replace(/\//g,'-').replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-');
   };
 
-  const srcForAttempt = (slug, step) => (
-    [LOCAL_BASE+slug+'.jpg', LOCAL_BASE+slug+'.png', REMOTE_BASE+slug+'.jpg', REMOTE_BASE+slug+'.png'][step] || PLACEHOLDER
-  );
+  const srcForAttempt = (slug, step) =>
+    [LOCAL_BASE+slug+'.jpg', LOCAL_BASE+slug+'.png', REMOTE_BASE+slug+'.jpg', REMOTE_BASE+slug+'.png'][step] || PLACEHOLDER;
+
   const attachImgFallback = (img, slug) => {
     let step = 0;
     const handler = () => {
@@ -65,32 +77,33 @@
     img.addEventListener('error', handler);
   };
 
-  // ===== OPISY SMAKÓW (opcjonalne, klucz = slug tytułu bez marki) =====
+  // ===== Opisy (klucz = slug tytułu BEZ marki) =====
   const DESCRIPTIONS = {
-    // Fighter Fuel – nowe nazwy
-    "kabura": "Intensywny, słodko-kwaśny miks owocowy z cytrusowym akcentem i wyraźnie chłodnym finiszem (seria Fighter Fuel).",
-    "freed": "Egzotyczny profil: słodkie owoce tropikalne z orzeźwiającym chłodem – bardzo soczysty i świeży.",
-    "seiryuto": "Soczyste czerwone owoce z cytrusowym „twistem” i rześkim chłodem. Wyrazisty, ale gładki w odbiorze.",
-    "kansetsu": "Kiwi / winogrono / granat – słodko-kwaskowe nuty i solidna porcja chłodu dla maksymalnego orzeźwienia.",
+    // Fighter Fuel – nowe
+    "kabura": "Intensywny, słodko-kwaśny miks owocowy z cytrusowym akcentem i wyraźnym chłodem (Fighter Fuel).",
+    "freed": "Egzotyczna mieszanka: słodkie owoce tropikalne z orzeźwiającym chłodem – bardzo soczysta.",
+    "seiryuto": "Czerwone owoce z cytrusowym „twistem” i rześkim chłodem. Wyrazisty, ale gładki profil.",
+    "kansetsu": "Kiwi / winogrono / granat – słodko-kwaskowe nuty + solidna porcja chłodu.",
 
-    // Duo / Dark Line / itp.
-    "pitaja-gruszka": "Smoczy owoc (pitaja) połączony z dojrzałą gruszką – egzotycznie, gładko i lekko słodko.",
-    "jablko-mieta": "Zielone jabłko i świeża mięta. Zwiewne, czyste i chłodne wykończenie.",
-    "grape": "Ciemne, soczyste winogrono – pełne, słodkie, z lekką kwaskowatością na końcu (Dark Line).",
-    "skittles": "Słodki miks cukierków owocowych – tęczowy profil, dużo słodyczy (Dark Line).",
-    "black-tea": "Aromat czarnej herbaty: lekko taniczny, herbaciany, subtelnie słodki (Dark Line).",
-    "kiwi": "Świeże, lekko kwaskowe kiwi o czystym, soczystym profilu (Dark Line).",
-    "forest-fruits": "Mieszanka owoców leśnych – jagoda, malina, jeżyna; słodko-kwaskowa i soczysta (Dark Line).",
+    // Duo / Dark Line
+    "pitaja-gruszka": "Smoczy owoc (pitaja) + dojrzała gruszka – egzotycznie, gładko i lekko słodko.",
+    "jablko-mieta": "Zielone jabłko i świeża mięta. Zwiewne, czyste i chłodne zakończenie.",
+    "grape": "Ciemne, soczyste winogrono – pełne, słodkie, z lekką kwaskowatością.",
+    "skittles": "Tęczowy miks cukierków owocowych – dużo słodyczy, lekko kwaskowy finisz.",
+    "black-tea": "Aromat czarnej herbaty: lekko taniczny, herbaciany, subtelnie słodki.",
+    "kiwi": "Świeże, lekko kwaskowe kiwi o czystym, soczystym profilu.",
+    "forest-fruits": "Mieszanka owoców leśnych – jagoda, malina, jeżyna; słodko-kwaskowa i soczysta.",
 
     // Inne mniej oczywiste
-    "dragon-berry": "Smoczy owoc ze słodkimi czerwonymi jagodami – soczysto-egzotyczny balans (Geometric Fruits).",
-    "wave": "Cytrusowa lemoniada z delikatnym chłodem – wakacyjnie i rześko (Summer time).",
-    "jam": "Słodka konfitura z czerwonych owoców; gęsta, deserowa baza (Winter time).",
-    "peach-ice": "Dojrzała brzoskwinia z wyraźnym, czystym chłodem (Aroma King)."
+    "dragon-berry": "Smoczy owoc ze słodkimi czerwonymi jagodami – soczysto-egzotyczny balans.",
+    "peach-ice": "Dojrzała brzoskwinia z wyraźnym, czystym chłodem.",
+    "wave": "Cytrusowa lemoniada z delikatnym chłodem – wakacyjnie i rześko.",
+    "jam": "Słodka konfitura z czerwonych owoców; gęsta, deserowa baza."
   };
 
-  // ===== DANE z AppData =====
+  // ===== Przetwarzanie AppData =====
   const raw = (window.AppData && AppData.flavors) ? AppData.flavors : [];
+
   const items = raw.map((full, i) => {
     const m = String(full).match(/^(.*)\s*\(([^()]+)\)\s*$/);
     if (!m) {
@@ -99,28 +112,33 @@
       return { index:i, full, title, brand, brandKey:norm(brand), cold:hasCold(full), slug: toSlug(title), desc: DESCRIPTIONS[toSlug(title)] || "" };
     }
     const title = stripNumber(m[1]).trim();
-    const originalBrand = m[2].trim();
-    const brandKey = norm(originalBrand);
-    const brand = CANON[brandKey] || originalBrand;
+    const brandRaw = m[2].trim();
+    const brandKey = norm(brandRaw);
+    const brand = CANON[brandKey] || brandRaw; // jeśli nowa marka — pokaż dokładnie tę z danych
     return { index:i, full, title, brand, brandKey, cold:hasCold(full), slug: toSlug(title), desc: DESCRIPTIONS[toSlug(title)] || "" };
   });
 
+  // Grupowanie po marce
   const byBrand = items.reduce((acc, it)=>{
     const key = CANON[it.brandKey] || it.brand;
     (acc[key] ||= []).push(it);
     return acc;
   },{});
 
-  const brands = Object.keys(byBrand).sort((a,b)=>{
-    const ia=ORDER.indexOf(a), ib=ORDER.indexOf(b);
-    return (ia===-1?999:ia)-(ib===-1?999:ib) || a.localeCompare(b,'pl');
-  });
-  brands.forEach(b=>byBrand[b].sort((x,y)=>x.title.localeCompare(y.title,'pl')));
+  // Kolejność marek: najpierw PRIORITY ∩ discovered, potem reszta A→Z
+  const discovered = Object.keys(byBrand);
+  const brands = [
+    ...PRIORITY.filter(b => discovered.includes(b)),
+    ...discovered.filter(b => !PRIORITY.includes(b)).sort((a,b)=>a.localeCompare(b,'pl'))
+  ];
+  // Sort nazw w obrębie marki
+  brands.forEach(b => byBrand[b].sort((x,y)=> x.title.localeCompare(y.title,'pl')));
 
-  // ===== Taby = nawigacja do sekcji =====
-  if ($tabs) {
-    $tabs.innerHTML = brands.map(b => `<button class="brand-tab" data-target="${anchorId(b)}">${b}</button>`).join('');
-    $tabs.addEventListener('click', (e)=>{
+  // ===== Taby (nawigacja do sekcji) =====
+  const $tabsEl = $tabs;
+  if ($tabsEl) {
+    $tabsEl.innerHTML = brands.map(b => `<button class="brand-tab" data-target="${anchorId(b)}">${b}</button>`).join('');
+    $tabsEl.addEventListener('click', (e)=>{
       const btn = e.target.closest('.brand-tab'); if(!btn) return;
       const el = document.getElementById(btn.dataset.target);
       if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
@@ -172,7 +190,7 @@
     });
   };
 
-  // ===== Lightbox (z opisem jeśli istnieje) =====
+  // ===== Lightbox (z opcjonalnym opisem) =====
   let $overlay;
   const openLightbox = (data) => {
     $overlay?.remove();
@@ -194,7 +212,7 @@
     $overlay.querySelector('.order-btn').addEventListener('click', ()=> addToOrder(data));
   };
 
-  // ===== Zlecenie z karty do modala zamówień =====
+  // ===== Powiązanie z modalem zamówienia =====
   const addToOrder = (data) => {
     const startBtn = document.getElementById('start-order'); if (startBtn) startBtn.click();
     const sel = document.getElementById('flavor-select'); if (sel) { sel.value = String(data.index); sel.dispatchEvent(new Event('change',{bubbles:true})); }
