@@ -512,3 +512,32 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
   padding:6px 10px; font-size:.8rem; cursor:pointer;
 }
 .mini-btn:hover{ filter:brightness(1.05) }
+
+/* --- FIX: modal scroll + niech nic nie nachodzi na przyciski --- */
+.order-scroll-container{
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+@media (max-width:768px){
+  .order-scroll-container{ max-height: 65vh; }
+}
+
+/* przywróć przewijanie listy pozycji w modalu (nadpisuje wcześniejsze "overflow: visible") */
+.modal .order-items-container{
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+/* długie nazwy w koszyku — max 2 linie + elipsa */
+.flavor-name{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+  max-height: calc(1.3em * 2);
+}
+
+/* nie pozwól, by szczegóły "wypychały" w poziomie */
+.order-item .item-details{ flex-wrap: wrap; }

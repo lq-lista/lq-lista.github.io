@@ -716,9 +716,9 @@ class OrderSystem {
                 li.querySelector('.remove-item').addEventListener('click', () => {
                     li.classList.add('removing');
                     setTimeout(() => {
-                        this.currentOrder = this.currentOrder.filter(i => 
-                            `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${i.strength}`
-                        );
+                        this.currentOrder = this.currentOrder.filter(i =>
+                            `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${item.strength}`
+                            );
                         this.updateOrderSummary();
                     }, 300);
                 });
