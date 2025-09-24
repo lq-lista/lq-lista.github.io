@@ -1465,3 +1465,15 @@ h3 {
         display: none !important;
     }
 }
+
+.brand-tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 16px}
+.brand-tab{padding:8px 14px;border-radius:999px;border:1px solid #ddd;background:#fff;cursor:pointer}
+.brand-tab.active{background:#111;color:#fff;border-color:#111}
+.brand-filters{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:12px}
+.brand-filters input[type="text"]{padding:8px 12px;border:1px solid #ddd;border-radius:10px;min-width:240px}
+.toggle{display:flex;gap:6px;align-items:center}
+.longfill-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999}
+.longfill-modal{background:#fff;padding:16px;border-radius:14px;max-width:480px;width:calc(100% - 32px);position:relative;text-align:center}
+.longfill-modal img{width:100%;height:auto;border-radius:10px}
+.longfill-modal-title{font-weight:700;margin:10px 0 12px}
+.longfill-close{position:absolute;top:8px;right:10px;border:none;background:transparent;font-size:24px;cursor:pointer}

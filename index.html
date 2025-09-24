@@ -269,17 +269,31 @@
     </header>
 
     <main class="container">
-        <section class="longfill-section">
-            <h2>Longfill'e</h2>
-            <div class="longfill-container">
-                <button class="scroll-btn left-btn">‹</button>
-                <div class="longfill-carousel">
-                    <!-- Elementy będą dodawane dynamicznie przez JS -->
-                </div>
-                <button class="scroll-btn right-btn">›</button>
-            </div>
-            <div class="carousel-dots"></div>
-        </section>
+        <section id="brands-section" class="longfill-section">
+        <h2 class="section-title">Smaki wg firmy</h2>
+
+
+        <!-- Zakładki z firmami --> 
+        <div id="brand-tabs" class="brand-tabs"></div>
+
+
+<!-- Filtry --> 
+<div class="brand-filters">
+<input id="brand-search" type="text" placeholder="Szukaj smaku..." aria-label="Szukaj smaku"/>
+<label class="toggle">
+<input id="filter-cold" type="checkbox"/>
+<span>Tylko z chłodem</span>
+</label>
+<label class="toggle">
+<input id="filter-noncold" type="checkbox"/>
+<span>Bez chłodu</span>
+</label>
+</div>
+
+
+<!-- Siatka kart smaków (wygląd jak dawny longfill) -->
+<div id="brand-grid" class="longfill-container"></div>
+</section>
 
         <section class="flavors">
             <h2>Nasze Smaki</h2>
@@ -516,7 +530,7 @@
     <script src="data.js"></script>
     <script src="order.js"></script>
     <script src="app.js"></script>
-    <script src="longfill.js"></script>
+    <script src="brands.js"></script>
     
     <script>
         // Aktualizacja roku w stopce
