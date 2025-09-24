@@ -541,3 +541,15 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
 
 /* nie pozwól, by szczegóły "wypychały" w poziomie */
 .order-item .item-details{ flex-wrap: wrap; }
+
+/* Opis w lightboxie */
+.longfill-desc{
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  background: #f8f8f8;
+  border-radius: 10px;
+  color: #444;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: left;
+}

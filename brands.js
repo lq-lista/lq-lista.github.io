@@ -1,5 +1,5 @@
 (function () {
-  // ===== USTAWIENIA OBRAZKÓW =====
+  // ===== OBRAZKI =====
   const LOCAL_BASE  = 'images/';
   const REMOTE_BASE = 'https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/';
   const PLACEHOLDER =
@@ -11,7 +11,6 @@
        </svg>`
     );
 
-  // ===== POBRANIE ELEMENTÓW =====
   const $ = (id) => document.getElementById(id);
   const $tabs = $('brand-tabs');
   const $grid = $('brand-grid');
@@ -26,21 +25,26 @@
   const norm = (s) => (s||'').toLowerCase().replace(/[’‘]/g,"'").trim();
   const anchorId = (b) => 'brand-' + b.toLowerCase().replace(/[^a-z0-9]+/g,'-');
 
+  // ujednolicone nazwy marek (dowolna pisownia -> jedna nazwa)
   const CANON = {
     "a&l":"A&L","vampir vape":"Vampir Vape","fighter fuel":"Fighter Fuel",
     "premium fcukin flava":"Premium Fcukin Flava","tribal force":"Tribal Force",
     "klarro smooth funk":"Klarro Smooth Funk","geometric fruits":"Geometric Fruits",
     "izi pizi":"Izi Pizi","wanna be cool":"Wanna be Cool","aroma king":"Aroma King",
     "dillon's":"Dillon's","dillon’s":"Dillon's","chilled face":"chilled face",
-    "summer time":"Summer time","winter time":"Winter time","inne":"Inne"
+    "summer time":"Summer time","winter time":"Winter time",
+    "duo":"Duo","dark line":"Dark Line","inne":"Inne"
   };
 
+  // kolejność wyświetlania zakładek
   const ORDER = [
     "A&L","Vampir Vape","Fighter Fuel","Premium Fcukin Flava","Tribal Force",
-    "Izi Pizi","Wanna be Cool","Klarro Smooth Funk","Aroma King","Dillon's",
-    "Geometric Fruits","chilled face","Summer time","Winter time","Inne"
+    "Izi Pizi","Wanna be Cool","Klarro Smooth Funk","Aroma King","Duo",
+    "Dark Line","Geometric Fruits","chilled face","Summer time","Winter time",
+    "Dillon's","Inne"
   ];
 
+  // slug z tytułu (do nazwy pliku i klucza opisu)
   const toSlug = (title) => {
     const map = {'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'a','Ć':'c','Ę':'e','Ł':'l','Ń':'n','Ó':'o','Ś':'s','Ź':'z','Ż':'z'};
     const ascii = title.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, ch => map[ch] || ch);
@@ -61,6 +65,30 @@
     img.addEventListener('error', handler);
   };
 
+  // ===== OPISY SMAKÓW (opcjonalne, klucz = slug tytułu bez marki) =====
+  const DESCRIPTIONS = {
+    // Fighter Fuel – nowe nazwy
+    "kabura": "Intensywny, słodko-kwaśny miks owocowy z cytrusowym akcentem i wyraźnie chłodnym finiszem (seria Fighter Fuel).",
+    "freed": "Egzotyczny profil: słodkie owoce tropikalne z orzeźwiającym chłodem – bardzo soczysty i świeży.",
+    "seiryuto": "Soczyste czerwone owoce z cytrusowym „twistem” i rześkim chłodem. Wyrazisty, ale gładki w odbiorze.",
+    "kansetsu": "Kiwi / winogrono / granat – słodko-kwaskowe nuty i solidna porcja chłodu dla maksymalnego orzeźwienia.",
+
+    // Duo / Dark Line / itp.
+    "pitaja-gruszka": "Smoczy owoc (pitaja) połączony z dojrzałą gruszką – egzotycznie, gładko i lekko słodko.",
+    "jablko-mieta": "Zielone jabłko i świeża mięta. Zwiewne, czyste i chłodne wykończenie.",
+    "grape": "Ciemne, soczyste winogrono – pełne, słodkie, z lekką kwaskowatością na końcu (Dark Line).",
+    "skittles": "Słodki miks cukierków owocowych – tęczowy profil, dużo słodyczy (Dark Line).",
+    "black-tea": "Aromat czarnej herbaty: lekko taniczny, herbaciany, subtelnie słodki (Dark Line).",
+    "kiwi": "Świeże, lekko kwaskowe kiwi o czystym, soczystym profilu (Dark Line).",
+    "forest-fruits": "Mieszanka owoców leśnych – jagoda, malina, jeżyna; słodko-kwaskowa i soczysta (Dark Line).",
+
+    // Inne mniej oczywiste
+    "dragon-berry": "Smoczy owoc ze słodkimi czerwonymi jagodami – soczysto-egzotyczny balans (Geometric Fruits).",
+    "wave": "Cytrusowa lemoniada z delikatnym chłodem – wakacyjnie i rześko (Summer time).",
+    "jam": "Słodka konfitura z czerwonych owoców; gęsta, deserowa baza (Winter time).",
+    "peach-ice": "Dojrzała brzoskwinia z wyraźnym, czystym chłodem (Aroma King)."
+  };
+
   // ===== DANE z AppData =====
   const raw = (window.AppData && AppData.flavors) ? AppData.flavors : [];
   const items = raw.map((full, i) => {
@@ -68,13 +96,13 @@
     if (!m) {
       const title = stripNumber(full).trim();
       const brand = "Inne";
-      return { index:i, full, title, brand, brandKey:norm(brand), cold:hasCold(full), slug: toSlug(title) };
+      return { index:i, full, title, brand, brandKey:norm(brand), cold:hasCold(full), slug: toSlug(title), desc: DESCRIPTIONS[toSlug(title)] || "" };
     }
     const title = stripNumber(m[1]).trim();
     const originalBrand = m[2].trim();
     const brandKey = norm(originalBrand);
     const brand = CANON[brandKey] || originalBrand;
-    return { index:i, full, title, brand, brandKey, cold:hasCold(full), slug: toSlug(title) };
+    return { index:i, full, title, brand, brandKey, cold:hasCold(full), slug: toSlug(title), desc: DESCRIPTIONS[toSlug(title)] || "" };
   });
 
   const byBrand = items.reduce((acc, it)=>{
@@ -89,7 +117,7 @@
   });
   brands.forEach(b=>byBrand[b].sort((x,y)=>x.title.localeCompare(y.title,'pl')));
 
-  // ===== TABS → scroll do sekcji =====
+  // ===== Taby = nawigacja do sekcji =====
   if ($tabs) {
     $tabs.innerHTML = brands.map(b => `<button class="brand-tab" data-target="${anchorId(b)}">${b}</button>`).join('');
     $tabs.addEventListener('click', (e)=>{
@@ -99,7 +127,7 @@
     });
   }
 
-  // ===== RENDER: sekcje marek (każda własna karuzela) =====
+  // ===== Render sekcji (jedna marka = jedna karuzela) =====
   const renderSections = () => {
     const q = ($q?.value||'').toLowerCase();
 
@@ -144,7 +172,7 @@
     });
   };
 
-  // ===== LIGHTBOX =====
+  // ===== Lightbox (z opisem jeśli istnieje) =====
   let $overlay;
   const openLightbox = (data) => {
     $overlay?.remove();
@@ -154,6 +182,7 @@
       <div class="longfill-modal">
         <img class="lb-img" src="${srcForAttempt(data.slug,0)}" alt="${data.title}">
         <div class="longfill-modal-title">${data.title}</div>
+        ${data.desc ? `<div class="longfill-desc">${data.desc}</div>` : ''}
         <button class="order-btn pretty">Zamów teraz</button>
         <button class="longfill-close" aria-label="Zamknij">×</button>
       </div>`;
@@ -165,16 +194,16 @@
     $overlay.querySelector('.order-btn').addEventListener('click', ()=> addToOrder(data));
   };
 
-  // ===== POWIĄZANIE Z MODALEM ZAMÓWIEŃ =====
+  // ===== Zlecenie z karty do modala zamówień =====
   const addToOrder = (data) => {
     const startBtn = document.getElementById('start-order'); if (startBtn) startBtn.click();
     const sel = document.getElementById('flavor-select'); if (sel) { sel.value = String(data.index); sel.dispatchEvent(new Event('change',{bubbles:true})); }
     const modal = document.getElementById('order-modal'); if (modal) modal.scrollTo({top:0,behavior:'smooth'});
   };
 
-  // ===== FILTRY =====
+  // ===== Filtry =====
   [$q,$cold,$noncold].forEach(el=> el && el.addEventListener('input', renderSections));
 
-  // START
+  // Start
   renderSections();
 })();
