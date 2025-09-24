@@ -482,3 +482,33 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
   width: 100% !important;
   margin: 0 auto;
 }
+
+/* Mini-ikonki profilu smaku */
+.flavor-tags{
+  display:flex; gap:6px; justify-content:center; align-items:center;
+  margin:6px 0 2px;
+}
+.flavor-tag{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:26px; height:26px; border-radius:8px;
+  background: rgba(0,0,0,.04);
+  font-size:16px; line-height:1;
+}
+
+/* Admin tools nad tabelą */
+.admin-tools{
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  margin:10px 0 6px;
+}
+.admin-tools select, .admin-tools input{
+  padding:8px 10px; border:1px solid #ddd; border-radius:8px;
+}
+.admin-tools .admin-hint{ color:#666; font-size:.9rem }
+
+/* Mini przycisk w kolumnie Akcje */
+.mini-btn{
+  background: linear-gradient(135deg, #ff6f61, #ff9a6b);
+  color:#fff; border:none; border-radius:999px;
+  padding:6px 10px; font-size:.8rem; cursor:pointer;
+}
+.mini-btn:hover{ filter:brightness(1.05) }
