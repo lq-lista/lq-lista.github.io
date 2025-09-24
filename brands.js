@@ -147,48 +147,51 @@
 
   // ===== Render sekcji (jedna marka = jedna karuzela) =====
   const renderSections = () => {
-    const q = ($q?.value||'').toLowerCase();
+  const q = ($q?.value || '').toLowerCase();
+  const wantCold = !!$cold?.checked;
+  const wantNon  = !!$noncold?.checked;
 
-    const sections = brands.map(brand=>{
-      const base = byBrand[brand] || [];
-      const list = base
-        .filter(it => !q || it.title.toLowerCase().includes(q))
-        .filter(it => !$cold?.checked || it.cold)
-        .filter(it => !$noncold?.checked || !it.cold);
+  const sections = brands.map(brand => {
+    const base = byBrand[brand] || [];
+    const list = base
+      // szukajka
+      .filter(it => !q || it.title.toLowerCase().includes(q))
+      // chłód: jeśli oba zaznaczone → nie filtruj wcale
+      .filter(it => (wantCold && wantNon) ? true : (wantCold ? it.cold : (wantNon ? !it.cold : true)));
 
-      if (!list.length) return '';
+    if (!list.length) return '';
 
-      const cards = list.map(it=>{
-        const firstSrc = srcForAttempt(it.slug,0);
-        return `
-          <div class="longfill-item" data-index="${it.index}">
-            <img class="longfill-image" alt="${it.title}" src="${firstSrc}">
-            <div class="longfill-name">${it.title}</div>
-            <button class="order-btn pretty">Zamów teraz</button>
-          </div>`;
-      }).join('');
-
+    const cards = list.map(it => {
+      const firstSrc = srcForAttempt(it.slug, 0);
       return `
-        <div class="brand-section" id="${anchorId(brand)}">
-          <h3 class="brand-title">${brand}</h3>
-          <div class="longfill-container">
-            <div class="longfill-carousel">${cards}</div>
-          </div>
+        <div class="longfill-item" data-index="${it.index}">
+          <img class="longfill-image" alt="${it.title}" src="${firstSrc}">
+          <div class="longfill-name">${it.title}</div>
+          <button class="order-btn pretty">Zamów teraz</button>
         </div>`;
     }).join('');
 
-    $grid.innerHTML = sections || '<p class="empty">Brak wyników.</p>';
+    return `
+      <div class="brand-section" id="${anchorId(brand)}">
+        <h3 class="brand-title">${brand}</h3>
+        <div class="longfill-container">
+          <div class="longfill-carousel">${cards}</div>
+        </div>
+      </div>`;
+  }).join('');
 
-    // akcje i fallbacki
-    $grid.querySelectorAll('.longfill-item').forEach(card=>{
-      const idx = +card.dataset.index;
-      const data = items[idx];
-      const img = card.querySelector('img');
-      attachImgFallback(img, data.slug);
-      img.addEventListener('click', ()=> openLightbox(data));
-      card.querySelector('.order-btn').addEventListener('click', ()=> addToOrder(data));
-    });
-  };
+  $grid.innerHTML = sections || '<p class="empty">Brak wyników.</p>';
+
+  $grid.querySelectorAll('.longfill-item').forEach(card => {
+    const idx = +card.dataset.index;
+    const data = items[idx];
+    const img = card.querySelector('img');
+    attachImgFallback(img, data.slug);
+    img.addEventListener('click', () => openLightbox(data));
+    card.querySelector('.order-btn').addEventListener('click', () => addToOrder(data));
+  });
+};
+
 
   // ===== Lightbox (z opcjonalnym opisem) =====
   let $overlay;

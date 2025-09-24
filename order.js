@@ -379,70 +379,70 @@ class OrderSystem {
     }
 
     filterFlavors() {
-        try {
-            const flavorsList = document.getElementById('flavors-list');
-            if (!flavorsList) return;
-    
-            const brandFilter = document.getElementById('brand-filter').value;
-            const typeFilter = document.getElementById('type-filter').value;
-            const flavors = AppData?.flavors || [];
-            const flavorCategories = AppData?.flavorCategories || {};
-    
-            flavorsList.innerHTML = '';
-    
-            // Sprawdź czy są jakieś smaki do wyświetlenia
-            if (flavors.length === 0) {
-                flavorsList.innerHTML = '<li class="error">Brak dostępnych smaków</li>';
-                return;
-            }
-    
-            flavors.forEach((flavor, index) => {
-                try {
-                    // Sprawdź filtr firmy
-                    const brandMatch = 
-                        brandFilter === 'all' ||
-                        (brandFilter === 'a&l' && flavor.includes('(A&L)')) ||
-                        (brandFilter === 'tribal' && flavor.includes('(Tribal Force)')) ||
-                        (brandFilter === 'vapir' && flavor.includes('(Vapir Vape)')) ||
-                        (brandFilter === 'fighter' && flavor.includes('(Fighter Fuel)')) ||
-                        (brandFilter === 'izi' && flavor.includes('(IZI PIZI)')) ||
-                        (brandFilter === 'wanna' && flavor.includes('(WANNA BE COOL)')) ||
-                        (brandFilter === 'funk' && flavor.includes('(FUNK CLARO)')) ||
-                        (brandFilter === 'aroma' && flavor.includes('(AROMA KING)')) ||
-                        (brandFilter === 'dilno' && flavor.includes('(DILNO\'S)')) ||
-                        (brandFilter === 'panda' && flavor.includes('(PANDA)'));
-    
-                    // Sprawdź filtr typu
-                    let typeMatch = typeFilter === 'all';
-                    if (!typeMatch) {
-                        const typeIndexes = flavorCategories[typeFilter] || [];
-                        typeMatch = typeIndexes.includes(index);
-                    }
-    
-                    // Jeśli pasuje do obu filtrów, dodaj do listy
-                    if (brandMatch && typeMatch) {
-                        const li = document.createElement('li');
-                        li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
-                        flavorsList.appendChild(li);
-                    }
-                } catch (e) {
-                    console.warn(`Błąd przetwarzania smaku ${index}:`, e);
-                }
-            });
-    
-            // Jeśli nic nie pasuje do filtrów
-            if (flavorsList.children.length === 0) {
-                flavorsList.innerHTML = '<li class="no-results">Brak smaków pasujących do wybranych filtrów</li>';
-            }
-    
-        } catch (error) {
-            console.error('Błąd filtrowania smaków:', error);
-            const flavorsList = document.getElementById('flavors-list');
-            if (flavorsList) {
-                flavorsList.innerHTML = '<li class="error">Błąd podczas filtrowania smaków</li>';
-            }
-        }
+  try {
+    const flavorsList = document.getElementById('flavors-list');
+    if (!flavorsList) return;
+
+    const brandFilter = (document.getElementById('brand-filter')?.value || 'all');
+    const typeFilter  = (document.getElementById('type-filter')?.value || 'all');
+
+    const flavors = AppData?.flavors || [];
+    const flavorCategories = AppData?.flavorCategories || {};
+
+    flavorsList.innerHTML = '';
+
+    // mapka brand → regex, niewrażliwy na wielkość
+    const brandRegex = {
+      "a&l":       /\(A&L\)\s*$/i,
+      "vampir":    /\(Vampir\s+Vape\)\s*$/i,
+      "fighter":   /\(Fighter\s+Fuel\)\s*$/i,
+      "premium":   /\(Premium\s+Fcukin\s+Flava\)\s*$/i,
+      "tribal":    /\(Tribal\s+Force\)\s*$/i,
+      "izi":       /\(Izi\s+Pizi\)\s*$/i,
+      "wanna":     /\(Wanna\s+be\s+Cool\)\s*$/i,
+      "klarro":    /\(Klarro\s+Smooth\s+Funk\)\s*$/i,
+      "aroma":     /\(Aroma\s+King\)\s*$/i,
+      "dillon":    /\(Dillon'?s\)\s*$/i,
+      "geometric": /\(Geometric\s+Fruits\)\s*$/i,
+      "chilled":   /\(chilled\s+face\)\s*$/i,
+      "summer":    /\(Summer\s+time\)\s*$/i,
+      "winter":    /\(Winter\s+time\)\s*$/i,
+      "duo":       /\(Duo\)\s*$/i,
+      "dark":      /\(Dark\s+Line\)\s*$/i
+    };
+
+    flavors.forEach((flavor, index) => {
+      // dopasowanie marki
+      const brandMatch =
+        brandFilter === 'all' ||
+        (brandRegex[brandFilter] && brandRegex[brandFilter].test(flavor));
+
+      // dopasowanie typu
+      let typeMatch = typeFilter === 'all';
+      if (!typeMatch) {
+        const typeIndexes = flavorCategories[typeFilter] || [];
+        typeMatch = typeIndexes.includes(index);
+      }
+
+      if (brandMatch && typeMatch) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
+        flavorsList.appendChild(li);
+      }
+    });
+
+    if (flavorsList.children.length === 0) {
+      flavorsList.innerHTML = '<li class="no-results">Brak smaków pasujących do wybranych filtrów</li>';
     }
+  } catch (error) {
+    console.error('Błąd filtrowania smaków:', error);
+    const flavorsList = document.getElementById('flavors-list');
+    if (flavorsList) {
+      flavorsList.innerHTML = '<li class="error">Błąd podczas filtrowania smaków</li>';
+    }
+  }
+}
+
     
     formatFlavorName(flavor) {
         try {
