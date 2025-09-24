@@ -445,3 +445,10 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
   filter:brightness(1.05);
   box-shadow:0 10px 20px rgba(255,111,97,.3);
 }
+
+/* --- Brand grid: jedna karuzela pod drugą --- */
+#brand-grid.longfill-container { display: block; }   /* nadpisuje flex */
+#brand-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+#brand-grid .brand-section { width: 100%; margin-bottom: 8px; }
+#brand-grid .longfill-carousel { width: 100%; }      /* zamiast 90% */
+@media (max-width: 768px){ #brand-grid { gap: 16px; } }
