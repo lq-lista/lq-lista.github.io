@@ -1,7 +1,7 @@
-// brands.js — marki → osobne karuzele, dynamiczne marki, lightbox z opisem
+// brands.js — marki → osobne karuzele, dynamicznie; lightbox z opisem + STATUS smaku
 // Wymaga: window.AppData (data.js)
 (function () {
-  // ===== Ustawienia obrazków =====
+  // ===== OBRAZKI =====
   const LOCAL_BASE  = 'images/';
   const REMOTE_BASE = 'https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/';
   const PLACEHOLDER =
@@ -21,34 +21,22 @@
   const $noncold = $('filter-noncold');
   if (!$grid) return;
 
-  // ===== Pomocnicze =====
+  // ===== POMOCNICZE =====
   const stripNumber = (s) => String(s).replace(/^\s*\d+[\.)]?\s*/, '');
   const hasCold = (s) => /chłod|ice|lod|cool|mięta|menthol/i.test(s);
   const norm = (s) => (s||'').toLowerCase().replace(/[’‘]/g,"'").trim();
   const anchorId = (b) => 'brand-' + b.toLowerCase().replace(/[^a-z0-9]+/g,'-');
 
-  // Kanonizacja marek (dowolna pisownia → jedna forma)
   const CANON = {
-    "a&l":"A&L",
-    "vampir vape":"Vampir Vape",
-    "fighter fuel":"Fighter Fuel",
-    "premium fcukin flava":"Premium Fcukin Flava",
-    "tribal force":"Tribal Force",
-    "klarro smooth funk":"Klarro Smooth Funk",
-    "geometric fruits":"Geometric Fruits",
-    "izi pizi":"Izi Pizi",
-    "wanna be cool":"Wanna be Cool",
-    "aroma king":"Aroma King",
-    "dillon's":"Dillon's","dillon’s":"Dillon's",
-    "chilled face":"chilled face",
-    "summer time":"Summer time",
-    "winter time":"Winter time",
-    "duo":"Duo",
-    "dark line":"Dark Line",
-    "inne":"Inne"
+    "a&l":"A&L","vampir vape":"Vampir Vape","fighter fuel":"Fighter Fuel",
+    "premium fcukin flava":"Premium Fcukin Flava","tribal force":"Tribal Force",
+    "klarro smooth funk":"Klarro Smooth Funk","geometric fruits":"Geometric Fruits",
+    "izi pizi":"Izi Pizi","wanna be cool":"Wanna be Cool","aroma king":"Aroma King",
+    "dillon's":"Dillon's","dillon’s":"Dillon's","chilled face":"chilled face",
+    "summer time":"Summer time","winter time":"Winter time",
+    "duo":"Duo","dark line":"Dark Line","inne":"Inne"
   };
 
-  // Kolejność zakładek: znane marki najpierw, reszta automatycznie A→Z
   const PRIORITY = [
     "A&L","Vampir Vape","Fighter Fuel","Premium Fcukin Flava","Tribal Force",
     "Izi Pizi","Wanna be Cool","Klarro Smooth Funk","Aroma King",
@@ -56,7 +44,7 @@
     "Dillon's"
   ];
 
-  // Slug do nazw plików i kluczy opisów (bez marki)
+  // slug = klucz statusu i nazwy pliku
   const toSlug = (title) => {
     const map = {'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'a','Ć':'c','Ę':'e','Ł':'l','Ń':'n','Ó':'o','Ś':'s','Ź':'z','Ż':'z'};
     const ascii = title.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, ch => map[ch] || ch);
@@ -77,33 +65,46 @@
     img.addEventListener('error', handler);
   };
 
-  // ===== Opisy (klucz = slug tytułu BEZ marki) =====
+  // ===== OPISY (opcjonalnie) =====
   const DESCRIPTIONS = {
-    // Fighter Fuel – nowe
-    "kabura": "Intensywny, słodko-kwaśny miks owocowy z cytrusowym akcentem i wyraźnym chłodem (Fighter Fuel).",
-    "freed": "Egzotyczna mieszanka: słodkie owoce tropikalne z orzeźwiającym chłodem – bardzo soczysta.",
-    "seiryuto": "Czerwone owoce z cytrusowym „twistem” i rześkim chłodem. Wyrazisty, ale gładki profil.",
-    "kansetsu": "Kiwi / winogrono / granat – słodko-kwaskowe nuty + solidna porcja chłodu.",
-
-    // Duo / Dark Line
-    "pitaja-gruszka": "Smoczy owoc (pitaja) + dojrzała gruszka – egzotycznie, gładko i lekko słodko.",
-    "jablko-mieta": "Zielone jabłko i świeża mięta. Zwiewne, czyste i chłodne zakończenie.",
-    "grape": "Ciemne, soczyste winogrono – pełne, słodkie, z lekką kwaskowatością.",
-    "skittles": "Tęczowy miks cukierków owocowych – dużo słodyczy, lekko kwaskowy finisz.",
-    "black-tea": "Aromat czarnej herbaty: lekko taniczny, herbaciany, subtelnie słodki.",
-    "kiwi": "Świeże, lekko kwaskowe kiwi o czystym, soczystym profilu.",
-    "forest-fruits": "Mieszanka owoców leśnych – jagoda, malina, jeżyna; słodko-kwaskowa i soczysta.",
-
-    // Inne mniej oczywiste
-    "dragon-berry": "Smoczy owoc ze słodkimi czerwonymi jagodami – soczysto-egzotyczny balans.",
-    "peach-ice": "Dojrzała brzoskwinia z wyraźnym, czystym chłodem.",
-    "wave": "Cytrusowa lemoniada z delikatnym chłodem – wakacyjnie i rześko.",
-    "jam": "Słodka konfitura z czerwonych owoców; gęsta, deserowa baza."
+    "kabura":"Intensywny, słodko-kwaśny miks owocowy z cytrusowym akcentem i chłodem (Fighter Fuel).",
+    "freed":"Egzotyczna mieszanka: słodkie owoce tropikalne z orzeźwiającym chłodem.",
+    "seiryuto":"Czerwone owoce z cytrusowym twistem i rześkim chłodem.",
+    "kansetsu":"Kiwi / winogrono / granat — słodko-kwaskowe nuty + solidny chłód.",
+    "pitaja-gruszka":"Pitaja + dojrzała gruszka — egzotycznie i gładko (Duo).",
+    "jablko-mieta":"Zielone jabłko i świeża mięta — czysto i chłodno (Duo).",
+    "grape":"Ciemne, soczyste winogrono — pełne i lekko kwaskowe (Dark Line).",
+    "skittles":"Słodki miks cukierków owocowych (Dark Line).",
+    "black-tea":"Aromat czarnej herbaty — lekko taniczny, subtelnie słodki (Dark Line).",
+    "kiwi":"Świeże, lekko kwaskowe kiwi (Dark Line).",
+    "forest-fruits":"Mieszanka owoców leśnych — słodko-kwaskowa, soczysta (Dark Line).",
+    "dragon-berry":"Smoczy owoc + czerwone jagody — egzotyczny balans (Geometric Fruits).",
+    "peach-ice":"Dojrzała brzoskwinia z czystym chłodem (Aroma King).",
+    "wave":"Cytrusowa lemoniada z delikatnym chłodem (Summer time).",
+    "jam":"Słodka konfitura z czerwonych owoców (Winter time)."
   };
 
-  // ===== Przetwarzanie AppData =====
-  const raw = (window.AppData && AppData.flavors) ? AppData.flavors : [];
+  // ===== STATUSY (z localStorage; aktualizowane przez order.js) =====
+  const readStatusMap = () => {
+    try { return JSON.parse(localStorage.getItem('flavorStatus') || '{}'); }
+    catch { return {}; }
+  };
+  let STATUS = readStatusMap();
 
+  const statusLabel = (code) => ({
+    available: 'Dostępny',
+    low:       'Na wyczerpaniu',
+    out:       'Brak'
+  }[code] || null);
+
+  const statusClass = (code) => ({
+    available: 'stock-available',
+    low:       'stock-low',
+    out:       'stock-out'
+  }[code] || '');
+
+  // ===== DANE z AppData =====
+  const raw = (window.AppData && AppData.flavors) ? AppData.flavors : [];
   const items = raw.map((full, i) => {
     const m = String(full).match(/^(.*)\s*\(([^()]+)\)\s*$/);
     if (!m) {
@@ -114,88 +115,93 @@
     const title = stripNumber(m[1]).trim();
     const brandRaw = m[2].trim();
     const brandKey = norm(brandRaw);
-    const brand = CANON[brandKey] || brandRaw; // jeśli nowa marka — pokaż dokładnie tę z danych
+    const brand = CANON[brandKey] || brandRaw;
     return { index:i, full, title, brand, brandKey, cold:hasCold(full), slug: toSlug(title), desc: DESCRIPTIONS[toSlug(title)] || "" };
   });
 
-  // Grupowanie po marce
   const byBrand = items.reduce((acc, it)=>{
     const key = CANON[it.brandKey] || it.brand;
     (acc[key] ||= []).push(it);
     return acc;
   },{});
 
-  // Kolejność marek: najpierw PRIORITY ∩ discovered, potem reszta A→Z
   const discovered = Object.keys(byBrand);
   const brands = [
     ...PRIORITY.filter(b => discovered.includes(b)),
     ...discovered.filter(b => !PRIORITY.includes(b)).sort((a,b)=>a.localeCompare(b,'pl'))
   ];
-  // Sort nazw w obrębie marki
   brands.forEach(b => byBrand[b].sort((x,y)=> x.title.localeCompare(y.title,'pl')));
 
-  // ===== Taby (nawigacja do sekcji) =====
-  const $tabsEl = $tabs;
-  if ($tabsEl) {
-    $tabsEl.innerHTML = brands.map(b => `<button class="brand-tab" data-target="${anchorId(b)}">${b}</button>`).join('');
-    $tabsEl.addEventListener('click', (e)=>{
+  // ===== TABS =====
+  if ($tabs) {
+    $tabs.innerHTML = brands.map(b => `<button class="brand-tab" data-target="${anchorId(b)}">${b}</button>`).join('');
+    $tabs.addEventListener('click', (e)=>{
       const btn = e.target.closest('.brand-tab'); if(!btn) return;
       const el = document.getElementById(btn.dataset.target);
       if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
     });
   }
 
-  // ===== Render sekcji (jedna marka = jedna karuzela) =====
+  // ===== RENDER =====
   const renderSections = () => {
-  const q = ($q?.value || '').toLowerCase();
-  const wantCold = !!$cold?.checked;
-  const wantNon  = !!$noncold?.checked;
+    STATUS = readStatusMap(); // odśwież statusy
+    const q = ($q?.value || '').toLowerCase();
+    const wantCold = !!$cold?.checked;
+    const wantNon  = !!$noncold?.checked;
 
-  const sections = brands.map(brand => {
-    const base = byBrand[brand] || [];
-    const list = base
-      // szukajka
-      .filter(it => !q || it.title.toLowerCase().includes(q))
-      // chłód: jeśli oba zaznaczone → nie filtruj wcale
-      .filter(it => (wantCold && wantNon) ? true : (wantCold ? it.cold : (wantNon ? !it.cold : true)));
+    const sections = brands.map(brand=>{
+      const base = byBrand[brand] || [];
+      const list = base
+        .filter(it => !q || it.title.toLowerCase().includes(q))
+        .filter(it => (wantCold && wantNon) ? true : (wantCold ? it.cold : (wantNon ? !it.cold : true)));
 
-    if (!list.length) return '';
+      if (!list.length) return '';
 
-    const cards = list.map(it => {
-      const firstSrc = srcForAttempt(it.slug, 0);
+      const cards = list.map(it=>{
+        const firstSrc = srcForAttempt(it.slug, 0);
+        const st = STATUS[it.slug] || 'available';
+        const stLabel = statusLabel(st);
+        const stClass = statusClass(st);
+        const disabled = st === 'out' ? 'disabled' : '';
+        const extraClass = st === 'out' ? 'is-disabled' : '';
+        return `
+          <div class="longfill-item" data-index="${it.index}">
+            <img class="longfill-image" alt="${it.title}" src="${firstSrc}">
+            <div class="longfill-name">${it.title}</div>
+            ${stLabel ? `<div class="status-badge ${stClass}">${stLabel}</div>` : ''}
+            <button class="order-btn pretty ${extraClass}" ${disabled}>Zamów teraz</button>
+          </div>`;
+      }).join('');
+
       return `
-        <div class="longfill-item" data-index="${it.index}">
-          <img class="longfill-image" alt="${it.title}" src="${firstSrc}">
-          <div class="longfill-name">${it.title}</div>
-          <button class="order-btn pretty">Zamów teraz</button>
+        <div class="brand-section" id="${anchorId(brand)}">
+          <h3 class="brand-title">${brand}</h3>
+          <div class="longfill-container">
+            <div class="longfill-carousel">${cards}</div>
+          </div>
         </div>`;
     }).join('');
 
-    return `
-      <div class="brand-section" id="${anchorId(brand)}">
-        <h3 class="brand-title">${brand}</h3>
-        <div class="longfill-container">
-          <div class="longfill-carousel">${cards}</div>
-        </div>
-      </div>`;
-  }).join('');
+    $grid.innerHTML = sections || '<p class="empty">Brak wyników.</p>';
 
-  $grid.innerHTML = sections || '<p class="empty">Brak wyników.</p>';
+    $grid.querySelectorAll('.longfill-item').forEach(card=>{
+      const idx = +card.dataset.index;
+      const data = items[idx];
+      const img = card.querySelector('img');
+      attachImgFallback(img, data.slug);
+      img.addEventListener('click', ()=> openLightbox(data));
+      const btn = card.querySelector('.order-btn');
+      btn.addEventListener('click', ()=> addToOrder(data));
+    });
+  };
 
-  $grid.querySelectorAll('.longfill-item').forEach(card => {
-    const idx = +card.dataset.index;
-    const data = items[idx];
-    const img = card.querySelector('img');
-    attachImgFallback(img, data.slug);
-    img.addEventListener('click', () => openLightbox(data));
-    card.querySelector('.order-btn').addEventListener('click', () => addToOrder(data));
-  });
-};
-
-
-  // ===== Lightbox (z opcjonalnym opisem) =====
+  // ===== LIGHTBOX =====
   let $overlay;
   const openLightbox = (data) => {
+    const st = (readStatusMap()[data.slug] || 'available');
+    const stLabel = statusLabel(st);
+    const stClass = statusClass(st);
+    const disabled = st === 'out' ? 'disabled' : '';
     $overlay?.remove();
     $overlay = document.createElement('div');
     $overlay.className = 'longfill-overlay';
@@ -204,7 +210,8 @@
         <img class="lb-img" src="${srcForAttempt(data.slug,0)}" alt="${data.title}">
         <div class="longfill-modal-title">${data.title}</div>
         ${data.desc ? `<div class="longfill-desc">${data.desc}</div>` : ''}
-        <button class="order-btn pretty">Zamów teraz</button>
+        ${stLabel ? `<div class="status-badge ${stClass}">${stLabel}</div>` : ''}
+        <button class="order-btn pretty ${st==='out'?'is-disabled':''}" ${disabled}>Zamów teraz</button>
         <button class="longfill-close" aria-label="Zamknij">×</button>
       </div>`;
     document.body.appendChild($overlay);
@@ -215,16 +222,22 @@
     $overlay.querySelector('.order-btn').addEventListener('click', ()=> addToOrder(data));
   };
 
-  // ===== Powiązanie z modalem zamówienia =====
+  // ===== POWIĄZANIE Z MODALEM ZAMÓWIEŃ =====
   const addToOrder = (data) => {
+    const st = (readStatusMap()[data.slug] || 'available');
+    if (st === 'out') { alert('Ten smak jest chwilowo niedostępny.'); return; }
     const startBtn = document.getElementById('start-order'); if (startBtn) startBtn.click();
     const sel = document.getElementById('flavor-select'); if (sel) { sel.value = String(data.index); sel.dispatchEvent(new Event('change',{bubbles:true})); }
     const modal = document.getElementById('order-modal'); if (modal) modal.scrollTo({top:0,behavior:'smooth'});
   };
 
-  // ===== Filtry =====
+  // ===== FILTRY =====
   [$q,$cold,$noncold].forEach(el=> el && el.addEventListener('input', renderSections));
 
-  // Start
+  // Aktualizuj, gdy admin zmieni status (order.js emituje event) lub gdy zmieni się localStorage z innej karty
+  window.addEventListener('flavorStatus:updated', renderSections);
+  window.addEventListener('storage', (e)=>{ if (e.key === 'flavorStatus') renderSections(); });
+
+  // START
   renderSections();
 })();

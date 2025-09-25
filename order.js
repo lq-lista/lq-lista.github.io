@@ -1,1649 +1,1010 @@
+/**
+ * order.js — system zamówień + panel admina + statusy smaków
+ * Wymaga: data.js (window.AppData), Chart.js (opcjonalnie), Firebase compat
+ */
 class OrderSystem {
-    constructor() {
-        try {
-            if (typeof AppData === 'undefined') {
-                throw new Error('Dane aplikacji (AppData) nie zostały załadowane! Upewnij się, że data.js jest ładowany przed order.js');
-            }
-    
-            // Inicjalizacja właściwości
-            this.currentOrder = [];
-            this.orders = {};
-            this.adminPassword = "admin123";
-            this.pageViews = 0;
-            this.ordersChart = null;
-            this.flavorsChart = null;
-            this.miniOrdersChart = null;
-            this.miniFlavorsChart = null;
-            this.firebaseAvailable = false;
-            this.isSyncing = false; // Flaga do kontroli synchronizacji
-            
-            // 1. Inicjalizacja Firebase
-            this.initializeFirebase();
-            
-            // 2. Inicjalizacja danych lokalnych
-            this.initializeLocalData();
-            
-            // 3. Inicjalizacja UI
-            this.initUIComponents();
-            
-            // 4. Inicjalizacja statystyk (bez wykresów na razie)
-            this.initBasicStatistics();
-            
-            // 5. Nasłuchiwanie zmian w Firebase (tylko raz)
-            if (this.database) {
-                this.database.ref('orders').on('value', (snapshot) => {
-                    try {
-                        const firebaseOrders = snapshot.val() || {};
-                        
-                        // Aktualizuj tylko jeśli są zmiany
-                        if (JSON.stringify(this.orders) !== JSON.stringify(firebaseOrders)) {
-                            this.orders = firebaseOrders;
-                            localStorage.setItem('orders', JSON.stringify(this.orders));
-                            this.updateStats();
-                        }
-                    } catch (error) {
-                        console.error('Błąd podczas aktualizacji zamówień:', error);
-                    }
-                });
-            }
-    
-            // 6. Opóźniona synchronizacja i test połączenia
-            if (this.firebaseAvailable) {
-                setTimeout(() => {
-                    if (!this.isSyncing) {
-                        this.isSyncing = true;
-                        this.testFirebaseConnection()
-                            .then(() => {
-                                console.log('Połączenie z Firebase sprawdzone, rozpoczynam synchronizację...');
-                                return this.syncLocalOrdersToFirebase();
-                            })
-                            .catch(e => {
-                                console.warn('Błąd podczas synchronizacji:', e);
-                                this.isSyncing = false;
-                            });
-                    }
-                }, 2000);
-            }
-    
-        } catch (error) {
-            console.error('Błąd inicjalizacji OrderSystem:', error);
-            throw error;
-        }
+  constructor() {
+    // ── Stan aplikacji ───────────────────────────────────────────────────────────
+    this.currentOrder = [];        // bieżące pozycje w koszyku (lista wariantów)
+    this.orders = {};              // { orderId: {items, total, ...} }
+    this.pageViews = 0;
+    this.adminPassword = "admin123";
+
+    // wykresy (mini w panelu)
+    this.miniOrdersChart = null;
+    this.miniFlavorsChart = null;
+
+    // Firebase
+    this.firebaseAvailable = false;
+    this.database = null;
+
+    // Statusy smaków (slug -> 'available'|'low'|'out')
+    this.flavorStatus = {};
+
+    // ── Inicjalizacja ───────────────────────────────────────────────────────────
+    try {
+      this.initializeFirebase();
+      this.initializeLocalData();
+      this.initFlavorStatusSync();        // nasłuch statusów (Firebase + localStorage)
+      this.initUIComponents();
+      this.initBasicStatistics();
+      this.initFirebaseOrdersListener();  // nasłuch zamówień (1 raz)
+    } catch (err) {
+      console.error("Błąd inicjalizacji OrderSystem:", err);
     }
+  }
 
-    initializeFirebase() {
-        try {
-            // Sprawdź czy Firebase jest dostępny
-            if (typeof firebase === 'undefined' || typeof firebase.initializeApp !== 'function') {
-                console.warn('Firebase nie został załadowany');
-                this.firebaseAvailable = false;
-                return;
-            }
-    
-            const firebaseConfig = {
-                apiKey: "AIzaSyAfYyYUOcdjfpupkWMTUZfup6xmRRZJ68w",
-                authDomain: "lq-lista.firebaseapp.com",
-                databaseURL: "https://lq-lista-default-rtdb.europe-west1.firebasedatabase.app",
-                projectId: "lq-lista",
-                storageBucket: "lq-lista.appspot.com",
-                messagingSenderId: "642905853097",
-                appId: "1:642905853097:web:ca850099dcdc002f9b2db8"
-            };
-    
-            // Inicjalizuj Firebase tylko jeśli nie został jeszcze zainicjalizowany
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            
-            this.database = firebase.database();
-            this.firebaseAvailable = true;
-            
-        } catch (error) {
-            console.error('Błąd inicjalizacji Firebase:', error);
-            this.firebaseAvailable = false;
-        }
-    }
-
-    async testConnection() {
-        try {
-            if (!this.database) {
-                throw new Error('Brak zainicjalizowanej bazy danych');
-            }
-            await this.database.ref('.info/connected').once('value');
-            console.log("Połączenie z Firebase działa poprawnie!");
-        } catch (error) {
-            console.error("Błąd połączenia z Firebase:", error);
-            throw error;
-        }
-    }
-
-    async initializeLocalData() {
-        try {
-            const localOrders = localStorage.getItem('orders');
-            this.orders = localOrders ? JSON.parse(localOrders) : {};
-            
-            if (Object.keys(this.orders).length > 0) {
-                await this.syncLocalOrdersToFirebase();
-            }
-        } catch (error) {
-            console.error("Błąd inicjalizacji danych lokalnych:", error);
-            this.orders = {};
-            throw error;
-        }
-    }
-
-    initUIComponents() {
-        try {
-            this.initEventListeners();
-            this.populateFlavors();
-            this.setupPricePreview();
-            this.initFlavorFilter();
-            this.initScrollButton();
-        } catch (error) {
-            console.error('Błąd inicjalizacji komponentów UI:', error);
-            throw error;
-        }
-    }
-
-    initStatistics() {
-        try {
-            this.pageViews = parseInt(localStorage.getItem('pageViews')) || 0;
-            this.initCharts();
-            this.trackPageView();
-        } catch (error) {
-            console.error('Błąd inicjalizacji statystyk:', error);
-            throw error;
-        }
-    }
-
-    async syncOrdersFromFirebase() {
-        try {
-            console.log("Rozpoczynanie synchronizacji z Firebase...");
-            const snapshot = await this.database.ref('orders').once('value');
-            const firebaseOrders = snapshot.val() || {};
-            
-            let updated = false;
-            
-            for (const [orderId, firebaseOrder] of Object.entries(firebaseOrders)) {
-                if (!this.orders[orderId] || 
-                    (this.orders[orderId].updatedAt || 0) < firebaseOrder.updatedAt) {
-                    this.orders[orderId] = firebaseOrder;
-                    updated = true;
-                }
-            }
-            
-            if (updated) {
-                localStorage.setItem('orders', JSON.stringify(this.orders));
-                console.log("Zaktualizowano lokalne zamówienia z Firebase");
-                this.updateStats(); // Automatyczna aktualizacja statystyk
-                this.updateCharts(); // Automatyczna aktualizacja wykresów
-            }
-            
-        } catch (error) {
-            console.error("Błąd synchronizacji z Firebase:", error);
-            throw error;
-        }
-    }
-
-    async syncLocalOrdersToFirebase() {
-        try {
-            console.log("Rozpoczynanie synchronizacji lokalnych zamówień z Firebase...");
-            const updates = {};
-            
-            for (const [orderId, order] of Object.entries(this.orders)) {
-                updates[`orders/${orderId}`] = order;
-            }
-            
-            await this.database.ref().update(updates);
-            console.log("Zsynchroniczowano lokalne zamówienia z Firebase");
-            
-        } catch (error) {
-            console.error("Błąd synchronizacji lokalnych zamówień:", error);
-            throw error;
-        }
-    }
-
-    async testFirebaseConnection() {
-        try {
-            const testRef = this.database.ref('connectionTest');
-            await testRef.set({
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                message: "Test połączenia z Firebase",
-                status: "success"
-            });
-            
-            const snapshot = await testRef.once('value');
-            console.log("Test połączenia z Firebase zakończony sukcesem:", snapshot.val());
-        } catch (error) {
-            console.error("Błąd testu połączenia z Firebase:", error);
-            throw error;
-        }
-    }
-
-    initEventListeners() {
-        try {
-            document.getElementById('start-order').addEventListener('click', () => {
-                this.openModal();
-                this.resetScrollPosition();
-            });
-            
-            document.querySelector('.close').addEventListener('click', this.closeModal.bind(this));
-            document.getElementById('add-to-order').addEventListener('click', this.addToOrder.bind(this));
-            document.getElementById('submit-order').addEventListener('click', this.submitOrder.bind(this));
-            document.getElementById('login-admin').addEventListener('click', this.loginAdmin.bind(this));
-            document.getElementById('search-order').addEventListener('click', this.searchOrder.bind(this));
-            
-            window.addEventListener('click', (event) => {
-                if (event.target === document.getElementById('order-modal')) {
-                    this.closeModal();
-                }
-            });
-
-            document.getElementById('admin-link').addEventListener('click', (e) => {
-                e.preventDefault();
-                document.getElementById('admin-panel').style.display = 'block';
-                window.scrollTo({
-                    top: document.getElementById('admin-panel').offsetTop,
-                    behavior: 'smooth'
-                });
-            });
-
-            // Obsługa przycisku kopiowania (globalna)
-            document.body.addEventListener('click', (e) => {
-                if (e.target.classList.contains('copy-order-number')) {
-                    this.handleCopyOrderNumber(e);
-                }
-            });
-
-        } catch (error) {
-            console.error('Błąd inicjalizacji event listenerów:', error);
-            throw error;
-        }
-    }
-
-    handleCopyOrderNumber(e) {
-        try {
-            const orderNumber = e.target.closest('.copy-container').querySelector('#order-number').textContent;
-            navigator.clipboard.writeText(orderNumber).then(() => {
-                const btn = e.target;
-                btn.textContent = 'Skopiowano!';
-                btn.classList.add('copied');
-                setTimeout(() => {
-                    btn.textContent = 'Kopiuj';
-                    btn.classList.remove('copied');
-                }, 2000);
-            });
-        } catch (error) {
-            console.error('Błąd kopiowania numeru zamówienia:', error);
-            alert('Nie udało się skopiować numeru zamówienia');
-        }
-    }
-
-    resetScrollPosition() {
-        try {
-            const scrollContainer = document.querySelector('.order-scroll-container');
-            if (scrollContainer) {
-                scrollContainer.scrollTop = 0;
-            }
-        } catch (error) {
-            console.error('Błąd resetowania pozycji scrolla:', error);
-        }
-    }
-
-    openModal() {
-        try {
-            document.getElementById('order-modal').style.display = 'block';
-            document.body.classList.add('modal-open');
-            document.getElementById('order-form').style.display = 'block';
-            document.getElementById('order-summary').style.display = 'block';
-            document.getElementById('submit-order-container').classList.remove('hidden');
-            document.getElementById('order-confirmation').style.display = 'none';
-            document.getElementById('order-notes').value = '';
-            this.currentOrder = [];
-            this.updateOrderSummary();
-        } catch (error) {
-            console.error('Błąd otwierania modala:', error);
-        }
-    }
-    
-    closeModal() {
-        try {
-            document.getElementById('order-modal').style.display = 'none';
-            document.body.classList.remove('modal-open');
-        } catch (error) {
-            console.error('Błąd zamykania modala:', error);
-        }
-    }
-
-    initFlavorFilter() {
-        try {
-            // Sprawdź czy filtry już istnieją
-            if (document.getElementById('brand-filter') && document.getElementById('type-filter')) {
-                return;
-            }
-    
-            // Dodaj event listeners do istniejących filtrów
-            const brandFilter = document.getElementById('brand-filter');
-            const typeFilter = document.getElementById('type-filter');
-            
-            if (brandFilter) brandFilter.addEventListener('change', () => this.filterFlavors());
-            if (typeFilter) typeFilter.addEventListener('change', () => this.filterFlavors());
-    
-            // Jeśli filtry nie istnieją, utwórz je (dla kompatybilności wstecznej)
-            if (!brandFilter || !typeFilter) {
-                const filterContainer = document.createElement('div');
-                filterContainer.className = 'filter-container';
-                filterContainer.innerHTML = `
-                    <div class="filter-group">
-                        <label for="brand-filter">Firma:</label>
-                        <select id="brand-filter" class="form-control">
-                            <option value="all">Wszystkie firmy</option>
-                            <option value="a&l">A&L</option>
-                            <option value="tribal">Tribal Force</option>
-                            <option value="vapir">Vapir Vape</option>
-                            <option value="fighter">Fighter Fuel</option>
-                            <option value="izi">IZI PIZI</option>
-                            <option value="wanna">WANNA BE COOL</option>
-                            <option value="funk">FUNK CLARO</option>
-                            <option value="aroma">AROMA KING</option>
-                            <option value="dilno">DILNO'S</option>
-                            <option value="panda">PANDA</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="type-filter">Typ smaku:</label>
-                        <select id="type-filter" class="form-control">
-                            <option value="all">Wszystkie typy</option>
-                            <option value="owocowe">Owocowe</option>
-                            <option value="miętowe">Miętowe</option>
-                            <option value="słodkie">Słodkie</option>
-                            <option value="cytrusowe">Cytrusowe</option>
-                            <option value="energy">Energy drink</option>
-                            <option value="chłodzone">Chłodzone</option>
-                        </select>
-                    </div>
-                `;
-    
-                const flavorsSection = document.querySelector('.flavors');
-                if (flavorsSection) {
-                    flavorsSection.insertBefore(filterContainer, document.getElementById('flavors-list'));
-                }
-    
-                // Dodaj event listeners do nowych filtrów
-                document.getElementById('brand-filter').addEventListener('change', () => this.filterFlavors());
-                document.getElementById('type-filter').addEventListener('change', () => this.filterFlavors());
-            }
-        } catch (error) {
-            console.error('Błąd inicjalizacji filtrów smaków:', error);
-        }
-    }
-
-    filterFlavors() {
-  try {
-    const flavorsList = document.getElementById('flavors-list');
-    if (!flavorsList) return;
-
-    const brandFilter = (document.getElementById('brand-filter')?.value || 'all');
-    const typeFilter  = (document.getElementById('type-filter')?.value || 'all');
-
-    const flavors = AppData?.flavors || [];
-    const flavorCategories = AppData?.flavorCategories || {};
-
-    flavorsList.innerHTML = '';
-
-    // mapka brand → regex, niewrażliwy na wielkość
-    const brandRegex = {
-      "a&l":       /\(A&L\)\s*$/i,
-      "vampir":    /\(Vampir\s+Vape\)\s*$/i,
-      "fighter":   /\(Fighter\s+Fuel\)\s*$/i,
-      "premium":   /\(Premium\s+Fcukin\s+Flava\)\s*$/i,
-      "tribal":    /\(Tribal\s+Force\)\s*$/i,
-      "izi":       /\(Izi\s+Pizi\)\s*$/i,
-      "wanna":     /\(Wanna\s+be\s+Cool\)\s*$/i,
-      "klarro":    /\(Klarro\s+Smooth\s+Funk\)\s*$/i,
-      "aroma":     /\(Aroma\s+King\)\s*$/i,
-      "dillon":    /\(Dillon'?s\)\s*$/i,
-      "geometric": /\(Geometric\s+Fruits\)\s*$/i,
-      "chilled":   /\(chilled\s+face\)\s*$/i,
-      "summer":    /\(Summer\s+time\)\s*$/i,
-      "winter":    /\(Winter\s+time\)\s*$/i,
-      "duo":       /\(Duo\)\s*$/i,
-      "dark":      /\(Dark\s+Line\)\s*$/i
-    };
-
-    flavors.forEach((flavor, index) => {
-      // dopasowanie marki
-      const brandMatch =
-        brandFilter === 'all' ||
-        (brandRegex[brandFilter] && brandRegex[brandFilter].test(flavor));
-
-      // dopasowanie typu
-      let typeMatch = typeFilter === 'all';
-      if (!typeMatch) {
-        const typeIndexes = flavorCategories[typeFilter] || [];
-        typeMatch = typeIndexes.includes(index);
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Firebase
+  // ──────────────────────────────────────────────────────────────────────────────
+  initializeFirebase() {
+    try {
+      if (typeof firebase === 'undefined' || typeof firebase.initializeApp !== 'function') {
+        console.warn('Firebase nie jest dostępny (brak skryptu). Działamy offline.');
+        this.firebaseAvailable = false;
+        return;
       }
 
-      if (brandMatch && typeMatch) {
-        const li = document.createElement('li');
-        li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
-        flavorsList.appendChild(li);
+      const firebaseConfig = {
+        apiKey: "AIzaSyAfYyYUOcdjfpupkWMTUZfup6xmRRZJ68w",
+        authDomain: "lq-lista.firebaseapp.com",
+        databaseURL: "https://lq-lista-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "lq-lista",
+        storageBucket: "lq-lista.appspot.com",
+        messagingSenderId: "642905853097",
+        appId: "1:642905853097:web:ca850099dcdc002f9b2db8"
+      };
+
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      this.database = firebase.database();
+      this.firebaseAvailable = true;
+    } catch (e) {
+      console.error('Błąd inicjalizacji Firebase:', e);
+      this.firebaseAvailable = false;
+    }
+  }
+
+  initFirebaseOrdersListener() {
+    if (!this.database) return;
+    try {
+      this.database.ref('orders').on('value', (snapshot) => {
+        const fbOrders = snapshot.val() || {};
+        // Aktualizuj tylko jeśli różni się od lokalnego
+        if (JSON.stringify(this.orders) !== JSON.stringify(fbOrders)) {
+          this.orders = fbOrders;
+          localStorage.setItem('orders', JSON.stringify(this.orders));
+          this.updateStats();
+        }
+      });
+    } catch (e) {
+      console.warn('Błąd nasłuchu orders:', e);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Dane lokalne / statusy smaków
+  // ──────────────────────────────────────────────────────────────────────────────
+  async initializeLocalData() {
+    try {
+      const localOrders = localStorage.getItem('orders');
+      this.orders = localOrders ? JSON.parse(localOrders) : {};
+    } catch (e) {
+      console.warn('Błąd parsowania orders z localStorage:', e);
+      this.orders = {};
+    }
+  }
+
+  // Konwersje nazw na slug (wspólne z brands.js)
+  toSlug(title) {
+    const map = {'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'a','Ć':'c','Ę':'e','Ł':'l','Ń':'n','Ó':'o','Ś':'s','Ź':'z','Ż':'z'};
+    const ascii = String(title).replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, ch => map[ch] || ch);
+    return ascii.toLowerCase()
+      .replace(/&/g,'and')
+      .replace(/\//g,'-')
+      .replace(/[^a-z0-9\s-]/g,'')
+      .trim()
+      .replace(/\s+/g,'-');
+  }
+  stripBrand(full) {
+    const m = String(full).match(/^(.*)\s*\(([^()]+)\)\s*$/);
+    return (m ? m[1] : full).trim();
+  }
+
+  initFlavorStatusSync() {
+    // 1) z localStorage
+    try { this.flavorStatus = JSON.parse(localStorage.getItem('flavorStatus') || '{}'); }
+    catch { this.flavorStatus = {}; }
+
+    // 2) nasłuch Firebase (jeśli dostępne)
+    if (this.database) {
+      this.database.ref('flavorStatus').on('value', (snap) => {
+        const val = snap.val() || {};
+        // akceptuj obie formy: {slug: 'low'} lub {slug: {status:'low'}}
+        const normalized = {};
+        Object.entries(val).forEach(([slug, v]) => {
+          normalized[slug] = (v && typeof v === 'object' && v.status) ? v.status : (v || 'available');
+        });
+        this.flavorStatus = normalized;
+        localStorage.setItem('flavorStatus', JSON.stringify(this.flavorStatus));
+        window.dispatchEvent(new CustomEvent('flavorStatus:updated'));
+        this.populateFlavors(); // odśwież listę w modalu
+      });
+    }
+
+    // 3) gdy zmieni się localStorage (inna karta)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'flavorStatus') {
+        try { this.flavorStatus = JSON.parse(e.newValue || '{}'); } catch { this.flavorStatus = {}; }
+        this.populateFlavors();
+        window.dispatchEvent(new CustomEvent('flavorStatus:updated'));
+      }
+    });
+  }
+
+  getFlavorStatusByIndex(index) {
+    const full = (window.AppData?.flavors || [])[index];
+    if (!full) return 'available';
+    const slug = this.toSlug(this.stripBrand(full));
+    return this.flavorStatus[slug] || 'available';
+  }
+
+  async updateFlavorStatus(slug, status) {
+    try {
+      // zapis do Firebase (jeśli jest)
+      if (this.database) {
+        await this.database.ref('flavorStatus/' + slug).set({
+          status,
+          updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+      }
+      // cache lokalny + event
+      this.flavorStatus[slug] = status;
+      localStorage.setItem('flavorStatus', JSON.stringify(this.flavorStatus));
+      window.dispatchEvent(new CustomEvent('flavorStatus:updated'));
+      this.populateFlavors();
+      this.showUserAlert('Zapisano status smaku', 'success');
+    } catch (e) {
+      console.error('Błąd zapisu statusu:', e);
+      this.showUserAlert('Błąd zapisu statusu', 'error');
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // UI
+  // ──────────────────────────────────────────────────────────────────────────────
+  initUIComponents() {
+    this.initEventListeners();
+    this.populateFlavors();
+    this.setupPricePreview();
+    this.initFlavorFilter();
+    this.initScrollButton();
+    // Minimalne poprawki modal layoutu (gdy CSS nie wejdzie)
+    const sc = document.querySelector('.order-scroll-container');
+    if (sc) {
+      sc.style.maxHeight = '65vh';
+      sc.style.overflowY = 'auto';
+    }
+  }
+
+  initEventListeners() {
+    // Przycisk „Stwórz zamówienie”
+    const startBtn = document.getElementById('start-order');
+    if (startBtn) startBtn.addEventListener('click', () => {
+      this.openModal();
+      this.resetScrollPosition();
+    });
+
+    // Zamknięcie modala
+    const closeX = document.querySelector('#order-modal .close');
+    if (closeX) closeX.addEventListener('click', this.closeModal.bind(this));
+
+    // Klik w tło modala
+    window.addEventListener('click', (ev) => {
+      if (ev.target === document.getElementById('order-modal')) {
+        this.closeModal();
       }
     });
 
-    if (flavorsList.children.length === 0) {
-      flavorsList.innerHTML = '<li class="no-results">Brak smaków pasujących do wybranych filtrów</li>';
+    // Formularz dodawania
+    const addBtn = document.getElementById('add-to-order');
+    if (addBtn) addBtn.addEventListener('click', this.addToOrder.bind(this));
+
+    // Złożenie zamówienia
+    const submitBtn = document.getElementById('submit-order');
+    if (submitBtn) submitBtn.addEventListener('click', this.submitOrder.bind(this));
+
+    // Panel admina — wejście
+    const adminLink = document.getElementById('admin-link');
+    if (adminLink) {
+      adminLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const panel = document.getElementById('admin-panel');
+        if (panel) panel.style.display = 'block';
+        window.scrollTo({ top: panel.offsetTop, behavior: 'smooth' });
+      });
     }
-  } catch (error) {
-    console.error('Błąd filtrowania smaków:', error);
-    const flavorsList = document.getElementById('flavors-list');
-    if (flavorsList) {
-      flavorsList.innerHTML = '<li class="error">Błąd podczas filtrowania smaków</li>';
+    // Logowanie admina
+    const loginBtn = document.getElementById('login-admin');
+    if (loginBtn) loginBtn.addEventListener('click', this.loginAdmin.bind(this));
+
+    // Wyszukiwanie zamówienia
+    const searchBtn = document.getElementById('search-order');
+    if (searchBtn) searchBtn.addEventListener('click', this.searchOrder.bind(this));
+  }
+
+  resetScrollPosition() {
+    try {
+      const sc = document.querySelector('.order-scroll-container');
+      if (sc) sc.scrollTop = 0;
+    } catch {}
+  }
+
+  openModal() {
+    const modal = document.getElementById('order-modal');
+    if (!modal) return;
+    modal.style.display = 'block';
+    document.body.classList.add('modal-open');
+
+    // pokaż właściwe sekcje
+    const $form = document.getElementById('order-form');
+    const $sum  = document.getElementById('order-summary');
+    const $sub  = document.getElementById('submit-order-container');
+    const $ok   = document.getElementById('order-confirmation');
+    if ($form) $form.style.display = 'block';
+    if ($sum)  $sum.style.display  = 'block';
+    if ($sub)  $sub.classList.remove('hidden');
+    if ($ok)   $ok.style.display   = 'none';
+
+    // czyść
+    document.getElementById('order-notes').value = '';
+    this.currentOrder = [];
+    this.updateOrderSummary();
+
+    // focus na pierwsze pole
+    const sel = document.getElementById('flavor-select');
+    if (sel) sel.focus();
+
+    // upewnij się, że kontener przewijany
+    const sc = document.querySelector('.order-scroll-container');
+    if (sc) {
+      sc.style.maxHeight = '65vh';
+      sc.style.overflowY = 'auto';
+    }
+  }
+
+  closeModal() {
+    const modal = document.getElementById('order-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Lista „Nasze Smaki” (sekcja na stronie)
+  // ──────────────────────────────────────────────────────────────────────────────
+  initFlavorFilter() {
+    const brandFilter = document.getElementById('brand-filter');
+    const typeFilter  = document.getElementById('type-filter');
+    if (brandFilter) brandFilter.addEventListener('change', () => this.filterFlavors());
+    if (typeFilter)  typeFilter.addEventListener('change',  () => this.filterFlavors());
+    // pierwsze renderowanie:
+    this.filterFlavors();
+  }
+
+  filterFlavors() {
+    try {
+      const list = document.getElementById('flavors-list');
+      if (!list) return;
+
+      const brandFilter = (document.getElementById('brand-filter')?.value || 'all');
+      const typeFilter  = (document.getElementById('type-filter')?.value || 'all');
+
+      const flavors = window.AppData?.flavors || [];
+      const flavorCategories = window.AppData?.flavorCategories || {};
+
+      list.innerHTML = '';
+
+      const brandRegex = {
+        "a&l":       /\(A&L\)\s*$/i,
+        "vampir":    /\(Vampir\s+Vape\)\s*$/i,
+        "fighter":   /\(Fighter\s+Fuel\)\s*$/i,
+        "premium":   /\(Premium\s+Fcukin\s+Flava\)\s*$/i,
+        "tribal":    /\(Tribal\s+Force\)\s*$/i,
+        "izi":       /\(Izi\s+Pizi\)\s*$/i,
+        "wanna":     /\(Wanna\s+be\s+Cool\)\s*$/i,
+        "klarro":    /\(Klarro\s+Smooth\s+Funk\)\s*$/i,
+        "aroma":     /\(Aroma\s+King\)\s*$/i,
+        "dillon":    /\(Dillon'?s\)\s*$/i,
+        "geometric": /\(Geometric\s+Fruits\)\s*$/i,
+        "chilled":   /\(chilled\s+face\)\s*$/i,
+        "summer":    /\(Summer\s+time\)\s*$/i,
+        "winter":    /\(Winter\s+time\)\s*$/i,
+        "duo":       /\(Duo\)\s*$/i,
+        "dark":      /\(Dark\s+Line\)\s*$/i
+      };
+
+      (flavors || []).forEach((flavor, index) => {
+        const byBrand = brandFilter === 'all' ||
+                        (brandRegex[brandFilter] && brandRegex[brandFilter].test(flavor));
+
+        let byType = typeFilter === 'all';
+        if (!byType) {
+          const indexes = flavorCategories[typeFilter] || [];
+          byType = indexes.includes(index);
+        }
+
+        if (byBrand && byType) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span class="flavor-number">${index + 1}.</span> ${this.formatFlavorName(flavor)}`;
+          list.appendChild(li);
+        }
+      });
+
+      if (list.children.length === 0) {
+        list.innerHTML = '<li class="no-results">Brak smaków pasujących do wybranych filtrów</li>';
+      }
+    } catch (e) {
+      console.error('Błąd filtrowania smaków:', e);
+      const list = document.getElementById('flavors-list');
+      if (list) list.innerHTML = '<li class="error">Błąd podczas filtrowania smaków</li>';
+    }
+  }
+
+  formatFlavorName(flavor) {
+    try {
+      return String(flavor)
+        .replace(/\s+/g, ' ')
+        .replace(/\s,/g, ',')
+        .replace(/\s\(/g, ' (');
+    } catch {
+      return String(flavor);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Formularz w modalu
+  // ──────────────────────────────────────────────────────────────────────────────
+  populateFlavors() {
+    const select = document.getElementById('flavor-select');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Wybierz smak</option>';
+
+    (window.AppData?.flavors || []).forEach((full, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      const titleOnly = this.stripBrand(full);
+      const slug = this.toSlug(titleOnly);
+      const stRaw = this.flavorStatus[slug] || 'available';
+      const st = (stRaw === 'low' || stRaw === 'out') ? stRaw : 'available';
+
+      let suffix = '';
+      if (st === 'low') suffix = ' — NA WYCZERPANIU';
+      if (st === 'out') suffix = ' — BRAK';
+
+      option.textContent = `${index + 1}. ${this.formatFlavorName(titleOnly)}${suffix}`;
+      if (st === 'out') option.disabled = true;
+      select.appendChild(option);
+    });
+  }
+
+  setupPricePreview() {
+    if (document.getElementById('price-preview')) return;
+    const after = document.getElementById('strength-select');
+    if (!after) return;
+
+    const preview = document.createElement('div');
+    preview.id = 'price-preview';
+    preview.textContent = 'Cena: -';
+    after.insertAdjacentElement('afterend', preview);
+
+    ['flavor-select','size-select','strength-select'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', () => this.updatePricePreview());
+    });
+  }
+
+  updatePricePreview() {
+    const size = document.getElementById('size-select')?.value;
+    const strength = document.getElementById('strength-select')?.value;
+    const preview = document.getElementById('price-preview');
+    if (!preview) return;
+
+    if (size && strength) {
+      const price = this.calculatePrice(size, strength);
+      preview.textContent = `Cena: ${price}zł`;
+      preview.style.color = '#ff6f61';
+    } else {
+      preview.textContent = 'Cena: -';
+      preview.style.color = '';
+    }
+  }
+
+  // Walidacja + alerty
+  showValidationError(element, message) {
+    if (!element) return;
+    const next = element.nextElementSibling;
+    if (!next || !next.classList.contains('error-message')) {
+      const div = document.createElement('div');
+      div.className = 'error-message';
+      div.textContent = message;
+      element.parentNode.insertBefore(div, element.nextSibling);
+    }
+    element.classList.add('error-input');
+  }
+  resetValidationErrors(elements = []) {
+    elements.forEach(el => {
+      if (!el) return;
+      el.classList.remove('error-input');
+      const next = el.nextElementSibling;
+      if (next && next.classList.contains('error-message')) next.remove();
+    });
+  }
+  showUserAlert(message, type='info') {
+    const a = document.createElement('div');
+    a.className = `user-alert ${type}`;
+    a.textContent = message;
+    document.body.appendChild(a);
+    setTimeout(() => a.remove(), 3000);
+  }
+
+  calculatePrice(size, strength) {
+    try {
+      const s = parseInt(strength, 10);
+      if (size === '10ml') {
+        return s >= 18 ? 16 : (s >= 12 ? 15 : (s >= 6 ? 14 : 13));
+      } else if (size === '30ml') {
+        return s >= 18 ? 40 : (s >= 12 ? 38 : (s >= 6 ? 37 : 36));
+      } else { // 60ml
+        return s >= 18 ? 70 : (s >= 12 ? 68 : (s >= 6 ? 67 : 66));
+      }
+    } catch {
+      return 0;
+    }
+  }
+
+  addToOrder() {
+    try {
+      const flavorSelect   = document.getElementById('flavor-select');
+      const sizeSelect     = document.getElementById('size-select');
+      const strengthSelect = document.getElementById('strength-select');
+
+      // Walidacja wyborów
+      if (!flavorSelect?.value) return this.showValidationError(flavorSelect, 'Proszę wybrać smak');
+      if (!sizeSelect?.value)   return this.showValidationError(sizeSelect,   'Proszę wybrać pojemność');
+      if (!strengthSelect?.value) return this.showValidationError(strengthSelect, 'Proszę wybrać moc nikotyny');
+
+      // Blokada dla „brak”
+      const idx = parseInt(flavorSelect.value, 10);
+      if (!isNaN(idx) && this.getFlavorStatusByIndex(idx) === 'out') {
+        return this.showValidationError(flavorSelect, 'Ten smak jest chwilowo niedostępny');
+      }
+
+      // Reset błędów
+      this.resetValidationErrors([flavorSelect, sizeSelect, strengthSelect]);
+
+      const all = window.AppData?.flavors || [];
+      const flavorFull = all[idx];
+      if (!flavorFull) throw new Error('Wybrany smak nie istnieje');
+
+      const price = this.calculatePrice(sizeSelect.value, strengthSelect.value);
+      const flavorNumber = idx + 1;
+
+      this.currentOrder.push({
+        flavor: flavorFull,
+        size: sizeSelect.value,
+        strength: strengthSelect.value + 'mg',
+        price,
+        flavorNumber
+      });
+
+      this.updateOrderSummary();
+
+      // feedback na przycisku
+      const addButton = document.getElementById('add-to-order');
+      if (addButton) {
+        addButton.textContent = '✓ Dodano!';
+        addButton.classList.add('success');
+        setTimeout(() => {
+          addButton.textContent = 'Dodaj do zamówienia';
+          addButton.classList.remove('success');
+        }, 1000);
+      }
+    } catch (e) {
+      console.error('Błąd dodawania do zamówienia:', e);
+      this.showUserAlert('Wystąpił błąd podczas dodawania produktu', 'error');
+    }
+  }
+
+  updateOrderSummary() {
+    const list = document.getElementById('order-items');
+    const totalEl = document.getElementById('order-total');
+    const submitBtn = document.getElementById('submit-order');
+    if (!list || !totalEl || !submitBtn) return;
+
+    list.innerHTML = '';
+    let total = 0;
+
+    // Grupowanie wariantów
+    const grouped = this.currentOrder.reduce((acc, item) => {
+      const key = `${item.flavorNumber}|${item.size}|${item.strength}`;
+      if (!acc[key]) acc[key] = { ...item, quantity: 0, totalPrice: 0 };
+      acc[key].quantity += 1;
+      acc[key].totalPrice += (item.price || 0);
+      return acc;
+    }, {});
+
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const symbol = isMobile ? '×' : 'x';
+
+    const sorted = Object.values(grouped).sort((a,b) =>
+      a.flavorNumber - b.flavorNumber || a.size.localeCompare(b.size)
+    );
+
+    if (sorted.length === 0) {
+      list.innerHTML = '<li class="empty-cart">Twój koszyk jest pusty</li>';
+      submitBtn.disabled = true;
+      totalEl.textContent = 'Razem: 0zł';
+      return;
+    }
+
+    sorted.forEach((item) => {
+      const li = document.createElement('li');
+      li.className = 'order-item';
+
+      const safeName = this.formatFlavorName(item.flavor).split('(')[0].trim();
+
+      li.innerHTML = `
+        <div class="order-item-info">
+          <div class="flavor-name">
+            <span class="flavor-number">${item.flavorNumber}.</span>
+            ${safeName}
+          </div>
+          <div class="item-details">
+            (${item.size}, ${item.strength})
+            <span class="item-quantity">${item.quantity}${symbol}</span>
+          </div>
+        </div>
+        <div class="order-item-price">${item.totalPrice.toFixed(2)}zł</div>
+        <button class="remove-item" aria-label="Usuń produkt">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      `;
+
+      // usuwanie całego wariantu
+      li.querySelector('.remove-item').addEventListener('click', () => {
+        li.classList.add('removing');
+        setTimeout(() => {
+          const key = `${item.flavorNumber}|${item.size}|${item.strength}`;
+          this.currentOrder = this.currentOrder.filter(i =>
+            `${i.flavorNumber}|${i.size}|${i.strength}` !== key
+          );
+          this.updateOrderSummary();
+        }, 250);
+      });
+
+      list.appendChild(li);
+      total += item.totalPrice;
+    });
+
+    totalEl.textContent = `Razem: ${total.toFixed(2)}zł`;
+    submitBtn.disabled = false;
+    totalEl.classList.add('updated');
+    setTimeout(() => totalEl.classList.remove('updated'), 500);
+  }
+
+  async submitOrder() {
+    try {
+      if (this.currentOrder.length === 0) {
+        alert('Dodaj przynajmniej jeden produkt do zamówienia!');
+        return;
+      }
+
+      const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
+      const total = this.currentOrder.reduce((s, it) => s + (it.price || 0), 0);
+      const notes = document.getElementById('order-notes')?.value || '';
+
+      const orderData = {
+        items: [...this.currentOrder],
+        total,
+        date: new Date().toISOString(),
+        status: 'Nowe',
+        notes,
+        updatedAt: this.database ? firebase.database.ServerValue.TIMESTAMP : Date.now()
+      };
+
+      // Zapis do Firebase (jeśli jest), inaczej tylko lokalnie
+      if (this.database) {
+        await this.database.ref('orders/' + orderNumber).set(orderData);
+      }
+      this.orders[orderNumber] = orderData;
+      localStorage.setItem('orders', JSON.stringify(this.orders));
+
+      // Potwierdzenie
+      document.getElementById('order-form').style.display = 'none';
+      document.getElementById('order-summary').style.display = 'none';
+      document.getElementById('submit-order-container').classList.add('hidden');
+      document.getElementById('order-confirmation').style.display = 'block';
+      document.getElementById('order-number').textContent = orderNumber;
+
+      this.updateStats();
+    } catch (e) {
+      console.error('Błąd zapisu zamówienia:', e);
+      alert('Wystąpił błąd podczas składania zamówienia. Spróbuj ponownie.');
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Admin
+  // ──────────────────────────────────────────────────────────────────────────────
+  loginAdmin() {
+    try {
+      const pass = document.getElementById('admin-password')?.value || '';
+      if (pass !== this.adminPassword) {
+        alert('Nieprawidłowe hasło!');
+        return;
+      }
+      document.getElementById('admin-content').style.display = 'block';
+      // Odśwież staty i mini wykresy
+      this.updateStats();
+      this.initMiniCharts();
+      // Menedżer statusów smaków
+      this.renderStockManager();
+    } catch (e) {
+      console.error('Błąd logowania admina:', e);
+    }
+  }
+
+  async searchOrder() {
+    const id = document.getElementById('order-search')?.value.trim();
+    const box = document.getElementById('order-details');
+    if (!box) return;
+
+    if (!id) {
+      box.innerHTML = '<p class="no-order">Wpisz numer zamówienia</p>';
+      return;
+    }
+    box.innerHTML = '<p class="loading">Wyszukiwanie zamówienia...</p>';
+
+    // najpierw lokalnie
+    if (this.orders[id]) {
+      this.displayOrderDetails(id, this.orders[id]);
+      return;
+    }
+
+    // Firebase
+    try {
+      if (!this.database) throw new Error('Offline');
+      const snap = await this.database.ref('orders/' + id).once('value');
+      const order = snap.val();
+      if (!order) {
+        box.innerHTML = '<p class="no-order">Nie znaleziono zamówienia</p>';
+        return;
+      }
+      this.orders[id] = order;
+      localStorage.setItem('orders', JSON.stringify(this.orders));
+      this.displayOrderDetails(id, order);
+    } catch (e) {
+      console.warn('Błąd pobierania zamówienia:', e);
+      box.innerHTML = '<p class="error">Błąd połączenia z bazą</p>';
+    }
+  }
+
+  displayOrderDetails(orderId, order) {
+    const box = document.getElementById('order-details');
+    if (!box) return;
+
+    const itemsHTML = (order.items || []).map(it => `
+      <li class="order-item-detail">
+        <span class="flavor-number">${it.flavorNumber}.</span>
+        ${this.formatFlavorName(it.flavor).split('(')[0].trim()}
+        (${it.size}, ${it.strength}) - ${Number(it.price||0).toFixed(2)}zł
+      </li>
+    `).join('');
+
+    box.innerHTML = `
+      <div class="order-header">
+        <h3>Zamówienie ${orderId}</h3>
+        <p class="order-date"><strong>Data:</strong> ${new Date(order.date).toLocaleString('pl-PL')}</p>
+        <p class="order-status"><strong>Status:</strong>
+          <span class="status-badge ${this.statusClassFromText(order.status)}">${order.status}</span>
+        </p>
+        ${order.notes ? `<p class="order-notes"><strong>Uwagi:</strong> ${order.notes}</p>` : ''}
+
+        <h4>Produkty:</h4>
+        <ul class="order-items-list">${itemsHTML}</ul>
+
+        <p class="order-total"><strong>Suma:</strong> ${Number(order.total||0).toFixed(2)}zł</p>
+      </div>
+    `;
+  }
+
+  statusClassFromText(t) {
+    const s = (t||'').toLowerCase();
+    if (s.includes('nowe')) return 'status-new';
+    if (s.includes('w trakcie')) return 'status-in-progress';
+    if (s.includes('zakończone')) return 'status-completed';
+    if (s.includes('anulowane')) return 'status-cancelled';
+    return '';
+  }
+
+  // Menedżer statusów smaków (w panelu admina)
+  renderStockManager() {
+    const box = document.getElementById('stock-manager');
+    const search = document.getElementById('stock-search');
+    if (!box) return;
+
+    const flavors = window.AppData?.flavors || [];
+    const q = (search?.value || '').toLowerCase();
+    const rows = [];
+
+    flavors.forEach((full, idx) => {
+      const title = this.stripBrand(full);
+      if (q && !title.toLowerCase().includes(q)) return;
+      const slug = this.toSlug(title);
+      const st = (this.flavorStatus[slug] || 'available');
+      rows.push(`
+        <div class="stock-row" data-slug="${slug}" data-index="${idx}">
+          <div class="stock-title">${idx+1}. ${title}</div>
+          <select class="stock-select form-control">
+            <option value="available" ${st==='available'?'selected':''}>Dostępny</option>
+            <option value="low" ${st==='low'?'selected':''}>Na wyczerpaniu</option>
+            <option value="out" ${st==='out'?'selected':''}>Brak</option>
+          </select>
+        </div>
+      `);
+    });
+
+    box.innerHTML = rows.join('') || '<div style="padding:12px;color:#666">Brak wyników…</div>';
+    // Listenery
+    box.querySelectorAll('.stock-row .stock-select').forEach(sel => {
+      sel.addEventListener('change', (e) => {
+        const row = e.target.closest('.stock-row');
+        this.updateFlavorStatus(row.dataset.slug, e.target.value);
+      });
+    });
+
+    if (search && !search._wired) {
+      search._wired = true;
+      search.addEventListener('input', () => this.renderStockManager());
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Statystyki + wykresy mini
+  // ──────────────────────────────────────────────────────────────────────────────
+  initBasicStatistics() {
+    try {
+      this.pageViews = parseInt(localStorage.getItem('pageViews') || '0', 10) || 0;
+      this.trackPageView();
+    } catch (e) {
+      console.warn('Błąd initBasicStatistics:', e);
+    }
+  }
+
+  trackPageView() {
+    this.pageViews += 1;
+    localStorage.setItem('pageViews', this.pageViews);
+    this.updateStats();
+  }
+
+  updateStats() {
+    try {
+      // Teksty
+      const totalOrders = Object.keys(this.orders).length;
+      const todayOrders = this.getTodaysOrdersCount();
+
+      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      set('total-orders', totalOrders);
+      set('today-orders', todayOrders);
+      set('total-views', this.pageViews);
+
+      // Tabela ostatnich
+      const recent = Object.entries(this.orders)
+        .sort((a,b) => new Date(b[1].date) - new Date(a[1].date))
+        .slice(0, 5);
+
+      const tbody = document.getElementById('recent-orders');
+      if (tbody) {
+        tbody.innerHTML = recent.map(([id, o]) => `
+          <tr>
+            <td>${id}</td>
+            <td>${new Date(o.date).toLocaleDateString('pl-PL')}</td>
+            <td>${Number(o.total||0).toFixed(2)}zł</td>
+            <td class="status-${this.statusClassFromText(o.status)}">${o.status}</td>
+            <td>
+              <select class="status-select" data-order-id="${id}">
+                <option value="Nowe" ${o.status==='Nowe'?'selected':''}>Nowe</option>
+                <option value="W trakcie" ${o.status==='W trakcie'?'selected':''}>W trakcie</option>
+                <option value="Zakończone" ${o.status==='Zakończone'?'selected':''}>Zakończone</option>
+                <option value="Anulowane" ${o.status==='Anulowane'?'selected':''}>Anulowane</option>
+              </select>
+              <button class="action-btn save-btn" data-order-id="${id}">Zapisz</button>
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
+
+        tbody.querySelectorAll('.save-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.getAttribute('data-order-id');
+            const sel = tbody.querySelector(`.status-select[data-order-id="${id}"]`);
+            await this.updateOrderStatus(id, sel.value);
+          });
+        });
+      }
+
+      // Mini wykresy
+      setTimeout(() => this.refreshMiniCharts(), 50);
+    } catch (e) {
+      console.warn('Błąd updateStats:', e);
+    }
+  }
+
+  getTodaysOrdersCount() {
+    const today = new Date().toLocaleDateString();
+    return Object.values(this.orders).filter(o =>
+      new Date(o.date).toLocaleDateString() === today
+    ).length;
+  }
+
+  getLast7Days() {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }));
+    }
+    return days;
+  }
+
+  getOrdersLast7Days() {
+    const counts = [0,0,0,0,0,0,0];
+    const today = new Date();
+    Object.values(this.orders || {}).forEach(o => {
+      try {
+        const d = new Date(o.date);
+        const diff = Math.floor((today - d) / 86400000);
+        if (diff >= 0 && diff < 7) counts[6 - diff] += 1;
+      } catch {}
+    });
+    return counts;
+  }
+
+  getTopFlavors(limit=5) {
+    const flavorCounts = {};
+    const all = window.AppData?.flavors || [];
+    Object.values(this.orders || {}).forEach(order => {
+      (order.items || []).forEach(item => {
+        const idx = (item.flavorNumber || 1) - 1;
+        const name = this.stripBrand(all[idx] || item.flavor);
+        const key = (name || 'Nieznany smak').split('(')[0].trim();
+        const qty = Number(item.quantity) || 1;
+        flavorCounts[key] = (flavorCounts[key] || 0) + qty;
+      });
+    });
+    return Object.entries(flavorCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a,b) => b.count - a.count)
+      .slice(0, limit);
+  }
+
+  initMiniCharts() {
+    if (typeof Chart === 'undefined') return; // brak Chart.js — pomijamy
+    // zniszcz stare
+    try { if (this.miniOrdersChart) { this.miniOrdersChart.destroy(); this.miniOrdersChart = null; } } catch {}
+    try { if (this.miniFlavorsChart) { this.miniFlavorsChart.destroy(); this.miniFlavorsChart = null; } } catch {}
+
+    const c1 = document.getElementById('miniOrdersChart');
+    const c2 = document.getElementById('miniFlavorsChart');
+    if (!c1 || !c2) return;
+
+    this.miniOrdersChart = new Chart(c1.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: this.getLast7Days(),
+        datasets: [{ label: 'Zamówienia (7 dni)', data: this.getOrdersLast7Days(), backgroundColor: 'rgba(255, 111, 97, 0.7)', borderColor: '#ff6f61', borderWidth: 1 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    const top = this.getTopFlavors(5);
+    this.miniFlavorsChart = new Chart(c2.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: top.map(f => f.name),
+        datasets: [{ data: top.map(f => f.count), backgroundColor: ['#ff6f61','#ff9a9e','#fad0c4','#ffcc00','#45a049'] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+    });
+  }
+
+  refreshMiniCharts() {
+    if (!this.miniOrdersChart || !this.miniFlavorsChart) {
+      this.initMiniCharts();
+      return;
+    }
+    try {
+      this.miniOrdersChart.data.labels = this.getLast7Days();
+      this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
+      this.miniOrdersChart.update();
+
+      const top = this.getTopFlavors(5);
+      this.miniFlavorsChart.data.labels = top.map(f => f.name);
+      this.miniFlavorsChart.data.datasets[0].data = top.map(f => f.count);
+      this.miniFlavorsChart.update();
+    } catch (e) {
+      console.warn('Błąd refreshMiniCharts:', e);
+      this.initMiniCharts();
+    }
+  }
+
+  async updateOrderStatus(orderId, newStatus) {
+    try {
+      if (this.database) {
+        await this.database.ref(`orders/${orderId}/status`).set(newStatus);
+        await this.database.ref(`orders/${orderId}/updatedAt`).set(firebase.database.ServerValue.TIMESTAMP);
+      }
+      if (this.orders[orderId]) {
+        this.orders[orderId].status = newStatus;
+        this.orders[orderId].updatedAt = Date.now();
+        localStorage.setItem('orders', JSON.stringify(this.orders));
+      }
+      this.updateStats();
+      this.showUserAlert('Zaktualizowano status zamówienia', 'success');
+    } catch (e) {
+      console.error('Błąd aktualizacji statusu zamówienia:', e);
+      this.showUserAlert('Błąd aktualizacji statusu', 'error');
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Drobne narzędzia
+  // ──────────────────────────────────────────────────────────────────────────────
+  initScrollButton() {
+    try {
+      const btn = document.createElement('button');
+      btn.className = 'scroll-top-btn';
+      btn.innerHTML = '↑';
+      btn.setAttribute('aria-label', 'Przewiń do góry');
+      document.body.appendChild(btn);
+      window.addEventListener('scroll', () => btn.classList.toggle('show', window.scrollY > 300));
+      btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    } catch {}
+  }
+
+  // Dla kompatybilności ze starymi wywołaniami (np. z dawnych longfill)
+  addItem({ name, type='Longfill', qty=1 }) {
+    try {
+      const all = window.AppData?.flavors || [];
+      const idx = all.findIndex(f => this.stripBrand(f).toLowerCase() === String(name).toLowerCase());
+      const index = (idx >= 0 ? idx : 0);
+
+      // domyślne pola jeśli ktoś wywoła bez rozmiaru/mocy
+      const size = '30ml';
+      const strength = '12mg';
+      const price = this.calculatePrice(size, parseInt(strength,10));
+
+      for (let i=0;i<qty;i++) {
+        this.currentOrder.push({
+          flavor: all[index] || name,
+          size, strength, price, flavorNumber: index + 1
+        });
+      }
+      this.openModal();
+      this.updateOrderSummary();
+    } catch (e) {
+      console.warn('addItem error:', e);
     }
   }
 }
 
-    
-    formatFlavorName(flavor) {
-        try {
-            if (!flavor) return '';
-            return String(flavor)
-                .replace(/\s+/g, ' ')
-                .replace(/\s,/g, ',')
-                .replace(/\s\(/g, ' (');
-        } catch (e) {
-            console.warn('Błąd formatowania nazwy smaku:', flavor, e);
-            return String(flavor);
-        }
-    }
-    
-    populateFlavors() {
-        try {
-            const select = document.getElementById('flavor-select');
-            if (!select) {
-                console.error('Element #flavor-select nie znaleziony');
-                return;
-            }
-            
-            select.innerHTML = '<option value="">Wybierz smak</option>';
-            
-            (AppData?.flavors || []).forEach((flavor, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${index + 1}. ${this.formatFlavorName(flavor)}`;
-                select.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Błąd wypełniania listy smaków:', error);
-        }
-    }
-    
-    setupPricePreview() {
-        try {
-            if (document.getElementById('price-preview')) return;
-            
-            const pricePreview = document.createElement('div');
-            pricePreview.id = 'price-preview';
-            pricePreview.textContent = 'Cena: -';
-            document.getElementById('strength-select').insertAdjacentElement('afterend', pricePreview);
-            
-            [document.getElementById('flavor-select'), 
-             document.getElementById('size-select'), 
-             document.getElementById('strength-select')].forEach(select => {
-                if (select) {
-                    select.addEventListener('change', () => this.updatePricePreview());
-                }
-            });
-        } catch (error) {
-            console.error('Błąd ustawiania podglądu ceny:', error);
-        }
-    }
-
-    updatePricePreview() {
-        try {
-            const size = document.getElementById('size-select').value;
-            const strength = document.getElementById('strength-select').value;
-            const pricePreview = document.getElementById('price-preview');
-            
-            if (!pricePreview) return;
-            
-            if (size && strength) {
-                const price = this.calculatePrice(size, strength);
-                pricePreview.textContent = `Cena: ${price}zł`;
-                pricePreview.style.color = '#ff6f61';
-            } else {
-                pricePreview.textContent = 'Cena: -';
-                pricePreview.style.color = '';
-            }
-        } catch (error) {
-            console.error('Błąd aktualizacji podglądu ceny:', error);
-        }
-    }
-    
-    addToOrder() {
-        try {
-            const flavorSelect = document.getElementById('flavor-select');
-            const sizeSelect = document.getElementById('size-select');
-            const strengthSelect = document.getElementById('strength-select');
-            
-            // Walidacja
-            if (!flavorSelect.value) {
-                this.showValidationError(flavorSelect, 'Proszę wybrać smak');
-                return;
-            }
-            
-            if (!sizeSelect.value) {
-                this.showValidationError(sizeSelect, 'Proszę wybrać pojemność');
-                return;
-            }
-            
-            if (!strengthSelect.value) {
-                this.showValidationError(strengthSelect, 'Proszę wybrać moc nikotyny');
-                return;
-            }
-            
-            // Resetowanie błędów
-            this.resetValidationErrors([flavorSelect, sizeSelect, strengthSelect]);
-            
-            // Reszta istniejącej logiki
-            const flavors = AppData?.flavors || [];
-            if (!flavors[flavorSelect.value]) {
-                throw new Error(`Nie znaleziono smaku o indeksie ${flavorSelect.value}`);
-            }
-            
-            const price = this.calculatePrice(sizeSelect.value, strengthSelect.value);
-            const flavorName = flavors[flavorSelect.value];
-            
-            this.currentOrder.push({
-                flavor: flavorName,
-                size: sizeSelect.value,
-                strength: strengthSelect.value + 'mg',
-                price,
-                flavorNumber: parseInt(flavorSelect.value) + 1
-            });
-            
-            this.updateOrderSummary();
-
-            // ★★★★★ TUTAJ WKŁADAMY NOWY KOD ★★★★★
-        const addButton = document.getElementById('add-to-order');
-        addButton.textContent = '✓ Dodano!';
-        addButton.classList.add('success');
-        setTimeout(() => {
-            addButton.textContent = 'Dodaj do zamówienia';
-            addButton.classList.remove('success');
-        }, 2000);
-        // ★★★★★ KONIEC NOWEGO KODU ★★★★★
-            
-        } catch (error) {
-            console.error('Błąd dodawania do zamówienia:', error);
-            this.showUserAlert('Wystąpił błąd podczas dodawania produktu. Spróbuj ponownie.', 'error');
-        }
-    }
-    
-    // Nowe metody pomocnicze
-    showValidationError(element, message) {
-        const errorElement = element.nextElementSibling;
-        if (!errorElement || !errorElement.classList.contains('error-message')) {
-            const errorMsg = document.createElement('div');
-            errorMsg.className = 'error-message';
-            errorMsg.textContent = message;
-            element.parentNode.insertBefore(errorMsg, element.nextSibling);
-        }
-        element.classList.add('error-input');
-    }
-    
-    resetValidationErrors(elements) {
-        elements.forEach(el => {
-            el.classList.remove('error-input');
-            const errorMsg = el.nextElementSibling;
-            if (errorMsg && errorMsg.classList.contains('error-message')) {
-                errorMsg.remove();
-            }
-        });
-    }
-    
-    showUserAlert(message, type = 'info') {
-        const alert = document.createElement('div');
-        alert.className = `user-alert ${type}`;
-        alert.textContent = message;
-        document.body.appendChild(alert);
-        setTimeout(() => alert.remove(), 3000);
-    }
-    
-    calculatePrice(size, strength) {
-        try {
-            const strengthNum = parseInt(strength);
-            let price;
-            
-            if (size === '10ml') {
-                price = strengthNum >= 18 ? 16 : (strengthNum >= 12 ? 15 : (strengthNum >= 6 ? 14 : 13));
-            } else if (size === '30ml') {
-                price = strengthNum >= 18 ? 40 : (strengthNum >= 12 ? 38 : (strengthNum >= 6 ? 37 : 36));
-            } else { // 60ml
-                price = strengthNum >= 18 ? 70 : (strengthNum >= 12 ? 68 : (strengthNum >= 6 ? 67 : 66));
-            }
-            
-            return price;
-        } catch (error) {
-            console.error('Błąd obliczania ceny:', error);
-            return 0;
-        }
-    }
-    
-    updateOrderSummary() {
-        try {
-            const itemsList = document.getElementById('order-items');
-            const orderTotal = document.getElementById('order-total');
-            const submitButton = document.getElementById('submit-order');
-            
-            if (!itemsList || !orderTotal || !submitButton) return;
-            
-            // Resetowanie listy
-            itemsList.innerHTML = '';
-            let total = 0;
-            
-            // Grupowanie przedmiotów z poprawioną obsługą błędów
-            const groupedItems = this.currentOrder.reduce((acc, item) => {
-                try {
-                    if (!item || !item.flavorNumber || !item.size || !item.strength) {
-                        console.warn('Nieprawidłowy przedmiot w zamówieniu:', item);
-                        return acc;
-                    }
-                    
-                    const key = `${item.flavorNumber}-${item.size}-${item.strength}`;
-                    if (!acc[key]) {
-                        acc[key] = {
-                            ...item,
-                            quantity: 0,
-                            totalPrice: 0
-                        };
-                    }
-                    acc[key].quantity++;
-                    acc[key].totalPrice += item.price || 0;
-                    return acc;
-                } catch (e) {
-                    console.error('Błąd podczas grupowania przedmiotu:', e);
-                    return acc;
-                }
-            }, {});
-            
-            // Sprawdzanie typu urządzenia
-            const isMobile = window.matchMedia("(max-width: 768px)").matches;
-            const quantitySymbol = isMobile ? '×' : 'x';
-            
-            // Sortowanie przedmiotów przed wyświetleniem
-            const sortedItems = Object.values(groupedItems).sort((a, b) => 
-                a.flavorNumber - b.flavorNumber || a.size.localeCompare(b.size)
-            );
-            
-            // Renderowanie przedmiotów
-            if (sortedItems.length === 0) {
-                itemsList.innerHTML = '<li class="empty-cart">Twój koszyk jest pusty</li>';
-                submitButton.disabled = true;
-                orderTotal.textContent = 'Razem: 0zł';
-                return;
-            }
-            
-            sortedItems.forEach((item) => {
-                const li = document.createElement('li');
-                li.className = 'order-item';
-                
-                // Bezpieczne formatowanie nazwy smaku
-                const flavorName = this.formatFlavorName(item.flavor || '')
-                    .split('(')[0]
-                    .trim();
-                
-                li.innerHTML = `
-                    <div class="order-item-info">
-                        <div class="flavor-name">
-                            <span class="flavor-number">${item.flavorNumber}.</span>
-                            ${flavorName}
-                        </div>
-                        <div class="item-details">
-                            (${item.size}, ${item.strength})
-                            <span class="item-quantity">${item.quantity}${quantitySymbol}</span>
-                        </div>
-                    </div>
-                    <div class="order-item-price">${item.totalPrice.toFixed(2)}zł</div>
-                    <button class="remove-item" aria-label="Usuń produkt">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                `;
-                
-                // Obsługa usuwania z animacją
-                li.querySelector('.remove-item').addEventListener('click', () => {
-                    li.classList.add('removing');
-                    setTimeout(() => {
-                        this.currentOrder = this.currentOrder.filter(i =>
-                            `${i.flavorNumber}-${i.size}-${i.strength}` !== `${item.flavorNumber}-${item.size}-${item.strength}`
-                            );
-                        this.updateOrderSummary();
-                    }, 300);
-                });
-                
-                itemsList.appendChild(li);
-                total += item.totalPrice;
-            });
-            
-            // Aktualizacja podsumowania
-            orderTotal.textContent = `Razem: ${total.toFixed(2)}zł`;
-            submitButton.disabled = false;
-            
-            // Animacja zmian
-            orderTotal.classList.add('updated');
-            setTimeout(() => orderTotal.classList.remove('updated'), 500);
-            
-        } catch (error) {
-            console.error('Błąd aktualizacji podsumowania zamówienia:', error);
-            this.showUserAlert('Wystąpił błąd podczas aktualizacji koszyka', 'error');
-        }
-    }
-    
-    async submitOrder() {
-        try {
-            if (this.currentOrder.length === 0) {
-                alert('Dodaj przynajmniej jeden produkt do zamówienia!');
-                return;
-            }
-            
-            const orderNumber = 'ORD-' + Date.now().toString().slice(-6);
-            const total = this.currentOrder.reduce((sum, item) => sum + item.price, 0);
-            const notes = document.getElementById('order-notes').value;
-            
-            const orderData = {
-                items: [...this.currentOrder],
-                total,
-                date: new Date().toISOString(),
-                status: 'Nowe',
-                notes: notes,
-                updatedAt: firebase.database.ServerValue.TIMESTAMP
-            };
-            
-            // Zapisz do Firebase
-            await this.database.ref('orders/' + orderNumber).set(orderData);
-            
-            // Aktualizuj lokalną kopię
-            this.orders[orderNumber] = orderData;
-            localStorage.setItem('orders', JSON.stringify(this.orders));
-            
-            // Pokaż potwierdzenie z przyciskiem kopiowania
-            document.getElementById('order-form').style.display = 'none';
-            document.getElementById('order-summary').style.display = 'none';
-            document.getElementById('submit-order-container').classList.add('hidden');
-            document.getElementById('order-confirmation').style.display = 'block';
-            
-            const orderNumberElement = document.getElementById('order-number');
-            orderNumberElement.textContent = orderNumber;
-            
-            console.log("Zamówienie zapisane:", orderNumber);
-            this.updateStats();
-            
-        } catch (error) {
-            console.error("Błąd zapisu zamówienia:", error);
-            alert('Wystąpił błąd podczas składania zamówienia. Spróbuj ponownie.');
-        }
-    }
-    
-    loginAdmin() {
-        try {
-            const password = document.getElementById('admin-password').value;
-            if (password === this.adminPassword) {
-                document.getElementById('admin-content').style.display = 'block';
-                this.updateStats(); // Dodano automatyczne ładowanie statystyk
-                this.initCharts(); // Dodano automatyczne inicjalizowanie wykresów
-            } else {
-                alert('Nieprawidłowe hasło!');
-            }
-        } catch (error) {
-            console.error('Błąd logowania admina:', error);
-        }
-    }
-    
-    async searchOrder() {
-        try {
-            const orderNumber = document.getElementById('order-search').value.trim();
-            const orderDetails = document.getElementById('order-details');
-            
-            if (!orderNumber) {
-                orderDetails.innerHTML = '<p class="no-order">Wpisz numer zamówienia</p>';
-                return;
-            }
-            
-            orderDetails.innerHTML = '<p class="loading">Wyszukiwanie zamówienia...</p>';
-            this.updateStats();
-            
-            // Szukaj najpierw lokalnie
-            if (this.orders[orderNumber]) {
-                this.displayOrderDetails(orderNumber, this.orders[orderNumber]);
-                return;
-            }
-            
-            // Jeśli nie znaleziono lokalnie, sprawdź Firebase
-            const snapshot = await this.database.ref('orders/' + orderNumber).once('value');
-            const order = snapshot.val();
-            
-            if (!order) {
-                orderDetails.innerHTML = '<p class="no-order">Nie znaleziono zamówienia</p>';
-                return;
-            }
-            
-            // Zapisz w lokalnej kopii i wyświetl
-            this.orders[orderNumber] = order;
-            localStorage.setItem('orders', JSON.stringify(this.orders));
-            this.displayOrderDetails(orderNumber, order);
-            
-        } catch (error) {
-            console.error("Błąd wyszukiwania:", error);
-            const orderDetails = document.getElementById('order-details');
-            if (orderDetails) {
-                orderDetails.innerHTML = '<p class="error">Błąd połączenia z bazą</p>';
-            }
-        }
-    }
-    
-    displayOrderDetails(orderNumber, order) {
-        try {
-            const orderDetails = document.getElementById('order-details');
-            if (!orderDetails) return;
-            
-            const orderHTML = `
-                <div class="order-header">
-                    <h3>Zamówienie ${orderNumber}</h3>
-                    <p class="order-date"><strong>Data:</strong> ${new Date(order.date).toLocaleString()}</p>
-                    <p class="order-status"><strong>Status:</strong> 
-                        <span class="status-badge ${order.status.toLowerCase().replace(' ', '-')}">
-                            ${order.status}
-                        </span>
-                    </p>
-                    ${order.notes ? `<p class="order-notes"><strong>Uwagi:</strong> ${order.notes}</p>` : ''}
-                    
-                    <h4>Produkty:</h4>
-                    <ul class="order-items-list">
-                        ${order.items.map(item => `
-                            <li class="order-item-detail">
-                                <span class="flavor-number">${item.flavorNumber}.</span> 
-                                ${this.formatFlavorName(item.flavor).split('(')[0].trim()} 
-                                (${item.size}, ${item.strength}) - ${item.price}zł
-                            </li>
-                        `).join('')}
-                    </ul>
-                    
-                    <p class="order-total"><strong>Suma:</strong> ${order.total}zł</p>
-                </div>
-            `;
-            
-            orderDetails.innerHTML = orderHTML;
-            
-            document.getElementById('update-status').addEventListener('click', async () => {
-                try {
-                    const newStatus = document.getElementById('status-select').value;
-                    
-                    // Aktualizuj w Firebase
-                    await this.database.ref(`orders/${orderNumber}/status`).set(newStatus);
-                    await this.database.ref(`orders/${orderNumber}/updatedAt`).set(firebase.database.ServerValue.TIMESTAMP);
-                    
-                    // Aktualizuj lokalnie
-                    this.orders[orderNumber].status = newStatus;
-                    this.orders[orderNumber].updatedAt = Date.now();
-                    localStorage.setItem('orders', JSON.stringify(this.orders));
-                    
-                    // Odśwież widok
-                    this.displayOrderDetails(orderNumber, this.orders[orderNumber]);
-                    this.updateStats();
-                    alert('Status zamówienia został zaktualizowany!');
-                    
-                } catch (error) {
-                    console.error("Błąd aktualizacji statusu:", error);
-                    alert("Wystąpił błąd podczas aktualizacji statusu");
-                }
-            });
-        } catch (error) {
-            console.error('Błąd wyświetlania szczegółów zamówienia:', error);
-        }
-    }
-
-    initScrollButton() {
-        try {
-            const scrollBtn = document.createElement('button');
-            scrollBtn.className = 'scroll-top-btn';
-            scrollBtn.innerHTML = '↑';
-            scrollBtn.setAttribute('aria-label', 'Przewiń do góry');
-            document.body.appendChild(scrollBtn);
-            
-            window.addEventListener('scroll', () => {
-                scrollBtn.classList.toggle('show', window.scrollY > 300);
-            });
-            
-            scrollBtn.addEventListener('click', () => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-        } catch (error) {
-            console.error('Błąd inicjalizacji przycisku scrolla:', error);
-        }
-    }
-
-    trackPageView() {
-        try {
-            this.pageViews++;
-            localStorage.setItem('pageViews', this.pageViews);
-            this.updateStats();
-        } catch (error) {
-            console.error('Błąd śledzenia odwiedzin:', error);
-        }
-    }
-
-    initCharts() {
-        // Funkcja pomocnicza do niszczenia wykresów
-        const destroyChart = (chartInstance, chartName) => {
-            if (chartInstance instanceof Chart) {
-                try {
-                    chartInstance.destroy();
-                    console.log(`Pomyślnie zniszczono wykres ${chartName}`);
-                } catch (e) {
-                    console.warn(`Błąd niszczenia wykresu ${chartName}:`, e);
-                }
-            }
-            return null;
-        };
-    
-        // Najpierw zniszcz istniejące mini wykresy
-        this.miniOrdersChart = destroyChart(this.miniOrdersChart, 'mini zamówień');
-        this.miniFlavorsChart = destroyChart(this.miniFlavorsChart, 'mini smaków');
-    
-        try {
-            // Pobierz elementy canvas dla mini wykresów
-            const miniOrdersCanvas = document.getElementById('miniOrdersChart');
-            const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
-            
-            if (!miniOrdersCanvas || !miniFlavorsCanvas) {
-                console.warn('Nie znaleziono elementów canvas dla mini wykresów');
-                return;
-            }
-    
-            // Sprawdź czy canvasy są gotowe do użycia
-            if (miniOrdersCanvas.__chart || miniFlavorsCanvas.__chart) {
-                console.warn('Canvas jest już używany - ponawiam próbę za 300ms');
-                setTimeout(() => this.initCharts(), 300);
-                return;
-            }
-    
-            // Przygotuj dane
-            const last7Days = this.getLast7Days();
-            const ordersData = this.getOrdersLast7Days();
-            const topFlavors = this.getTopFlavors(5);
-    
-            // Oznacz canvasy jako używane
-            miniOrdersCanvas.__chart = true;
-            miniFlavorsCanvas.__chart = true;
-    
-            // Utwórz nowe mini wykresy
-            this.miniOrdersChart = new Chart(miniOrdersCanvas.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: last7Days,
-                    datasets: [{
-                        label: 'Zamówienia z ostatnich 7 dni',
-                        data: ordersData,
-                        backgroundColor: 'rgba(255, 111, 97, 0.7)',
-                        borderColor: '#ff6f61',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
-                }
-            });
-    
-            this.miniFlavorsChart = new Chart(miniFlavorsCanvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: topFlavors.map(f => f.name),
-                    datasets: [{
-                        data: topFlavors.map(f => f.count),
-                        backgroundColor: [
-                            '#ff6f61',
-                            '#ff9a9e',
-                            '#fad0c4',
-                            '#ffcc00',
-                            '#45a049'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right' }
-                    }
-                }
-            });
-    
-            // Ustaw obsługę zakończenia animacji
-            this.miniOrdersChart.options.animation = {
-                onComplete: () => {
-                    if (miniOrdersCanvas) miniOrdersCanvas.__chart = this.miniOrdersChart;
-                }
-            };
-            
-            this.miniFlavorsChart.options.animation = {
-                onComplete: () => {
-                    if (miniFlavorsCanvas) miniFlavorsCanvas.__chart = this.miniFlavorsChart;
-                }
-            };
-    
-        } catch (error) {
-            console.error('Krytyczny błąd inicjalizacji mini wykresów:', error);
-            // W przypadku błędu oznacz canvasy jako nieużywane
-            const miniOrdersCanvas = document.getElementById('miniOrdersChart');
-            const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
-            if (miniOrdersCanvas) miniOrdersCanvas.__chart = false;
-            if (miniFlavorsCanvas) miniFlavorsCanvas.__chart = false;
-        }
-    }
-    
-    // Nowe metody pomocnicze:
-    
-    prepareChartData() {
-        try {
-            const last7Days = this.getLast7Days().map(String);
-            const ordersData = this.getOrdersLast7Days().map(Number);
-            const topFlavors = this.getTopFlavors(5);
-    
-            if (!last7Days.length || !ordersData.length || !topFlavors.length) {
-                return null;
-            }
-    
-            return {
-                labels: last7Days,
-                ordersData: ordersData,
-                topFlavors: topFlavors
-            };
-        } catch (error) {
-            console.error('Błąd przygotowywania danych wykresów:', error);
-            return null;
-        }
-    }
-    
-    createOrdersChart(canvas, data) {
-        const ctx = canvas.getContext('2d');
-        return new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.labels,
-                datasets: [{
-                    label: 'Zamówienia z ostatnich 7 dni',
-                    data: data.ordersData,
-                    borderColor: '#ff6f61',
-                    backgroundColor: 'rgba(255, 111, 97, 0.1)',
-                    tension: 0.3,
-                    fill: true,
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: { size: 12 }
-                        }
-                    },
-                    tooltip: {
-                        enabled: true,
-                        mode: 'index',
-                        intersect: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { precision: 0 }
-                    }
-                }
-            }
-        });
-    }
-    
-    createFlavorsChart(canvas, data) {
-        const ctx = canvas.getContext('2d');
-        return new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: data.topFlavors.map(f => f.name),
-                datasets: [{
-                    data: data.topFlavors.map(f => f.count),
-                    backgroundColor: [
-                        '#ff6f61',
-                        '#ff9a9e',
-                        '#fad0c4',
-                        '#ffcc00',
-                        '#45a049'
-                    ],
-                    borderWidth: 1,
-                    hoverOffset: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            font: { size: 12 },
-                            padding: 20
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = Math.round((value / total) * 100);
-                                return `${label}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                },
-                cutout: '60%'
-            }
-        });
-    }
-    
-    setChartAnimationHandlers() {
-        if (this.ordersChart) {
-            this.ordersChart.options.animation = {
-                onComplete: () => {
-                    const canvas = document.getElementById('ordersChart');
-                    if (canvas) canvas.__chart = this.ordersChart;
-                }
-            };
-        }
-        
-        if (this.flavorsChart) {
-            this.flavorsChart.options.animation = {
-                onComplete: () => {
-                    const canvas = document.getElementById('flavorsChart');
-                    if (canvas) canvas.__chart = this.flavorsChart;
-                }
-            };
-        }
-    }
-    
-    cleanupFailedCharts() {
-        const ordersCanvas = document.getElementById('ordersChart');
-        const flavorsCanvas = document.getElementById('flavorsChart');
-        
-        if (ordersCanvas) ordersCanvas.__chart = null;
-        if (flavorsCanvas) flavorsCanvas.__chart = null;
-        
-        this.ordersChart = null;
-        this.flavorsChart = null;
-    }
-
-    updateStats() {
-        try {
-            // 1. Aktualizacja statystyk tekstowych
-            const totalOrders = Object.keys(this.orders).length;
-            const todayOrders = this.getTodaysOrdersCount();
-            
-            // Bezpieczna aktualizacja UI
-            const safeUpdate = (id, value) => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.textContent = value;
-                    element.style.animation = 'pulse 0.5s'; // Efekt wizualny
-                    setTimeout(() => element.style.animation = '', 500);
-                }
-            };
-            
-            safeUpdate('total-orders', totalOrders);
-            safeUpdate('today-orders', todayOrders);
-            safeUpdate('total-views', this.pageViews);
-    
-            // 2. Aktualizacja ostatnich zamówień
-            const recentOrders = Object.entries(this.orders)
-                .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
-                .slice(0, 5);
-    
-            const recentOrdersContainer = document.getElementById('recent-orders');
-            if (recentOrdersContainer) {
-                recentOrdersContainer.innerHTML = recentOrders.map(([orderId, order]) => `
-                    <tr>
-                        <td>${orderId}</td>
-                        <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
-                        <td>${order.total}zł</td>
-                        <td class="status-${order.status.toLowerCase()}">${order.status}</td>
-                    </tr>
-                `).join('') || '<tr><td colspan="4">Brak danych</td></tr>';
-            }
-    
-            // 3. Aktualizacja wykresów
-            this.updateCharts();
-    
-        } catch (error) {
-            console.error('Błąd podczas aktualizacji statystyk:', error);
-        }
-    }
-
-    updateCharts() {
-        if (!this.ordersChart || !this.flavorsChart) {
-            this.initCharts();
-            return;
-        }
-
-        try {
-            const last7Days = this.getLast7Days();
-            const ordersData = this.getOrdersLast7Days();
-            const topFlavors = this.getTopFlavors(5);
-
-            // Sprawdź czy wykresy są prawidłowe
-            if (this.isChartValid(this.ordersChart)) {
-                this.ordersChart.data.labels = last7Days;
-                this.ordersChart.data.datasets[0].data = ordersData;
-                this.ordersChart.update();
-            }
-
-            if (this.isChartValid(this.flavorsChart)) {
-                this.flavorsChart.data.labels = topFlavors.map(f => String(f.name));
-                this.flavorsChart.data.datasets[0].data = topFlavors.map(f => Number(f.count));
-                this.flavorsChart.update();
-            }
-
-        } catch (error) {
-            console.error('Błąd aktualizacji wykresów:', error);
-            this.initCharts(); // Próba ponownej inicjalizacji
-        }
-    }
-
-    isChartValid(chart) {
-        return chart instanceof Chart && 
-               typeof chart.update === 'function' &&
-               chart.data && 
-               chart.data.datasets &&
-               chart.data.datasets.length > 0;
-    }
-
-    getLast7Days() {
-        try {
-            const days = [];
-            for (let i = 6; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                days.push(date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }));
-            }
-            return days.map(String);
-        } catch (error) {
-            console.error('Błąd generowania dni:', error);
-            return ['Błąd', '', '', '', '', '', ''];
-        }
-    }
-
-    getOrdersLast7Days() {
-        try {
-            const counts = [0, 0, 0, 0, 0, 0, 0];
-            const today = new Date();
-            
-            Object.values(this.orders || {}).forEach(order => {
-                try {
-                    const orderDate = new Date(order.date);
-                    const diffDays = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
-                    
-                    if (diffDays >= 0 && diffDays < 7) {
-                        counts[6 - diffDays]++;
-                    }
-                } catch (e) {
-                    console.warn('Błąd przetwarzania zamówienia:', order, e);
-                }
-            });
-            
-            return counts;
-        } catch (error) {
-            console.error('Błąd obliczania zamówień:', error);
-            return [0, 0, 0, 0, 0, 0, 0];
-        }
-    }
-
-    getTopFlavors(limit = 5) {
-        const flavorCounts = {};
-        
-        try {
-            // Używamy AppData.flavors jako źródła danych
-            const allFlavors = AppData?.flavors || [];
-            const orders = this.orders || {};
-            
-            Object.values(orders).forEach(order => {
-                try {
-                    if (order?.items && Array.isArray(order.items)) {
-                        order.items.forEach(item => {
-                            try {
-                                if (item?.flavor) {
-                                    // Szukamy pełnej nazwy smaku na podstawie flavorNumber
-                                    const flavorIndex = (item.flavorNumber || 1) - 1;
-                                    const flavorName = allFlavors[flavorIndex] || item.flavor;
-                                    const formattedName = this.formatFlavorName(flavorName).split('(')[0].trim();
-                                    
-                                    if (formattedName) {
-                                        const quantity = Number(item.quantity) || 1;
-                                        flavorCounts[formattedName] = (flavorCounts[formattedName] || 0) + quantity;
-                                    }
-                                }
-                            } catch (itemError) {
-                                console.warn('Błąd przetwarzania pozycji:', item, itemError);
-                            }
-                        });
-                    }
-                } catch (orderError) {
-                    console.warn('Błąd przetwarzania zamówienia:', order, orderError);
-                }
-            });
-        } catch (error) {
-            console.error('Błąd przetwarzania zamówień:', error);
-        }
-        
-        // Zawsze zwracamy poprawną strukturę danych
-        const result = Object.entries(flavorCounts)
-            .map(([name, count]) => ({ 
-                name: String(name || 'Nieznany smak'), 
-                count: Number(count) || 0 
-            }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, limit);
-    
-        return result.length > 0 ? result : [{ name: 'Brak danych', count: 0 }];
-    }
-    
-    getValidatedFlavors() {
-        try {
-            const flavors = this.getTopFlavors(5);
-            return {
-                valid: true, // Zawsze zwracamy true, aby pokazać wykres
-                data: flavors
-            };
-        } catch (e) {
-            console.warn('Błąd walidacji smaków:', e);
-            return {
-                valid: true,
-                data: [{ name: 'Brak danych', count: 0 }]
-            };
-        }
-    }
-
-    updateStats() {
-        try {
-            // 1. Aktualizacja statystyk tekstowych
-            const totalOrders = Object.keys(this.orders).length;
-            const todayOrders = this.getTodaysOrdersCount();
-            
-            document.getElementById('total-orders').textContent = totalOrders;
-            document.getElementById('today-orders').textContent = todayOrders;
-            document.getElementById('total-views').textContent = this.pageViews;
-    
-            // 2. Aktualizacja ostatnich zamówień
-            const recentOrders = Object.entries(this.orders)
-                .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
-                .slice(0, 5);
-                
-            document.getElementById('recent-orders').innerHTML = recentOrders.map(([orderId, order]) => `
-                <tr>
-                    <td>${orderId}</td>
-                    <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
-                    <td>${order.total}zł</td>
-                    <td class="status-${order.status.toLowerCase()}">${order.status}</td>
-                    <td>
-                        <select class="status-select" data-order-id="${orderId}">
-                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
-                            <option value="W trakcie" ${order.status === 'W trakcie' ? 'selected' : ''}>W trakcie</option>
-                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
-                            <option value="Anulowane" ${order.status === 'Anulowane' ? 'selected' : ''}>Anulowane</option>
-                        </select>
-                        <button class="action-btn save-btn" data-order-id="${orderId}">Zapisz</button>
-                    </td>
-                </tr>
-            `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
-    
-            // 3. Dodanie event listenerów
-            document.querySelectorAll('.save-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const orderId = e.target.getAttribute('data-order-id');
-                    const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
-                    this.updateOrderStatus(orderId, select.value);
-                });
-            });
-    
-            // 4. Opóźniona aktualizacja wykresów (zabezpieczenie przed wyścigiem)
-            setTimeout(() => {
-                if (!this.miniOrdersChart || !this.miniFlavorsChart) {
-                    this.initMiniCharts();
-                } else {
-                    try {
-                        this.miniOrdersChart.data.labels = this.getLast7Days();
-                        this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
-                        this.miniOrdersChart.update();
-                        
-                        this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
-                        this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
-                        this.miniFlavorsChart.update();
-                    } catch (error) {
-                        console.error('Błąd aktualizacji mini wykresów:', error);
-                        this.initMiniCharts(); // Próba ponownej inicjalizacji
-                    }
-                }
-            }, 100);
-        } catch (error) {
-            console.error('Błąd aktualizacji statystyk:', error);
-        }
-    }
-
-    getTodaysOrdersCount() {
-        const today = new Date().toLocaleDateString();
-        return Object.values(this.orders).filter(order => {
-            return new Date(order.date).toLocaleDateString() === today;
-        }).length;
-    }
-
-    initBasicStatistics() {
-        try {
-            this.pageViews = parseInt(localStorage.getItem('pageViews')) || 0;
-            this.trackPageView();
-        } catch (error) {
-            console.error('Błąd inicjalizacji statystyk:', error);
-        }
-    }
-
-    // Dodaj nową metodę do inicjalizacji mini wykresów
-    initMiniCharts() {
-        // Najpierw zniszcz istniejące wykresy jeśli są
-        if (this.miniOrdersChart instanceof Chart) {
-            this.miniOrdersChart.destroy();
-            this.miniOrdersChart = null;
-        }
-        if (this.miniFlavorsChart instanceof Chart) {
-            this.miniFlavorsChart.destroy();
-            this.miniFlavorsChart = null;
-        }
-    
-        // Sprawdź czy elementy canvas istnieją i nie są już używane
-        const miniOrdersCanvas = document.getElementById('miniOrdersChart');
-        const miniFlavorsCanvas = document.getElementById('miniFlavorsChart');
-        
-        if (!miniOrdersCanvas || !miniFlavorsCanvas) {
-            console.warn('Elementy canvas dla mini wykresów nie istnieją');
-            return;
-        }
-    
-        // Dodatkowe sprawdzenie czy canvas nie jest już używany
-        if (miniOrdersCanvas.__chart || miniFlavorsCanvas.__chart) {
-            console.warn('Canvas jest już używany - odczekaj przed ponowną inicjalizacją');
-            return;
-        }
-    
-        try {
-            // Oznacz canvasy jako używane
-            miniOrdersCanvas.__chart = true;
-            miniFlavorsCanvas.__chart = true;
-    
-            // Inicjalizacja wykresów
-            this.miniOrdersChart = new Chart(miniOrdersCanvas.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: this.getLast7Days(),
-                    datasets: [{
-                        label: 'Zamówienia z ostatnich 7 dni',
-                        data: this.getOrdersLast7Days(),
-                        backgroundColor: 'rgba(255, 111, 97, 0.7)',
-                        borderColor: '#ff6f61',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
-                }
-            });
-    
-            this.miniFlavorsChart = new Chart(miniFlavorsCanvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: this.getTopFlavors(5).map(f => f.name),
-                    datasets: [{
-                        data: this.getTopFlavors(5).map(f => f.count),
-                        backgroundColor: [
-                            '#ff6f61',
-                            '#ff9a9e',
-                            '#fad0c4',
-                            '#ffcc00',
-                            '#45a049'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right' }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Błąd inicjalizacji mini wykresów:', error);
-            // W przypadku błędu oznacz canvasy jako nieużywane
-            if (miniOrdersCanvas) miniOrdersCanvas.__chart = false;
-            if (miniFlavorsCanvas) miniFlavorsCanvas.__chart = false;
-        }
-    }
-
-    // Nowa metoda do aktualizacji statusu
-    async updateOrderStatus(orderId, newStatus) {
-        try {
-            // Aktualizacja w Firebase
-            await this.database.ref(`orders/${orderId}/status`).set(newStatus);
-            await this.database.ref(`orders/${orderId}/updatedAt`).set(firebase.database.ServerValue.TIMESTAMP);
-            
-            // Aktualizacja lokalna
-            if (this.orders[orderId]) {
-                this.orders[orderId].status = newStatus;
-                this.orders[orderId].updatedAt = Date.now();
-                localStorage.setItem('orders', JSON.stringify(this.orders));
-            }
-            
-            // Odświeżenie widoku
-            this.updateStats();
-            alert('Status zamówienia został zaktualizowany!');
-        } catch (error) {
-            console.error('Błąd aktualizacji statusu:', error);
-            alert('Wystąpił błąd podczas aktualizacji statusu');
-        }
-    }
-
-    // Zaktualizowana metoda updateStats
-    updateStats() {
-        try {
-            // 1. Aktualizacja statystyk tekstowych
-            const totalOrders = Object.keys(this.orders).length;
-            const todayOrders = this.getTodaysOrdersCount();
-            
-            document.getElementById('total-orders').textContent = totalOrders;
-            document.getElementById('today-orders').textContent = todayOrders;
-            document.getElementById('total-views').textContent = this.pageViews;
-    
-            // 2. Aktualizacja ostatnich zamówień
-            const recentOrders = Object.entries(this.orders)
-                .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
-                .slice(0, 5);
-                
-            const recentOrdersHTML = recentOrders.map(([orderId, order]) => `
-                <tr>
-                    <td>${orderId}</td>
-                    <td>${new Date(order.date).toLocaleDateString('pl-PL')}</td>
-                    <td>${order.total}zł</td>
-                    <td class="status-${order.status.toLowerCase().replace(' ', '-')}">
-                        ${order.status}
-                    </td>
-                    <td>
-                        <select class="status-select" data-order-id="${orderId}">
-                            <option value="Nowe" ${order.status === 'Nowe' ? 'selected' : ''}>Nowe</option>
-                            <option value="W trakcie" ${order.status === 'W trakcie' ? 'selected' : ''}>W trakcie</option>
-                            <option value="Zakończone" ${order.status === 'Zakończone' ? 'selected' : ''}>Zakończone</option>
-                            <option value="Anulowane" ${order.status === 'Anulowane' ? 'selected' : ''}>Anulowane</option>
-                        </select>
-                        <button class="action-btn save-btn" data-order-id="${orderId}">Zapisz</button>
-                    </td>
-                </tr>
-            `).join('') || '<tr><td colspan="5">Brak zamówień</td></tr>';
-            
-            document.getElementById('recent-orders').innerHTML = recentOrdersHTML;
-    
-            // 3. Dodanie event listenerów do przycisków
-            document.querySelectorAll('.save-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const orderId = e.target.getAttribute('data-order-id');
-                    const select = document.querySelector(`.status-select[data-order-id="${orderId}"]`);
-                    this.updateOrderStatus(orderId, select.value);
-                });
-            });
-    
-            // 4. Aktualizacja mini wykresów (zostawiamy oba)
-            if (this.miniOrdersChart && this.miniFlavorsChart) {
-                this.miniOrdersChart.data.labels = this.getLast7Days();
-                this.miniOrdersChart.data.datasets[0].data = this.getOrdersLast7Days();
-                this.miniOrdersChart.update();
-                
-                this.miniFlavorsChart.data.labels = this.getTopFlavors(5).map(f => f.name);
-                this.miniFlavorsChart.data.datasets[0].data = this.getTopFlavors(5).map(f => f.count);
-                this.miniFlavorsChart.update();
-            } else {
-                this.initMiniCharts();
-            }
-    
-        } catch (error) {
-            console.error('Błąd aktualizacji statystyk:', error);
-        }
-    }
-}
-
-// Bezpieczna inicjalizacja systemu
+// ── Start systemu ───────────────────────────────────────────────────────────────
 try {
-    const orderSystem = new OrderSystem();
-} catch (error) {
-    console.error('Błąd inicjalizacji systemu zamówień:', error);
-    // Tutaj możesz dodać kod wyświetlający komunikat o błędzie użytkownikowi
+  window.OrderSystem = new OrderSystem();
+} catch (e) {
+  console.error('Błąd startu OrderSystem:', e);
 }

@@ -553,3 +553,32 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
   line-height: 1.45;
   text-align: left;
 }
+
+/* Badge statusu na kartach */
+.status-badge {
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  margin:8px 0 0;
+}
+.stock-available { background:#e8f5e9; color:#2e7d32; }
+.stock-low       { background:#fff8e1; color:#ff8f00; }
+.stock-out       { background:#ffebee; color:#c62828; }
+
+/* Przycisk zamówienia gdy brak */
+.order-btn.pretty[disabled],
+.order-btn.pretty.is-disabled {
+  opacity:.6;
+  cursor:not-allowed;
+  filter:grayscale(0.2);
+}
+
+/* Lista w adminie */
+.admin-stock-section { margin-top:24px; }
+.stock-manager { max-height:360px; overflow:auto; border:1px solid #eee; border-radius:8px; background:#fff; }
+.stock-row { display:flex; gap:12px; align-items:center; padding:10px 12px; border-bottom:1px solid #f3f3f3; }
+.stock-row:last-child { border-bottom:none; }
+.stock-title { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stock-select { min-width:170px; }
