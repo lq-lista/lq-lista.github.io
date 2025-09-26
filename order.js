@@ -241,6 +241,16 @@ class OrderSystem {
     } catch {}
   }
 
+  getBrandFromFlavorIndex(index) {
+  try {
+    const s = AppData?.flavors?.[index];
+    if (!s) return null;
+    const m = s.match(/\(([^()]+)\)\s*$/);
+    return m ? m[1].trim() : null;
+  } catch { return null; }
+}
+
+
   openModal() {
     const modal = document.getElementById('order-modal');
     if (!modal) return;
@@ -459,20 +469,27 @@ class OrderSystem {
   }
 
   updatePricePreview() {
-    const size = document.getElementById('size-select')?.value;
-    const strength = document.getElementById('strength-select')?.value;
-    const preview = document.getElementById('price-preview');
-    if (!preview) return;
+  try {
+    const size = document.getElementById('size-select').value;
+    const strength = document.getElementById('strength-select').value;
+    const flavorIndex = document.getElementById('flavor-select').value;
+    const brand = this.getBrandFromFlavorIndex(flavorIndex);
+    const pricePreview = document.getElementById('price-preview');
 
-    if (size && strength) {
-      const price = this.calculatePrice(size, strength);
-      preview.textContent = `Cena: ${price}zł`;
-      preview.style.color = '#ff6f61';
+    if (!pricePreview) return;
+
+    if (size && strength && brand) {
+      const price = this.calculatePrice(size, strength, brand);
+      pricePreview.textContent = `Cena: ${price}zł`;
+      pricePreview.style.color = '#ff6f61';
     } else {
-      preview.textContent = 'Cena: -';
-      preview.style.color = '';
+      pricePreview.textContent = 'Cena: -';
+      pricePreview.style.color = '';
     }
+  } catch (error) {
+    console.error('Błąd aktualizacji podglądu ceny:', error);
   }
+}
 
   // Walidacja + alerty
   showValidationError(element, message) {
@@ -502,20 +519,34 @@ class OrderSystem {
     setTimeout(() => a.remove(), 3000);
   }
 
-  calculatePrice(size, strength) {
-    try {
-      const s = parseInt(strength, 10);
-      if (size === '10ml') {
-        return s >= 18 ? 16 : (s >= 12 ? 15 : (s >= 6 ? 14 : 13));
-      } else if (size === '30ml') {
-        return s >= 18 ? 40 : (s >= 12 ? 38 : (s >= 6 ? 37 : 36));
-      } else { // 60ml
-        return s >= 18 ? 70 : (s >= 12 ? 68 : (s >= 6 ? 67 : 66));
-      }
-    } catch {
-      return 0;
+  calculatePrice(size, strength, brand) {
+  try {
+    const bp = window.BrandPricing || {};
+    const fallback = bp['A&L'] || {}; // sensowny default
+    const table = (bp[brand] && bp[brand][size]) || fallback[size] || null;
+    const mg = String(parseInt(strength, 10));
+
+    if (table) {
+      // 24/18/12 idą wprost; 6/3/0 wspólny klucz '6'
+      const key = (mg === '24' || mg === '18' || mg === '12') ? mg : '6';
+      const val = table[key];
+      if (typeof val === 'number') return val;
     }
+
+    // Ostateczny awaryjny fallback (stare widełki)
+    const mgNum = parseInt(strength, 10);
+    if (size === '10ml') {
+      return mgNum >= 18 ? 16 : (mgNum >= 12 ? 15 : 14);
+    } else if (size === '30ml') {
+      return mgNum >= 18 ? 40 : (mgNum >= 12 ? 38 : 35);
+    } else { // 60ml
+      return mgNum >= 18 ? 70 : (mgNum >= 12 ? 67 : 65);
+    }
+  } catch (e) {
+    console.error('Błąd obliczania ceny:', e);
+    return 0;
   }
+}
 
   addToOrder() {
     try {
@@ -541,7 +572,9 @@ class OrderSystem {
       const flavorFull = all[idx];
       if (!flavorFull) throw new Error('Wybrany smak nie istnieje');
 
-      const price = this.calculatePrice(sizeSelect.value, strengthSelect.value);
+      const price = this.calculatePrice(sizeSelect.value, strengthSelect.value,
+      this.getBrandFromFlavorIndex(flavorSelect.value));
+
       const flavorNumber = idx + 1;
 
       this.currentOrder.push({
