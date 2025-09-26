@@ -285,13 +285,65 @@ class OrderSystem {
   // Lista „Nasze Smaki” (sekcja na stronie)
   // ──────────────────────────────────────────────────────────────────────────────
   initFlavorFilter() {
-    const brandFilter = document.getElementById('brand-filter');
-    const typeFilter  = document.getElementById('type-filter');
-    if (brandFilter) brandFilter.addEventListener('change', () => this.filterFlavors());
-    if (typeFilter)  typeFilter.addEventListener('change',  () => this.filterFlavors());
-    // pierwsze renderowanie:
-    this.filterFlavors();
+  // Jeśli sekcji .flavors nie ma (usunięta z index.html), to nic nie rób
+  const flavorsSection = document.querySelector('.flavors');
+  if (!flavorsSection) return;
+
+  // jeżeli jednak kiedyś wróci – podpinamy się do istniejących filtrów
+  const brandFilter = document.getElementById('brand-filter');
+  const typeFilter = document.getElementById('type-filter');
+
+  if (brandFilter) brandFilter.addEventListener('change', () => this.filterFlavors());
+  if (typeFilter) typeFilter.addEventListener('change', () => this.filterFlavors());
+
+  // Gdyby filtrów nie było w HTML, tworzymy je TYLKO jeśli istnieje .flavors
+  if (!brandFilter || !typeFilter) {
+    const filterContainer = document.createElement('div');
+    filterContainer.className = 'filter-container';
+    filterContainer.innerHTML = `
+      <div class="filter-group">
+        <label for="brand-filter">Firma:</label>
+        <select id="brand-filter" class="form-control">
+          <option value="all">Wszystkie firmy</option>
+          <option value="a&l">A&L</option>
+          <option value="vampir">Vampir Vape</option>
+          <option value="fighter">Fighter Fuel</option>
+          <option value="premium">Premium Fcukin Flava</option>
+          <option value="tribal">Tribal Force</option>
+          <option value="izi">IZI PIZI</option>
+          <option value="wanna">WANNA BE COOL</option>
+          <option value="klarro">Klarro Smooth Funk</option>
+          <option value="aroma">AROMA KING</option>
+          <option value="dillon">Dillon's</option>
+          <option value="geometric">Geometric Fruits</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="type-filter">Typ smaku:</label>
+        <select id="type-filter" class="form-control">
+          <option value="all">Wszystkie typy</option>
+          <option value="owocowe">Owocowe</option>
+          <option value="miętowe">Miętowe</option>
+          <option value="słodkie">Słodkie</option>
+          <option value="cytrusowe">Cytrusowe</option>
+          <option value="energy">Energy drink</option>
+          <option value="chłodzone">Chłodzone</option>
+        </select>
+      </div>
+    `;
+
+    // wstawiamy filtry tylko jeśli jest gdzie
+    const flavorsList = document.getElementById('flavors-list');
+    if (flavorsList) {
+      flavorsSection.insertBefore(filterContainer, flavorsList);
+      const bf = document.getElementById('brand-filter');
+      const tf = document.getElementById('type-filter');
+      if (bf) bf.addEventListener('change', () => this.filterFlavors());
+      if (tf) tf.addEventListener('change', () => this.filterFlavors());
+    }
   }
+}
+
 
   filterFlavors() {
     try {
