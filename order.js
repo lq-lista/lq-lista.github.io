@@ -250,6 +250,58 @@ class OrderSystem {
   } catch { return null; }
 }
 
+// jakie pojemności ma dana firma wg BrandPricing
+getAvailableSizesForBrand(brand) {
+  const bp = window.BrandPricing || {};
+  if (!brand || !bp[brand]) return [];
+  return Object.keys(bp[brand]); // np. ["60ml","30ml","10ml"]
+}
+
+// wyszarza niedostępne pojemności i auto-przełącza
+updateSizeAvailability() {
+  try {
+    const flavorIndex = document.getElementById('flavor-select').value;
+    const sizeSelect  = document.getElementById('size-select');
+    const brand = this.getBrandFromFlavorIndex(flavorIndex);
+    if (!sizeSelect || !brand) return;
+
+    const avail = this.getAvailableSizesForBrand(brand); // np. ["60ml","30ml"]
+    let firstAvailable = null;
+
+    [...sizeSelect.options].forEach(opt => {
+      if (!opt.value) return; // "Wybierz pojemność"
+      const isAvail = avail.includes(opt.value);
+      // zapamiętaj oryginalny tekst (do czyszczenia)
+      if (!opt.dataset.orig) opt.dataset.orig = opt.textContent;
+
+      opt.disabled = !isAvail;
+      opt.textContent = isAvail ? opt.dataset.orig : `${opt.dataset.orig} — niedostępne`;
+      if (isAvail && !firstAvailable) firstAvailable = opt.value;
+    });
+
+    // jeśli wybrana pojemność jest niedostępna – przełącz na pierwszą dostępną
+    const cur = sizeSelect.value;
+    if (!avail.includes(cur)) {
+      sizeSelect.value = firstAvailable || '';
+    }
+
+    // odśwież podgląd ceny
+    this.updatePricePreview();
+  } catch (e) {
+    console.warn('updateSizeAvailability error:', e);
+  }
+}
+
+
+  getBrandFromFlavorIndex(index) {
+  try {
+    const s = AppData?.flavors?.[index];
+    if (!s) return null;
+    const m = s.match(/\(([^()]+)\)\s*$/);
+    return m ? m[1].trim() : null;
+  } catch { return null; }
+}
+
 
   openModal() {
     const modal = document.getElementById('order-modal');
@@ -271,6 +323,9 @@ class OrderSystem {
     document.getElementById('order-notes').value = '';
     this.currentOrder = [];
     this.updateOrderSummary();
+
+    this.updateSizeAvailability();
+    this.updatePricePreview();
 
     // focus na pierwsze pole
     const sel = document.getElementById('flavor-select');
@@ -305,6 +360,15 @@ class OrderSystem {
 
   if (brandFilter) brandFilter.addEventListener('change', () => this.filterFlavors());
   if (typeFilter) typeFilter.addEventListener('change', () => this.filterFlavors());
+
+    const flavorSelect = document.getElementById('flavor-select');
+if (flavorSelect) {
+  flavorSelect.addEventListener('change', () => {
+    this.updateSizeAvailability();
+    this.updatePricePreview();
+  });
+}
+
 
   // Gdyby filtrów nie było w HTML, tworzymy je TYLKO jeśli istnieje .flavors
   if (!brandFilter || !typeFilter) {
@@ -468,7 +532,7 @@ class OrderSystem {
     });
   }
 
-  updatePricePreview() {
+updatePricePreview() {
   try {
     const size = document.getElementById('size-select').value;
     const strength = document.getElementById('strength-select').value;
@@ -490,6 +554,7 @@ class OrderSystem {
     console.error('Błąd aktualizacji podglądu ceny:', error);
   }
 }
+
 
   // Walidacja + alerty
   showValidationError(element, message) {
@@ -519,34 +584,30 @@ class OrderSystem {
     setTimeout(() => a.remove(), 3000);
   }
 
-  calculatePrice(size, strength, brand) {
+calculatePrice(size, strength, brand) {
   try {
     const bp = window.BrandPricing || {};
-    const fallback = bp['A&L'] || {}; // sensowny default
+    const fallback = bp['A&L'] || {};
     const table = (bp[brand] && bp[brand][size]) || fallback[size] || null;
     const mg = String(parseInt(strength, 10));
 
     if (table) {
-      // 24/18/12 idą wprost; 6/3/0 wspólny klucz '6'
-      const key = (mg === '24' || mg === '18' || mg === '12') ? mg : '6';
+      const key = (mg === '24' || mg === '18' || mg === '12') ? mg : '6'; // 6/3/0 razem
       const val = table[key];
       if (typeof val === 'number') return val;
     }
 
-    // Ostateczny awaryjny fallback (stare widełki)
+    // awaryjnie stare widełki
     const mgNum = parseInt(strength, 10);
-    if (size === '10ml') {
-      return mgNum >= 18 ? 16 : (mgNum >= 12 ? 15 : 14);
-    } else if (size === '30ml') {
-      return mgNum >= 18 ? 40 : (mgNum >= 12 ? 38 : 35);
-    } else { // 60ml
-      return mgNum >= 18 ? 70 : (mgNum >= 12 ? 67 : 65);
-    }
+    if (size === '10ml') return mgNum >= 18 ? 16 : (mgNum >= 12 ? 15 : 14);
+    if (size === '30ml') return mgNum >= 18 ? 40 : (mgNum >= 12 ? 38 : 35);
+    return mgNum >= 18 ? 70 : (mgNum >= 12 ? 67 : 65);
   } catch (e) {
-    console.error('Błąd obliczania ceny:', e);
+    console.error('Błąd calculatePrice:', e);
     return 0;
   }
 }
+
 
   addToOrder() {
     try {
@@ -572,8 +633,11 @@ class OrderSystem {
       const flavorFull = all[idx];
       if (!flavorFull) throw new Error('Wybrany smak nie istnieje');
 
-      const price = this.calculatePrice(sizeSelect.value, strengthSelect.value,
-      this.getBrandFromFlavorIndex(flavorSelect.value));
+      const price = this.calculatePrice(
+  sizeSelect.value, strengthSelect.value,
+  this.getBrandFromFlavorIndex(flavorSelect.value)
+);
+
 
       const flavorNumber = idx + 1;
 

@@ -629,3 +629,33 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
 }
 .price-table td:first-child { text-align: left; font-weight: 600; }
 .muted { color: #888; font-size: 12px; }
+
+/* Chips (skróty firm) nad cennikiem */
+.price-chips {
+  display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 18px;
+}
+.price-chip {
+  display:inline-block; padding:6px 12px; border-radius:999px;
+  background:#fff; border:1px solid #eee; text-decoration:none; color:#333;
+  box-shadow:0 2px 6px rgba(0,0,0,.05);
+}
+.price-chip:hover { background:#fffbfb; border-color:#ffd4d0; }
+
+/* Accordion cennika */
+.price-acc { background:#fff; border:1px solid #f1f1f1; border-radius:12px; margin-bottom:10px; overflow:hidden; }
+.price-acc__summary {
+  list-style:none; cursor:pointer; padding:12px 16px; font-weight:700; color:#ff6f61;
+  background:linear-gradient(135deg, #ffefe9, #fff);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.price-acc__summary::-webkit-details-marker { display:none; }
+.price-acc[open] .price-acc__summary { border-bottom:1px solid #f3d3cf; }
+.price-acc__body { padding:10px; }
+
+.price-table { width:100%; border-collapse:collapse; }
+.price-table th, .price-table td { padding:10px 8px; text-align:center; border-bottom:1px solid #f5f5f5; }
+.price-table td:first-child { text-align:left; font-weight:600; }
+.muted { color:#888; font-size:12px; }
+
+/* Select – wizualka dla pozycji niedostępnych (i tak są disabled) */
+select option[disabled] { color:#aaa; }

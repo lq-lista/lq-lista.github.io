@@ -1,6 +1,6 @@
-// pricing.js – cennik wg firmy + eksport do window.BrandPricing + render kart
+// pricing.js – cennik wg firmy + accordion + eksport do window.BrandPricing
 (function () {
-  // Tabela cen (6/3/0 mają wspólną cenę pod kluczem '6')
+  // Tabela cen (6/3/0 wspólna cena pod kluczem '6')
   window.BrandPricing = {
     'A&L': {
       '60ml': { '24': 70, '18': 68, '12': 67, '6': 65, '3': 65, '0': 65 },
@@ -57,13 +57,21 @@
     }
   };
 
-  // === RENDER KART CENNIKA ===
+  // === Render accordionu ===
   const host = document.getElementById('brand-pricing');
   if (!host) return;
 
   const sizesOrder = ['60ml', '30ml', '10ml'];
+  const brands = Object.keys(window.BrandPricing);
 
-  host.innerHTML = Object.keys(window.BrandPricing).map(brand => {
+  // mini-nawigacja po firmach
+  const chips = `
+    <div class="price-chips">
+      ${brands.map(b => `<a href="#price-${b.replace(/\s+/g,'-')}" class="price-chip">${b}</a>`).join('')}
+    </div>
+  `;
+
+  const content = brands.map(brand => {
     const data = window.BrandPricing[brand];
     const rows = sizesOrder
       .filter(s => data[s])
@@ -76,26 +84,29 @@
         return `
           <tr>
             <td>${size}</td>
-            <td>${p24 === '—' ? '—' : p24 + 'zł'}</td>
-            <td>${p18 === '—' ? '—' : p18 + 'zł'}</td>
-            <td>${p12 === '—' ? '—' : p12 + 'zł'}</td>
-            <td>${p63 === '—' ? '—' : p63 + 'zł'} <span class="muted">(6/3/0)</span></td>
-          </tr>
-        `;
+            <td>${p24==='—'?'—':p24+'zł'}</td>
+            <td>${p18==='—'?'—':p18+'zł'}</td>
+            <td>${p12==='—'?'—':p12+'zł'}</td>
+            <td>${p63==='—'?'—':p63+'zł'} <span class="muted">(6/3/0)</span></td>
+          </tr>`;
       }).join('');
 
     return `
-      <div class="price-card">
-        <div class="price-card__header">${brand}</div>
-        <table class="price-table" aria-label="Cennik ${brand}">
-          <thead>
-            <tr>
-              <th>Pojemność</th><th>24mg</th><th>18mg</th><th>12mg</th><th>6/3/0mg</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
+      <details class="price-acc" id="price-${brand.replace(/\s+/g,'-')}">
+        <summary class="price-acc__summary">${brand}</summary>
+        <div class="price-acc__body">
+          <table class="price-table" aria-label="Cennik ${brand}">
+            <thead>
+              <tr>
+                <th>Pojemność</th><th>24mg</th><th>18mg</th><th>12mg</th><th>6/3/0mg</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </details>
     `;
   }).join('');
+
+  host.innerHTML = chips + content;
 })();
