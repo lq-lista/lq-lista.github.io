@@ -54,7 +54,7 @@
     'Geometric Fruits': 10,
     'chilled face': 6,
     'Summer time': 10,
-    'Winter time': 10,
+    'Winter time': 10
   };
 
   // slug = klucz statusu i nazwy pliku
