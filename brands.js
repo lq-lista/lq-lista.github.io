@@ -154,64 +154,65 @@
   }
 
   // ===== helpers do karuzeli =====
-  const setupCarousel = (section) => {
-    const scroller = section.querySelector('.longfill-carousel');
-    const prev = section.querySelector('.brand-prev');
-    const next = section.querySelector('.brand-next');
-    if (!scroller || !prev || !next) return;
+  // --- w brands.js zamień dotychczasowe setupCarousel na to:
+const setupCarousel = (section) => {
+  const scroller = section.querySelector('.longfill-carousel');
+  const prev = section.querySelector('.brand-prev');
+  const next = section.querySelector('.brand-next');
+  if (!scroller || !prev || !next) return;
 
-    const oneStep = () => {
-      const card = scroller.querySelector('.longfill-item');
-      if (!card) return 300;
-      const style = parseFloat(getComputedStyle(scroller).columnGap || getComputedStyle(scroller).gap || 20);
-      return card.getBoundingClientRect().width + style;
-    };
+  // zawsze pokazujemy przyciski (na desktopie bywały chowane przez inne style)
+  prev.hidden = false; next.hidden = false;
+  prev.style.display = 'flex'; next.style.display = 'flex';
 
-    const updateArrows = () => {
-      const atStart = scroller.scrollLeft <= 5;
-      const atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 5;
-      prev.disabled = atStart; next.disabled = atEnd;
-    };
-
-    prev.addEventListener('click', () => {
-      scroller.scrollBy({ left: -oneStep() * 2, behavior: 'smooth' });
-    });
-    next.addEventListener('click', () => {
-      scroller.scrollBy({ left:  oneStep() * 2, behavior: 'smooth' });
-    });
-
-    // przewijanie kółkiem w poziomie
-    scroller.addEventListener('wheel', (e) => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault();
-        scroller.scrollLeft += e.deltaY;
-        updateArrows();
-      }
-    }, { passive: false });
-
-    // przeciąganie myszką / palcem
-    let dragging = false, startX = 0, startLeft = 0;
-    scroller.addEventListener('pointerdown', (e) => {
-      dragging = true;
-      startX = e.pageX;
-      startLeft = scroller.scrollLeft;
-      scroller.setPointerCapture(e.pointerId);
-      scroller.classList.add('dragging');
-    });
-    scroller.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const dx = e.pageX - startX;
-      scroller.scrollLeft = startLeft - dx;
-      updateArrows();
-    });
-    const stopDrag = () => { dragging = false; scroller.classList.remove('dragging'); };
-    scroller.addEventListener('pointerup', stopDrag);
-    scroller.addEventListener('pointercancel', stopDrag);
-    scroller.addEventListener('scroll', updateArrows);
-
-    // inicjalny stan
-    updateArrows();
+  const stepSize = () => {
+    const card = scroller.querySelector('.longfill-item');
+    if (!card) return 300;
+    const gap = parseFloat(getComputedStyle(scroller).columnGap || getComputedStyle(scroller).gap || 20);
+    return card.getBoundingClientRect().width + gap;
   };
+
+  const updateArrows = () => {
+    const atStart = scroller.scrollLeft <= 5;
+    const atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 5;
+    prev.disabled = atStart;
+    next.disabled = atEnd;
+  };
+
+  prev.addEventListener('click', () => scroller.scrollBy({ left: -stepSize()*2, behavior: 'smooth' }));
+  next.addEventListener('click', () => scroller.scrollBy({ left:  stepSize()*2, behavior: 'smooth' }));
+
+  // przewijanie kółkiem w poziomie (desktop)
+  scroller.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault();
+      scroller.scrollLeft += e.deltaY;
+      updateArrows();
+    }
+  }, { passive: false });
+
+  // przeciąganie myszką/palcem
+  let dragging = false, startX = 0, startLeft = 0;
+  scroller.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    startX = e.pageX;
+    startLeft = scroller.scrollLeft;
+    scroller.setPointerCapture(e.pointerId);
+    scroller.classList.add('dragging');
+  });
+  scroller.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    scroller.scrollLeft = startLeft - (e.pageX - startX);
+    updateArrows();
+  });
+  const stop = () => { dragging = false; scroller.classList.remove('dragging'); };
+  scroller.addEventListener('pointerup', stop);
+  scroller.addEventListener('pointercancel', stop);
+
+  scroller.addEventListener('scroll', updateArrows);
+  updateArrows(); // init
+};
+
 
   // ===== RENDER =====
   const renderSections = () => {
