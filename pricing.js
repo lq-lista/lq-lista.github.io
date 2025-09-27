@@ -1,6 +1,6 @@
 // pricing.js – cennik wg firmy + accordion + eksport do window.BrandPricing
 (function () {
-  // Tabela cen (6/3/0 wspólna cena pod kluczem '6')
+  // Tabela cen (6/3/0 mają tę samą cenę => trzymamy pod kluczem '6')
   window.BrandPricing = {
     'A&L': {
       '60ml': { '24': 70, '18': 68, '12': 67, '6': 65, '3': 65, '0': 65 },
@@ -30,30 +30,48 @@
     'Izi Pizi': {
       '60ml': { '24': 64, '18': 62, '12': 61, '6': 60, '3': 60, '0': 60 },
       '30ml': { '24': 36, '18': 35, '12': 34, '6': 33, '3': 33, '0': 33 }
+      // brak 10ml
     },
     'Klarro Smooth Funk': {
       '60ml': { '24': 75, '18': 73, '12': 72, '6': 71, '3': 71, '0': 71 },
       '30ml': { '24': 40, '18': 38, '12': 37, '6': 35, '3': 35, '0': 35 }
+      // brak 10ml
     },
     'Aroma King': {
       '60ml': { '24': 75, '18': 73, '12': 72, '6': 71, '3': 71, '0': 71 },
       '30ml': { '24': 40, '18': 38, '12': 37, '6': 35, '3': 35, '0': 35 }
+      // brak 10ml
     },
     'Duo': {
       '60ml': { '24': 75, '18': 73, '12': 72, '6': 71, '3': 71, '0': 71 },
       '30ml': { '24': 40, '18': 38, '12': 37, '6': 35, '3': 35, '0': 35 }
+      // brak 10ml
     },
     'Dark Line': {
       '60ml': { '24': 64, '18': 62, '12': 61, '6': 60, '3': 60, '0': 60 },
       '30ml': { '24': 36, '18': 35, '12': 34, '6': 32, '3': 32, '0': 32 }
+      // brak 10ml
     },
     'Geometric Fruits': {
       '60ml': { '24': 65, '18': 63, '12': 62, '6': 61, '3': 61, '0': 61 },
       '30ml': { '24': 37, '18': 36, '12': 35, '6': 34, '3': 34, '0': 34 }
+      // brak 10ml
     },
     'chilled face': {
       '60ml': { '24': 62, '18': 60, '12': 59, '6': 58, '3': 58, '0': 58 },
       '30ml': { '24': 35, '18': 34, '12': 33, '6': 30, '3': 30, '0': 30 }
+      // brak 10ml
+    },
+    // >>> DODANE DWIE MARKI <<<
+    'Summer time': {
+      '60ml': { '24': 65, '18': 63, '12': 62, '6': 61, '3': 61, '0': 61 },
+      '30ml': { '24': 37, '18': 36, '12': 35, '6': 34, '3': 34, '0': 34 }
+      // brak 10ml
+    },
+    'Winter time': {
+      '60ml': { '24': 65, '18': 63, '12': 62, '6': 61, '3': 61, '0': 61 },
+      '30ml': { '24': 37, '18': 36, '12': 35, '6': 34, '3': 34, '0': 34 }
+      // brak 10ml
     }
   };
 
@@ -73,23 +91,22 @@
 
   const content = brands.map(brand => {
     const data = window.BrandPricing[brand];
-    const rows = sizesOrder
-      .filter(s => data[s])
-      .map(size => {
-        const p = data[size];
-        const p24 = p['24'] ?? '—';
-        const p18 = p['18'] ?? '—';
-        const p12 = p['12'] ?? '—';
-        const p63 = p['6'] ?? '—'; // grupa 6/3/0
-        return `
-          <tr>
-            <td>${size}</td>
-            <td>${p24==='—'?'—':p24+'zł'}</td>
-            <td>${p18==='—'?'—':p18+'zł'}</td>
-            <td>${p12==='—'?'—':p12+'zł'}</td>
-            <td>${p63==='—'?'—':p63+'zł'} <span class="muted">(6/3/0)</span></td>
-          </tr>`;
-      }).join('');
+    const rows = sizesOrder.map(size => {
+      const p = data[size] || null;
+      const p24 = p ? (p['24'] ?? '—') : '—';
+      const p18 = p ? (p['18'] ?? '—') : '—';
+      const p12 = p ? (p['12'] ?? '—') : '—';
+      const p63 = p ? (p['6']  ?? '—') : '—'; // grupa 6/3/0
+      const disabledClass = p ? '' : 'row-na';
+      return `
+        <tr class="${disabledClass}">
+          <td>${size}</td>
+          <td>${p24==='—'?'—':p24+'zł'}</td>
+          <td>${p18==='—'?'—':p18+'zł'}</td>
+          <td>${p12==='—'?'—':p12+'zł'}</td>
+          <td>${p63==='—'?'—':p63+'zł'} <span class="muted">(6/3/0)</span></td>
+        </tr>`;
+    }).join('');
 
     return `
       <details class="price-acc" id="price-${brand.replace(/\s+/g,'-')}">
