@@ -801,3 +801,12 @@ select option[disabled] { color:#aaa; }
   .brand-section .brand-prev{ left: 4px; }
   .brand-section .brand-next{ right: 4px; }
 }
+
+
+.longfill-carousel.dragging{
+  cursor: grabbing;
+  user-select: none;
+}
+.longfill-carousel .longfill-item *{
+  pointer-events: auto;
+}

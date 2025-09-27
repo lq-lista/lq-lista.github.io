@@ -180,7 +180,7 @@ const setupCarousel = (section) => {
   prev.addEventListener('click', () => scroller.scrollBy({ left: -stepSize()*2, behavior: 'smooth' }));
   next.addEventListener('click', () => scroller.scrollBy({ left:  stepSize()*2, behavior: 'smooth' }));
 
-  // poziome przewijanie kółkiem
+  // poziome przewijanie kółkiem (desktop)
   scroller.addEventListener('wheel', (e) => {
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       e.preventDefault();
@@ -189,45 +189,69 @@ const setupCarousel = (section) => {
     }
   }, { passive: false });
 
-  // drag-to-scroll (nie na przyciskach!)
-  let dragging = false, startX = 0, startLeft = 0, lastPointerId = null;
+  // drag-to-scroll z progiem (klik nie jest blokowany)
+  let potential = false, dragging = false;
+  let startX = 0, startLeft = 0, lastPointerId = null;
+  const THRESH = 6;  // próg pikseli zanim zaczniemy drag
+  let moved = 0;
+
+  // NIE startujemy dragu na klikalnych elementach (przycisk, link, form)
+  const isClickable = (t) => !!t.closest('button, a, input, select, textarea, label, .no-drag');
 
   scroller.addEventListener('pointerdown', (e) => {
-    // tylko lewy przycisk i tylko gdy nie klikamy w kontrolki
-    if (e.button !== 0) return;
-    if (e.target.closest('button, a, input, select, textarea, label, .no-drag')) return;
-    if (scroller.scrollWidth <= scroller.clientWidth) return; // nic do przewijania
-
-    dragging = true;
-    startX = e.pageX;
-    startLeft = scroller.scrollLeft;
+    if (e.button !== 0) return;                 // tylko lewy
+    if (isClickable(e.target)) return;          // zostaw klikom
+    if (scroller.scrollWidth <= scroller.clientWidth) return; // nic do scrolla
+    potential = true; dragging = false; moved = 0;
+    startX = e.pageX; startLeft = scroller.scrollLeft;
     lastPointerId = e.pointerId;
-    scroller.setPointerCapture(lastPointerId);
-    scroller.classList.add('dragging');
   });
 
   scroller.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    scroller.scrollLeft = startLeft - (e.pageX - startX);
-    updateArrows();
+    if (!potential && !dragging) return;
+    const dx = e.pageX - startX;
+    moved = Math.abs(dx);
+    if (!dragging && moved > THRESH) {
+      dragging = true;
+      scroller.setPointerCapture(lastPointerId);
+      scroller.classList.add('dragging');
+    }
+    if (dragging) {
+      scroller.scrollLeft = startLeft - dx;
+      updateArrows();
+    }
   });
 
-  const stopDrag = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    if (lastPointerId != null && scroller.hasPointerCapture(lastPointerId)) {
+  const stopDrag = () => {
+    potential = false;
+    if (dragging && lastPointerId != null && scroller.hasPointerCapture(lastPointerId)) {
       scroller.releasePointerCapture(lastPointerId);
     }
+    dragging = false;
     lastPointerId = null;
     scroller.classList.remove('dragging');
   };
-  scroller.addEventListener('pointerup', stopDrag);
+  scroller.addEventListener('pointerup',   stopDrag);
   scroller.addEventListener('pointercancel', stopDrag);
-  scroller.addEventListener('pointerleave', stopDrag);
+  scroller.addEventListener('pointerleave',  stopDrag);
+
+  // Jeśli był realny drag, zablokuj „fałszywy” click, ale tylko wtedy
+  scroller.addEventListener('click', (e) => {
+    if (moved > THRESH && !isClickable(e.target)) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true); // capture
+
+  // Nie pozwól scrollerowi przejąć clicka z przycisku
+  scroller.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('pointerdown', (e) => e.stopPropagation(), {capture:true});
+  });
 
   scroller.addEventListener('scroll', updateArrows);
   updateArrows();
 };
+
 
 
 
