@@ -45,7 +45,7 @@
   ];
 
   // Pojemność samego aromatu (ml) – tylko wybrane brandy pokazujemy
-  const AROMA_ML = {
+  const BRAND_VOLUME = {
     'Izi Pizi': 6,
     'Klarro Smooth Funk': 11,
     'Aroma King': 10,
@@ -56,6 +56,8 @@
     'Summer time': 10,
     'Winter time': 10
   };
+
+  const AROMA_ML = BRAND_VOLUME;
 
   // slug = klucz statusu i nazwy pliku
   const toSlug = (title) => {
