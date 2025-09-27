@@ -44,6 +44,17 @@
     "Dillon's"
   ];
 
+  // Pojemność samego aromatu (ml) – tylko wybrane brandy pokazujemy
+  const AROMA_ML = {
+    'Izi Pizi': 6,
+    'Klarro Smooth Funk': 11,
+    'Aroma King': 10,
+    'Duo': 10,
+    'Dark Line': 6,
+    'Geometric Fruits': 10,
+    'chilled face': 6
+  };
+
   // slug = klucz statusu i nazwy pliku
   const toSlug = (title) => {
     const map = {'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'a','Ć':'c','Ę':'e','Ł':'l','Ń':'n','Ó':'o','Ś':'s','Ź':'z','Ż':'z'};
@@ -173,9 +184,17 @@
           </div>`;
       }).join('');
 
+      // nagłówek firmy + badge z ml aromatu (jeśli jest w mapie)
+      const header = `
+        <div class="brand-header">
+          <h3 class="brand-title">${brand}</h3>
+          ${AROMA_ML[brand] ? `<span class="ml-badge" title="Pojemność aromatu">Aromat: ${AROMA_ML[brand]} ml</span>` : ''}
+        </div>
+      `;
+
       return `
         <div class="brand-section" id="${anchorId(brand)}">
-          <h3 class="brand-title">${brand}</h3>
+          ${header}
           <div class="longfill-container">
             <div class="longfill-carousel">${cards}</div>
           </div>

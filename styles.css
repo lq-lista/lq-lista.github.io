@@ -659,3 +659,41 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
 
 /* Select – wizualka dla pozycji niedostępnych (i tak są disabled) */
 select option[disabled] { color:#aaa; }
+
+/* Nagłówek sekcji marki + badge z ml */
+.brand-header{
+  display:flex;
+  align-items:center;
+  justify-content:center;   /* na środku jak chipy */
+  gap:10px;
+  margin: 6px 0 14px;
+  flex-wrap: wrap;
+}
+
+.brand-title-chip{
+  display:inline-block;
+  padding:8px 14px;
+  border-radius:999px;
+  background:#f3f3f3;
+  font-weight:700;
+  color:#333;
+  box-shadow:0 3px 10px rgba(0,0,0,.06);
+}
+
+/* zielona „pigułka” z informacją o ml aromatu */
+.ml-badge{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  background:#eaf7ee;
+  color:#2e7d32;
+  font-weight:600;
+  font-size:.9rem;
+  box-shadow:0 2px 8px rgba(0,0,0,.05);
+  border:1px solid #d9efdf;
+}
+
+@media (max-width: 768px){
+  .brand-header{ gap:8px; }
+  .ml-badge{ font-size:.85rem; padding:5px 10px; }
+}
