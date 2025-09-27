@@ -153,15 +153,13 @@
     });
   }
 
-  // ===== helpers do karuzeli =====
-  // --- w brands.js zamień dotychczasowe setupCarousel na to:
+// --- brands.js
 const setupCarousel = (section) => {
   const scroller = section.querySelector('.longfill-carousel');
   const prev = section.querySelector('.brand-prev');
   const next = section.querySelector('.brand-next');
   if (!scroller || !prev || !next) return;
 
-  // zawsze pokazujemy przyciski (na desktopie bywały chowane przez inne style)
   prev.hidden = false; next.hidden = false;
   prev.style.display = 'flex'; next.style.display = 'flex';
 
@@ -174,7 +172,7 @@ const setupCarousel = (section) => {
 
   const updateArrows = () => {
     const atStart = scroller.scrollLeft <= 5;
-    const atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 5;
+    const atEnd   = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 5;
     prev.disabled = atStart;
     next.disabled = atEnd;
   };
@@ -182,7 +180,7 @@ const setupCarousel = (section) => {
   prev.addEventListener('click', () => scroller.scrollBy({ left: -stepSize()*2, behavior: 'smooth' }));
   next.addEventListener('click', () => scroller.scrollBy({ left:  stepSize()*2, behavior: 'smooth' }));
 
-  // przewijanie kółkiem w poziomie (desktop)
+  // poziome przewijanie kółkiem
   scroller.addEventListener('wheel', (e) => {
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       e.preventDefault();
@@ -191,27 +189,46 @@ const setupCarousel = (section) => {
     }
   }, { passive: false });
 
-  // przeciąganie myszką/palcem
-  let dragging = false, startX = 0, startLeft = 0;
+  // drag-to-scroll (nie na przyciskach!)
+  let dragging = false, startX = 0, startLeft = 0, lastPointerId = null;
+
   scroller.addEventListener('pointerdown', (e) => {
+    // tylko lewy przycisk i tylko gdy nie klikamy w kontrolki
+    if (e.button !== 0) return;
+    if (e.target.closest('button, a, input, select, textarea, label, .no-drag')) return;
+    if (scroller.scrollWidth <= scroller.clientWidth) return; // nic do przewijania
+
     dragging = true;
     startX = e.pageX;
     startLeft = scroller.scrollLeft;
-    scroller.setPointerCapture(e.pointerId);
+    lastPointerId = e.pointerId;
+    scroller.setPointerCapture(lastPointerId);
     scroller.classList.add('dragging');
   });
+
   scroller.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     scroller.scrollLeft = startLeft - (e.pageX - startX);
     updateArrows();
   });
-  const stop = () => { dragging = false; scroller.classList.remove('dragging'); };
-  scroller.addEventListener('pointerup', stop);
-  scroller.addEventListener('pointercancel', stop);
+
+  const stopDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    if (lastPointerId != null && scroller.hasPointerCapture(lastPointerId)) {
+      scroller.releasePointerCapture(lastPointerId);
+    }
+    lastPointerId = null;
+    scroller.classList.remove('dragging');
+  };
+  scroller.addEventListener('pointerup', stopDrag);
+  scroller.addEventListener('pointercancel', stopDrag);
+  scroller.addEventListener('pointerleave', stopDrag);
 
   scroller.addEventListener('scroll', updateArrows);
-  updateArrows(); // init
+  updateArrows();
 };
+
 
 
   // ===== RENDER =====
