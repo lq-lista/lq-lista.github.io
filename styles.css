@@ -697,3 +697,52 @@ select option[disabled] { color:#aaa; }
   .brand-header{ gap:8px; }
   .ml-badge{ font-size:.85rem; padding:5px 10px; }
 }
+
+/* ==== Strzałki karuzeli marek ==== */
+.brand-section .longfill-container{
+  position: relative;            /* kotwica dla absolutnych strzałek */
+  padding: 0 48px;               /* miejsce na strzałki po bokach */
+}
+
+.brand-section .brand-prev,
+.brand-section .brand-next{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: #ff6f61;
+  color: #fff;
+  font-size: 22px;
+  box-shadow: 0 2px 5px rgba(0,0,0,.2);
+  cursor: pointer;
+  transition: transform .2s, opacity .2s, background .2s;
+}
+
+.brand-section .brand-prev{ left: 6px; }
+.brand-section .brand-next{ right: 6px; }
+
+.brand-section .brand-prev:hover,
+.brand-section .brand-next:hover{
+  transform: translateY(-50%) scale(1.05);
+}
+
+.brand-section .brand-prev:disabled,
+.brand-section .brand-next:disabled{
+  opacity: .35;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* Na węższych ekranach trochę mniejsze odstępy */
+@media (max-width: 768px){
+  .brand-section .longfill-container{ padding: 0 40px; }
+  .brand-section .brand-prev{ left: 4px; }
+  .brand-section .brand-next{ right: 4px; }
+}
