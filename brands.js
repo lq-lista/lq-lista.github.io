@@ -153,6 +153,66 @@
     });
   }
 
+  // ===== helpers do karuzeli =====
+  const setupCarousel = (section) => {
+    const scroller = section.querySelector('.longfill-carousel');
+    const prev = section.querySelector('.brand-prev');
+    const next = section.querySelector('.brand-next');
+    if (!scroller || !prev || !next) return;
+
+    const oneStep = () => {
+      const card = scroller.querySelector('.longfill-item');
+      if (!card) return 300;
+      const style = parseFloat(getComputedStyle(scroller).columnGap || getComputedStyle(scroller).gap || 20);
+      return card.getBoundingClientRect().width + style;
+    };
+
+    const updateArrows = () => {
+      const atStart = scroller.scrollLeft <= 5;
+      const atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 5;
+      prev.disabled = atStart; next.disabled = atEnd;
+    };
+
+    prev.addEventListener('click', () => {
+      scroller.scrollBy({ left: -oneStep() * 2, behavior: 'smooth' });
+    });
+    next.addEventListener('click', () => {
+      scroller.scrollBy({ left:  oneStep() * 2, behavior: 'smooth' });
+    });
+
+    // przewijanie kółkiem w poziomie
+    scroller.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        scroller.scrollLeft += e.deltaY;
+        updateArrows();
+      }
+    }, { passive: false });
+
+    // przeciąganie myszką / palcem
+    let dragging = false, startX = 0, startLeft = 0;
+    scroller.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      startX = e.pageX;
+      startLeft = scroller.scrollLeft;
+      scroller.setPointerCapture(e.pointerId);
+      scroller.classList.add('dragging');
+    });
+    scroller.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.pageX - startX;
+      scroller.scrollLeft = startLeft - dx;
+      updateArrows();
+    });
+    const stopDrag = () => { dragging = false; scroller.classList.remove('dragging'); };
+    scroller.addEventListener('pointerup', stopDrag);
+    scroller.addEventListener('pointercancel', stopDrag);
+    scroller.addEventListener('scroll', updateArrows);
+
+    // inicjalny stan
+    updateArrows();
+  };
+
   // ===== RENDER =====
   const renderSections = () => {
     STATUS = readStatusMap(); // odśwież statusy
@@ -192,17 +252,21 @@
         </div>
       `;
 
+      // dodaj przyciski ‹ › wokół karuzeli
       return `
         <div class="brand-section" id="${anchorId(brand)}">
           ${header}
           <div class="longfill-container">
+            <button class="scroll-btn brand-prev" aria-label="W lewo">‹</button>
             <div class="longfill-carousel">${cards}</div>
+            <button class="scroll-btn brand-next" aria-label="W prawo">›</button>
           </div>
         </div>`;
     }).join('');
 
     $grid.innerHTML = sections || '<p class="empty">Brak wyników.</p>';
 
+    // obrazki + zamówienia
     $grid.querySelectorAll('.longfill-item').forEach(card=>{
       const idx = +card.dataset.index;
       const data = items[idx];
@@ -212,6 +276,9 @@
       const btn = card.querySelector('.order-btn');
       btn.addEventListener('click', ()=> addToOrder(data));
     });
+
+    // setup karuzel
+    $grid.querySelectorAll('.brand-section').forEach(setupCarousel);
   };
 
   // ===== LIGHTBOX =====
