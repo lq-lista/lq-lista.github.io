@@ -245,6 +245,11 @@ h3{font-size:1.5rem;color:var(--primary);margin-top:0}
 .longfill-item:hover{transform:scale(1.05);box-shadow:0 8px 16px rgba(0,0,0,.15)}
 .longfill-image{width:200px;height:200px;object-fit:cover;border-radius:10px;border:2px solid var(--primary)}
 .longfill-name{margin-top:10px;font-weight:bold;color:var(--primary);font-size:1.1rem}
+.section-subtitle{margin:6px 0 2px;color:var(--muted);font-size:1rem}
+.featured-darkline .longfill-container{margin-top:12px}
+.featured-card{position:relative;padding-bottom:18px}
+.price-chip{display:inline-block;margin:8px auto 0;padding:6px 12px;border-radius:999px;background:linear-gradient(135deg,#ff6f61,#ff9a6b);color:#fff;font-weight:700;font-size:.95rem}
+.image-hint{text-align:center;color:#666;margin:10px 0 0;font-size:.95rem}
 
 /* Lightbox (brands.js) */
 .longfill-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999}
