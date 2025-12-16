@@ -88,6 +88,8 @@
     "kansetsu":"Kiwi / winogrono / granat — słodko-kwaskowe nuty + solidny chłód.",
     "pitaja-gruszka":"Pitaja + dojrzała gruszka — egzotycznie i gładko (Duo).",
     "jablko-mieta":"Zielone jabłko i świeża mięta — czysto i chłodno (Duo).",
+    "green-tea":"Herbaciany Dark Line w wersji 15ml — delikatna zielona herbata z lekko słodkim finiszem (17zł).",
+    "apple-x-coconut":"Zielone jabłko z kokosową słodyczą, limitowana butelka 15ml w cenie 17zł (Dark Line).",
     "grape":"Ciemne, soczyste winogrono — pełne i lekko kwaskowe (Dark Line).",
     "skittles":"Słodki miks cukierków owocowych (Dark Line).",
     "black-tea":"Aromat czarnej herbaty — lekko taniczny, subtelnie słodki (Dark Line).",

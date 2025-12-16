@@ -1,6 +1,6 @@
 /**
  * Pełna baza smaków liquidów z kategoriami i cennikiem
- * @version 3.0.1
+ * @version 3.1.0
  * @type {Object}
  */
 const AppData = (() => {
@@ -50,6 +50,8 @@ const AppData = (() => {
         "Black tea (Dark Line)",
         "Kiwi (Dark Line)",
         "Forest fruits (Dark Line)",
+        "Green tea (Dark Line)",
+        "Apple x Coconut (Dark Line)",
     ];
 
     // Kategorie smaków
@@ -68,7 +70,7 @@ const AppData = (() => {
 "geometric":[28],
 "klarro": [33,34,35,36],
 "duo":    [37,38],
-"dark":   [39,40,41,42,43]
+"dark":   [39,40,41,42,43,44,45]
 
     };
 
