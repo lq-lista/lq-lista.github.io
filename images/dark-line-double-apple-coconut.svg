@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1b0e06"/>
+      <stop offset="50%" stop-color="#3a1b0a"/>
+      <stop offset="100%" stop-color="#120803"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="320" rx="18" fill="url(#bg2)"/>
+  <text x="22" y="60" fill="#ff9b4c" font-family="Arial, sans-serif" font-size="30" font-weight="700">Dark Line</text>
+  <text x="22" y="98" fill="#ff9b4c" font-family="Arial, sans-serif" font-size="30" font-weight="700">Double</text>
+  <text x="22" y="160" fill="#ffe3cf" font-family="Arial, sans-serif" font-size="22" font-weight="600">Apple &amp; Coconut</text>
+  <text x="22" y="200" fill="#ffd9b8" font-family="Arial, sans-serif" font-size="18">15ml • 17zł</text>
+  <circle cx="260" cy="70" r="42" fill="#160a04" stroke="#ff9b4c" stroke-width="6"/>
+  <text x="232" y="83" fill="#ff9b4c" font-family="Arial, sans-serif" font-size="34" font-weight="700">☄</text>
+</svg>
