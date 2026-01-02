@@ -10,8 +10,106 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
+
+/* Sekcja LQ 15ml */
+.lq15-section {
+    margin: 40px 0;
+    text-align: center;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(245,245,245,0.95));
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.lq15-container{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:15px;
+}
+
+.lq15-carousel{
+    display:flex;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    gap:20px;
+    padding:10px;
+    max-width:800px;
+    scrollbar-width:none;
+}
+.lq15-carousel::-webkit-scrollbar{ display:none; }
+
+.lq15-item{
+    scroll-snap-align:start;
+    min-width:250px;
+    text-align:center;
+    transition:transform .3s;
+    background:white;
+    padding:15px;
+    border-radius:10px;
+}
+.lq15-item:hover{ transform:scale(1.02); }
+
+.lq15-image{
+    width:200px;
+    height:200px;
+    object-fit:cover;
+    border-radius:10px;
+    border:2px solid #ff6f61;
+}
+
+.lq15-name{
+    margin-top:10px;
+    font-weight:bold;
+    color:#ff6f61;
+    font-size:1.1rem;
+}
+
+.lq15-actions{
+    margin-top:10px;
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+}
+
+.lq15-status{
+    padding:6px 12px;
+    border-radius:999px;
+    font-weight:600;
+    font-size:.9rem;
+}
+.lq15-status.available{ background:#e6f7e6; color:#1b7f1b; }
+.lq15-status.unavailable{ background:#ffe6e6; color:#b00020; }
+
+.lq15-order-btn{
+    background:#ff6f61;
+    color:white;
+    border:none;
+    padding:7px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    font-weight:600;
+}
+.lq15-order-btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+.lq15-dots{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-top:10px;
+}
+.lq15-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#ccc;
+    cursor:pointer;
+}
+.lq15-dot.active{ background:#ff6f61; }
+
+
         /* Responsywny nagłówek */
         .custom-header {
             text-align: center;
@@ -27,19 +125,24 @@
 
         /* Mobile-specific styles */
         @media (max-width: 768px) {
-            .custom-header { padding: 5px; }
-            .header-image { max-width: 40%; }
-        }
-        @media (max-width: 480px) {
+            .custom-header {
+                padding: 5px;
+            }
             .header-image {
-                max-width: 100%;
-                padding: 0;
-                margin: 0;
-                object-fit: contain;
-                min-height: 100px;
-                max-height: 200px;
+                max-width: 40%; /* Nieco mniejszy obrazek */
             }
         }
+
+        @media (max-width: 480px) {
+            .header-image {
+                max-width: 100%; /* Pełna szerokość na małych ekranach */
+            padding: 0;
+            margin: 0;
+            object-fit: contain; /* Zapobiega deformacji */
+            min-height: 100px; /* Minimalna wysokość */
+            max-height: 200px; /* Maksymalna wysokość */
+        }
+    }
 
         /* Style dla przycisku kopiowania i nowych elementów */
         .copy-btn-container {
@@ -78,34 +181,55 @@
             font-weight: bold;
             color: #ff6f61;
         }
-
+        
         /* Nowe style dla formularza */
         .error-input {
             border: 2px solid #ff4f42 !important;
             animation: shake 0.5s;
         }
+        
         .error-message {
             color: #d32f2f;
             font-size: 0.8rem;
             margin-top: 5px;
             display: block;
         }
-        #add-to-order.success { background: #4CAF50; animation: pulse 0.5s; }
+        
+        #add-to-order.success {
+            background: #4CAF50;
+            animation: pulse 0.5s;
+        }
+        
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-5px); }
             40%, 80% { transform: translateX(5px); }
         }
+        
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
-        .order-item.removing { transform: translateX(100%); opacity: 0; transition: all 0.3s ease; }
-        .empty-cart { text-align: center; color: #666; padding: 20px; font-style: italic; }
-        #order-total.updated { animation: pulse 0.5s; }
+        
+        .order-item.removing {
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .empty-cart {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+        
+        #order-total.updated {
+            animation: pulse 0.5s;
+        }
 
-        /* Sekcja Longfill (layout używany też przez karty firm) */
+        /* Sekcja Longfill */
         .longfill-section {
             margin: 40px 0;
             text-align: center;
@@ -114,6 +238,7 @@
             border-radius: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
+
         .longfill-container {
             display: flex;
             align-items: center;
@@ -122,6 +247,7 @@
             margin: 20px 0;
             position: relative;
         }
+
         .longfill-carousel {
             display: flex;
             gap: 20px;
@@ -133,7 +259,11 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        .longfill-carousel::-webkit-scrollbar { display: none; }
+
+        .longfill-carousel::-webkit-scrollbar {
+            display: none;
+        }
+
         .longfill-item {
             scroll-snap-align: start;
             min-width: 250px;
@@ -145,10 +275,12 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
+
         .longfill-item:hover {
             transform: scale(1.05);
             box-shadow: 0 8px 16px rgba(0,0,0,0.15);
         }
+
         .longfill-image {
             width: 200px;
             height: 200px;
@@ -156,12 +288,14 @@
             border-radius: 10px;
             border: 2px solid #ff6f61;
         }
+
         .longfill-name {
             margin-top: 10px;
             font-weight: bold;
             color: #ff6f61;
             font-size: 1.1rem;
         }
+
         .scroll-btn {
             background: #ff6f61;
             color: white;
@@ -177,329 +311,360 @@
             transition: all 0.3s;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .scroll-btn:hover { background: #ff4f42; transform: scale(1.1); }
-        .carousel-dots { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
-        .dot { width: 12px; height: 12px; border-radius: 50%; background: #ddd; cursor: pointer; transition: all 0.3s; }
-        .dot.active { background: #ff6f61; transform: scale(1.2); }
 
-        /* Brand tabs + filtry (dodane) */
-        .brand-tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 12px}
-        .brand-tab{border:0;background:#f3f3f3;padding:8px 14px;border-radius:999px;cursor:pointer}
-        .brand-tab.active{background:#111;color:#fff}
-        .brand-filters{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin:8px 0 2px}
-        .brand-filters input[type="text"]{padding:8px 12px;border-radius:8px;border:1px solid #ddd;min-width:240px}
-        .brand-filters .toggle{display:flex;align-items:center;gap:6px}
+        .scroll-btn:hover {
+            background: #ff4f42;
+            transform: scale(1.1);
+        }
 
-        /* Lightbox (dodane) */
-        .longfill-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000}
-        .longfill-modal{position:relative;background:#fff;padding:16px;border-radius:12px;width:min(92vw,560px);text-align:center}
-        .longfill-modal img{width:100%;height:auto;border-radius:10px}
-        .longfill-modal-title{margin:10px 0 8px;font-weight:700;color:#ff6f61}
-        .longfill-close{position:absolute;top:6px;right:10px;border:0;background:#ff6f61;color:#fff;width:32px;height:32px;border-radius:999px;cursor:pointer}
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: #ff6f61;
+            transform: scale(1.2);
+        }
 
         /* Responsywność */
         @media (max-width: 768px) {
-            .longfill-item { min-width: 180px; }
-            .longfill-image { width: 150px; height: 150px; }
-            .longfill-carousel { width: 85%; }
+            .longfill-item {
+                min-width: 180px;
+            }
+            
+            .longfill-image {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .longfill-carousel {
+                width: 85%;
+            }
         }
     </style>
+
+
 </head>
 <body>
-
+   
 <header class="custom-header">
-    <img src='https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/sole-naglowek.png' 
-         alt="Sole - Smaki i Cennik" 
-         class="header-image"
-         loading="lazy">
-</header>
+        <img src='https://raw.githubusercontent.com/lq-lista/lq-lista.github.io/main/images/sole-naglowek.png' 
+             alt="Sole - Smaki i Cennik" 
+             class="header-image"
+             loading="lazy">
+    </header>
 
-<main class="container">
-    <!-- ====== Sekcja: Smaki wg firmy ====== -->
-    <section id="brands-section" class="longfill-section">
-        <h2 class="section-title">Smaki</h2>
-
-        <!-- Zakładki z firmami --> 
-        <div id="brand-tabs" class="brand-tabs"></div>
-
-        <!-- Filtry --> 
-        <div class="brand-filters">
-            <input id="brand-search" type="text" placeholder="Szukaj smaku..." aria-label="Szukaj smaku"/>
-            <label class="toggle">
-                <input id="filter-cold" type="checkbox"/>
-                <span>Tylko z chłodem</span>
-            </label>
-            <label class="toggle">
-                <input id="filter-noncold" type="checkbox"/>
-                <span>Bez chłodu</span>
-            </label>
-        </div>
-
-        <!-- Siatka kart smaków (wygląd jak dawny longfill) -->
-        <div id="brand-grid" class="longfill-container"></div>
-    </section>
-
-    <section class="pricing-by-brand">
-  <h2>Cennik wg firmy</h2>
-  <div id="brand-pricing"></div>
+    <section class="lq15-section">
+    <h2>LQ 15ml / 24mg (17zl)</h2>
+    <div class="lq15-container">
+        <button class="scroll-btn lq15-left-btn">‹</button>
+        <div class="lq15-carousel"><!-- LQ beda dodane przez JS --></div>
+        <button class="scroll-btn lq15-right-btn">›</button>
+    </div>
+    <div class="lq15-dots"></div>
 </section>
 
-
-    <section class="pricing-by-brand">
-        <h2>Cennik</h2>
-        <div id="brand-pricing"></div>
-    </section>
-
-
-    <section class="why-us">
-        <h2>Dlaczego my?</h2>
-        <div class="benefits-grid">
-            <div class="benefit-card">
-                <div class="benefit-icon">⚗️</div>
-                <h3>Spersonalizowane liquidy</h3>
-                <p>Dopasowujemy skład i proporcje PG/VG specjalnie pod Twój model e-papierosa</p>
+    <main class="container">
+        <section class="longfill-section">
+            <h2>Longfill'e</h2>
+            <div class="longfill-container">
+                <button class="scroll-btn left-btn">‹</button>
+                <div class="longfill-carousel">
+                    <!-- Elementy będą dodawane dynamicznie przez JS -->
+                </div>
+                <button class="scroll-btn right-btn">›</button>
             </div>
-            <div class="benefit-card">
-                <div class="benefit-icon">✔️</div>
-                <h3>Doświadczenie</h3>
-                <p>5 lat tworzenia liquidów pod konkretne urządzenia</p>
-            </div>
-            <div class="benefit-card">
-                <div class="benefit-icon">🛠️</div>
-                <h3>Optymalizacja</h3>
-                <p>Uwzględniamy moc grzałki i konstrukcję Twojego e-papierosa</p>
-            </div>
-        </div>
-    </section>
-</main>
+            <div class="carousel-dots"></div>
+        </section>
 
-<footer class="footer">
-    <p>© <span id="current-year">2023</span> Sole. Wszystkie prawa zastrzeżone.</p>
-    <a href="#" id="admin-link" class="admin-link">Panel admina</a>
-</footer>
+        <section class="flavors">
+            <h2>Nasze Smaki</h2>
+            <div class="filter-container">
+                <div class="filter-group">
+                    <label for="brand-filter">Firma:</label>
+                    <select id="brand-filter" class="form-control">
+                        <option value="all">Wszystkie firmy</option>
+                        <option value="a&l">A&L</option>
+                        <option value="vampir">Vampir Vape</option>
+                        <option value="fighter">Fighter Fuel</option>
+                        <option value="premium">Premium Fcukin Flava</option>
+                        <option value="tribal">Tribal Force</option>
+                        <option value="izi">IZI PIZI</option>
+                        <option value="wanna">WANNA BE COOL</option>
+                        <option value="klarro">Klarro Smooth Funk</option>
+                        <option value="aroma">AROMA KING</option>
+                        <option value="dillon">Dillon's</option>
+                        <option value="geometric">Geometric Fruits</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="type-filter">Typ smaku:</label>
+                    <select id="type-filter" class="form-control">
+                        <option value="all">Wszystkie typy</option>
+                        <option value="owocowe">Owocowe</option>
+                        <option value="miętowe">Miętowe</option>
+                        <option value="słodkie">Słodkie</option>
+                        <option value="cytrusowe">Cytrusowe</option>
+                        <option value="energy">Energy drink</option>
+                        <option value="chłodzone">Chłodzone</option>
+                    </select>
+                </div>
+            </div>
+            <ul id="flavors-list">
+                <!-- Lista smaków zostanie wstawiona przez JavaScript -->
+            </ul>
+        </section>
 
-<!-- Modal zamówienia -->
-<div id="order-modal" class="modal">
-    <div class="modal-content">
-        <span class="close">×</span>
-        <div class="order-scroll-container">
-            <h2>Tworzenie zamówienia</h2>
+        <section class="pricing">
+            <h2>Cennik</h2>
+            <table id="pricing-table">
+                <!-- Tabela cen zostanie wstawiona przez JavaScript -->
+            </table>
+        </section>
+
+        <section class="why-us">
+            <h2>Dlaczego my?</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">⚗️</div>
+                    <h3>Spersonalizowane liquidy</h3>
+                    <p>Dopasowujemy skład i proporcje PG/VG specjalnie pod Twój model e-papierosa</p>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-icon">✔️</div>
+                    <h3>Doświadczenie</h3>
+                    <p>5 lat tworzenia liquidów pod konkretne urządzenia</p>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-icon">🛠️</div>
+                    <h3>Optymalizacja</h3>
+                    <p>Uwzględniamy moc grzałki i konstrukcję Twojego e-papierosa</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>© <span id="current-year">2023</span> Sole. Wszystkie prawa zastrzeżone.</p>
+        <a href="#" id="admin-link" class="admin-link">Panel admina</a>
+    </footer>
+
+    <!-- Modal zamówienia -->
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <div class="order-scroll-container">
+                <h2>Tworzenie zamówienia</h2>
+                
+                <div id="order-form">
+                    <div class="form-group">
+                        <label for="flavor-select">Smak:</label>
+                        <select id="flavor-select" class="form-control" required>
+                            <option value="">Wybierz smak</option>
+                            <!-- Opcje będą dodane przez JS -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="size-select">Pojemność:</label>
+                        <select id="size-select" class="form-control" required>
+                            <option value="">Wybierz pojemność</option>
+                            <option value="10ml">10ml</option>
+                            <option value="30ml">30ml</option>
+                            <option value="60ml">60ml</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="strength-select">Moc nikotyny:</label>
+                        <select id="strength-select" class="form-control" required>
+                            <option value="">Wybierz moc</option>
+                            <option value="24">24mg</option>
+                            <option value="18">18mg</option>
+                            <option value="12">12mg</option>
+                            <option value="6">6mg</option>
+                            <option value="3">3mg</option>
+                            <option value="0">0mg</option>
+                        </select>
+                    </div>
+                    
+                    <button id="add-to-order" class="btn">
+                        <span class="btn-text">Dodaj do zamówienia</span>
+                    </button>
+                </div>
+                
+                <div id="order-summary">
+                    <h3>Twoje zamówienie:</h3>
+                    <div class="order-items-container">
+                        <ul id="order-items">
+                            <li class="empty-cart">Twój koszyk jest pusty</li>
+                        </ul>
+                    </div>
+                    
+                    <div id="order-total">Razem: 0zł</div>
+                    
+                    <div class="form-group notes-group">
+                        <label for="order-notes">Uwagi do zamówienia:</label>
+                        <textarea id="order-notes" class="form-control" rows="3" 
+                                  placeholder="Podaj model swojego e-peta i preferencje..."></textarea>
+                    </div>
+                </div>
+            </div>
             
-            <div id="order-form">
-                <div class="form-group">
-                    <label for="flavor-select">Smak:</label>
-                    <select id="flavor-select" class="form-control" required>
-                        <option value="">Wybierz smak</option>
-                        <!-- Opcje będą dodane przez JS -->
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="size-select">Pojemność:</label>
-                    <select id="size-select" class="form-control" required>
-                        <option value="">Wybierz pojemność</option>
-                        <option value="10ml">10ml</option>
-                        <option value="30ml">30ml</option>
-                        <option value="60ml">60ml</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="strength-select">Moc nikotyny:</label>
-                    <select id="strength-select" class="form-control" required>
-                        <option value="">Wybierz moc</option>
-                        <option value="24">24mg</option>
-                        <option value="18">18mg</option>
-                        <option value="12">12mg</option>
-                        <option value="6">6mg</option>
-                        <option value="3">3mg</option>
-                        <option value="0">0mg</option>
-                    </select>
-                </div>
-                
-                <button id="add-to-order" class="btn">
-                    <span class="btn-text">Dodaj do zamówienia</span>
-                </button>
+            <div id="submit-order-container" class="hidden">
+                <button id="submit-order" class="btn" disabled>Złóż zamówienie</button>
             </div>
             
-            <div id="order-summary">
-                <h3>Twoje zamówienie:</h3>
-                <div class="order-items-container">
-                    <ul id="order-items">
-                        <li class="empty-cart">Twój koszyk jest pusty</li>
-                    </ul>
+            <div id="order-confirmation" style="display:none;">
+                <h3>Zamówienie złożone! 🎉</h3>
+                <div class="copy-btn-container">
+                    <span>Twój numer:</span>
+                    <span id="order-number" class="order-number"></span>
+                    <button class="copy-order-btn" aria-label="Kopiuj numer zamówienia">
+                        <span class="btn-text">Kopiuj</span>
+                        <span class="btn-icon">📋</span>
+                    </button>
                 </div>
-                
-                <div id="order-total">Razem: 0zł</div>
-                
-                <div class="form-group notes-group">
-                    <label for="order-notes">Uwagi do zamówienia:</label>
-                    <textarea id="order-notes" class="form-control" rows="3" 
-                              placeholder="Podaj model swojego e-peta i preferencje..."></textarea>
-                </div>
+                <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
             </div>
-        </div>
-        
-        <div id="submit-order-container" class="hidden">
-            <button id="submit-order" class="btn" disabled>Złóż zamówienie</button>
-        </div>
-        
-        <div id="order-confirmation" style="display:none;">
-            <h3>Zamówienie złożone! 🎉</h3>
-            <div class="copy-btn-container">
-                <span>Twój numer:</span>
-                <span id="order-number" class="order-number"></span>
-                <button class="copy-order-btn" aria-label="Kopiuj numer zamówienia">
-                    <span class="btn-text">Kopiuj</span>
-                    <span class="btn-icon">📋</span>
-                </button>
-            </div>
-            <p>Zachowaj ten numer, aby śledzić status zamówienia.</p>
         </div>
     </div>
-</div>
-
-<!-- Przycisk otwierający zamówienie -->
-<button id="start-order" class="order-button" aria-label="Otwórz formularz zamówienia">
-    🛒 Stwórz zamówienie
-</button>
-
-<!-- Panel admina -->
-<div id="admin-panel" class="admin-panel" style="display:none;">
-    <h2>Panel administratora</h2>
-    <div class="form-group">
-        <label for="admin-password">Hasło admina:</label>
-        <input type="password" id="admin-password" class="form-control" placeholder="Wpisz hasło">
-        <button id="login-admin" class="btn">Zaloguj</button>
-    </div>
-    
-    <div id="admin-content" style="display:none;">
+  
+    <!-- Przycisk otwierający zamówienie -->
+    <button id="start-order" class="order-button" aria-label="Otwórz formularz zamówienia">
+        🛒 Stwórz zamówienie
+    </button>
+  
+    <!-- Panel admina -->
+    <div id="admin-panel" class="admin-panel" style="display:none;">
+        <h2>Panel administratora</h2>
         <div class="form-group">
-            <label for="order-search">Numer zamówienia:</label>
-            <input type="text" id="order-search" class="form-control" placeholder="Wpisz numer zamówienia">
-            <button id="search-order" class="btn">Szukaj</button>
+            <label for="admin-password">Hasło admina:</label>
+            <input type="password" id="admin-password" class="form-control" placeholder="Wpisz hasło">
+            <button id="login-admin" class="btn">Zaloguj</button>
         </div>
         
-        <div id="order-details">
-            <!-- Tutaj będą wyświetlane szczegóły zamówienia -->
-        </div>
-
-        <!-- Sekcja statystyk -->
-        <div class="admin-stats-section">
-            <h3>Statystyki sklepu</h3>
+        <div id="admin-content" style="display:none;">
+            <div class="form-group">
+                <label for="order-search">Numer zamówienia:</label>
+                <input type="text" id="order-search" class="form-control" placeholder="Wpisz numer zamówienia">
+                <button id="search-order" class="btn">Szukaj</button>
+            </div>
             
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="total-orders">0</div>
-                    <div class="stat-label">Łącznie zamówień</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="today-orders">0</div>
-                    <div class="stat-label">Zamówienia dziś</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="total-views">0</div>
-                    <div class="stat-label">Odwiedziny</div>
-                </div>
+            <div id="order-details">
+                <!-- Tutaj będą wyświetlane szczegóły zamówienia -->
             </div>
-
-            <div class="charts-mini-container">
-                <div class="chart-mini-wrapper">
-                    <canvas id="miniOrdersChart" width="300" height="150"></canvas>
+    
+            <!-- Sekcja statystyk -->
+            <div class="admin-stats-section">
+                <h3>Statystyki sklepu</h3>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-orders">0</div>
+                        <div class="stat-label">Łącznie zamówień</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="today-orders">0</div>
+                        <div class="stat-label">Zamówienia dziś</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-views">0</div>
+                        <div class="stat-label">Odwiedziny</div>
+                    </div>
                 </div>
-                <div class="chart-mini-wrapper">
-                    <canvas id="miniFlavorsChart" width="300" height="150"></canvas>
+    
+                <div class="charts-mini-container">
+                    <div class="chart-mini-wrapper">
+                        <canvas id="miniOrdersChart" width="300" height="150"></canvas>
+                    </div>
+                    <div class="chart-mini-wrapper">
+                        <canvas id="miniFlavorsChart" width="300" height="150"></canvas>
+                    </div>
                 </div>
-            </div>
-
-            <h4>Ostatnie zamówienia</h4>
-            <div class="recent-orders-container">
-                <table class="recent-orders-table">
-                    <thead>
-                        <tr>
-                            <th>Numer</th>
-                            <th>Data</th>
-                            <th>Kwota</th>
-                            <th>Status</th>
-                            <th>Akcje</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recent-orders">
-                        <tr>
-                            <td colspan="5">Ładowanie danych...</td>
-                        </tr>
-                    </tbody>
-                </table>
+    
+                <h4>Ostatnie zamówienia</h4>
+                <div class="recent-orders-container">
+                    <table class="recent-orders-table">
+                        <thead>
+                            <tr>
+                                <th>Numer</th>
+                                <th>Data</th>
+                                <th>Kwota</th>
+                                <th>Status</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-orders">
+                            <tr>
+                                <td colspan="5">Ładowanie danych...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-        <!-- === Statusy smaków (magazyn) === -->
-<div class="admin-stats-section">
-  <h3>Statusy smaków</h3>
-
-  <div class="form-group">
-    <label for="stock-search">Szukaj smaku:</label>
-    <input id="stock-search" class="form-control" type="text" placeholder="np. truskawka, Fighter Fuel…">
-  </div>
-
-  <div id="stock-manager" class="stock-manager">
-    <!-- wiersze generuje JS z order.js -->
-  </div>
-</div>
-
-        <!-- === Zarządzanie stanami smaków === -->
-<div class="admin-stock-section">
-  <h3>Statusy smaków</h3>
-  <div class="form-group">
-    <input type="text" id="stock-search" class="form-control" placeholder="Szukaj smaku..." />
-  </div>
-  <div id="stock-manager" class="stock-manager"></div>
-</div>
-
     </div>
-</div>
 
-<!-- Skrypty JS -->
-<script src="promo.js"></script>
-<script src="data.js"></script>
-<script src="pricing.js"></script>
-<script src="order.js"></script>
-<script src="app.js"></script>
-<script src="brands.js"></script>
-
-<script>
-    // Aktualizacja roku w stopce
-    document.getElementById('current-year').textContent = new Date().getFullYear();
-
-    // Obsługa przycisku kopiowania
-    document.addEventListener('DOMContentLoaded', function() {
-        function copyToClipboard(text) {
-            return navigator.clipboard.writeText(text);
-        }
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.copy-order-btn')) {
-                const btn = e.target.closest('.copy-order-btn');
-                const orderNumber = document.getElementById('order-number').textContent;
-                copyToClipboard(orderNumber).then(() => {
-                    const btnText = btn.querySelector('.btn-text');
-                    const btnIcon = btn.querySelector('.btn-icon');
-                    btnText.textContent = 'Skopiowano!';
-                    btnIcon.textContent = '✔️';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                        btnText.textContent = 'Kopiuj';
-                        btnIcon.textContent = '📋';
-                        btn.classList.remove('copied');
-                    }, 2000);
-                }).catch(err => {
-                    console.error('Błąd kopiowania: ', err);
-                });
+    <!-- Skrypty JS -->
+    <script src="data.js"></script>
+    <script src="order.js"></script>
+    <script src="app.js"></script>
+    <script src="lq15.js"></script>
+    <script src="longfill.js"></script>
+    
+    <script>
+        // Aktualizacja roku w stopce
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Obsługa przycisku kopiowania
+        document.addEventListener('DOMContentLoaded', function() {
+            function copyToClipboard(text) {
+                return navigator.clipboard.writeText(text);
+            }
+            
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.copy-order-btn')) {
+                    const btn = e.target.closest('.copy-order-btn');
+                    const orderNumber = document.getElementById('order-number').textContent;
+                    
+                    copyToClipboard(orderNumber).then(() => {
+                        const btnText = btn.querySelector('.btn-text');
+                        const btnIcon = btn.querySelector('.btn-icon');
+                        
+                        btnText.textContent = 'Skopiowano!';
+                        btnIcon.textContent = '✔️';
+                        btn.classList.add('copied');
+                        
+                        setTimeout(() => {
+                            btnText.textContent = 'Kopiuj';
+                            btnIcon.textContent = '📋';
+                            btn.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Błąd kopiowania: ', err);
+                    });
+                }
+            });
+            
+            if (!window.Chart) {
+                console.warn('Chart.js nie został załadowany!');
             }
         });
-
-        if (!window.Chart) {
-            console.warn('Chart.js nie został załadowany!');
-        }
-    });
-</script>
+    </script>
 </body>
 </html>
